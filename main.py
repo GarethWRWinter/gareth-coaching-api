@@ -1,7 +1,10 @@
-# main.py
-
 from fastapi import FastAPI
-from api.routes import router as ride_router  # ✅ Correctly imports the router
+from api.routes import router as ride_router
 
 app = FastAPI()
-app.include_router(ride_router, prefix="/api")
+
+@app.get("/")
+def read_root():
+    return {"status": "OK", "message": "Gareth Coaching API is live"}
+
+app.include_router(ride_router)
