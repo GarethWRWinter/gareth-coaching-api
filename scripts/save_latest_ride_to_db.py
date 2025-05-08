@@ -5,15 +5,12 @@ import dropbox
 from fitparse import FitFile
 import sqlite3
 from dotenv import load_dotenv
-from dropbox_auth import refresh_dropbox_token
+import json
 
 load_dotenv()
 
-def save_latest_ride_to_db():
-    # Refresh Dropbox token before doing anything
-    refresh_dropbox_token()
-
-    dbx = dropbox.Dropbox(os.environ["DROPBOX_TOKEN"])
+def save_latest_ride_to_db(access_token: str):
+    dbx = dropbox.Dropbox(access_token)
     folder_path = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
 
     # Get latest .fit file
@@ -43,7 +40,6 @@ def save_latest_ride_to_db():
         )
     """)
 
-    import json
     c.execute("INSERT INTO rides (filename, timestamp, data) VALUES (?, datetime('now'), ?)",
               (latest_file.name, json.dumps(records)))
 
@@ -52,5 +48,5 @@ def save_latest_ride_to_db():
 
     return {
         "filename": latest_file.name,
-        "records": records[:5]  # return first 5 for brevity
+        "records": records[:5]  # just return a preview
     }
