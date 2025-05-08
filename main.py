@@ -1,25 +1,15 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from api.routes import fetch_latest_ride  # Add other routes as needed
+from api.routes import router as ride_router  # Make sure this file exists
 
 app = FastAPI(
     title="Gareth Coaching API",
-    description="World-class cycling coach backend.",
-    version="1.0.0"
+    description="An API to process and analyze cycling ride data from Dropbox",
+    version="1.0.0",
 )
-
-# Allow CORS for GPT access or local dev
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # You can tighten this for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Register routes
-app.include_router(fetch_latest_ride.router)
 
 @app.get("/")
-def root():
-    return {"message": "Gareth Coaching API is running."}
+def health_check():
+    return {"status": "OK", "message": "Gareth Coaching API is live"}
+
+# Include the route from api/routes.py
+app.include_router(ride_router, prefix="/api")
