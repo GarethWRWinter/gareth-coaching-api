@@ -1,11 +1,12 @@
-from fastapi import FastAPI
-from api.routes import router as ride_router
+# api/routes.py
 
-app = FastAPI()
+from fastapi import APIRouter
 
-@app.get("/")
-def root():
-    return {"status": "API is running"}
+router = APIRouter()
 
-app.include_router(ride_router)
-
+@router.get("/")
+async def root():
+    return {
+        "status": "OK",
+        "message": "Gareth Coaching API is live"
+    }
