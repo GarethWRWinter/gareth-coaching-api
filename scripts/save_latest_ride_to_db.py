@@ -1,37 +1,42 @@
-# scripts/save_latest_ride_to_db.py
-
 import os
 import dropbox
-from fitparse import FitFile
+import tempfile
 import pandas as pd
 from sqlalchemy import create_engine
-from dotenv import load_dotenv
-from scripts.get_latest_file import get_latest_dropbox_file
+from scripts.get_latest_dropbox_file import get_latest_dropbox_file
+from scripts.parse_fit_to_dataframe import parse_fit_to_dataframe
 
-load_dotenv()
+DROPBOX_FOLDER = os.environ.get("DROPBOX_FOLDER", "")
+DB_FILE = "ride_data.db"
 
-DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
-
-def save_latest_ride_to_db(access_token: str):
-    dbx = dropbox.Dropbox(access_token)
-
-    # Get latest file from Dropbox
+def save_latest_ride_to_db(access_token):
+    print("Starting: save_latest_ride_to_db()")
+    dbx = dropbox.Dropbox(oauth2_access_token=access_token)
+    
+    # Get latest file metadata
     latest_file = get_latest_dropbox_file(dbx, DROPBOX_FOLDER)
+    if not latest_file:
+        raise Exception("No .fit file found in Dropbox folder.")
 
-    # Parse the FIT file
-    fitfile = FitFile(latest_file.content)
-    records = []
+    file_path = latest_file.path_display
+    print(f"Downloading latest .FIT file: {file_path}")
+    
+    # Download file to temp location
+    _, temp_file = tempfile.mkstemp(suffix=".fit")
+    with open(temp_file, "wb") as f:
+        metadata, res = dbx.files_download(path=file_path)
+        f.write(res.content)
 
-    for record in fitfile.get_messages("record"):
-        record_data = {}
-        for field in record:
-            record_data[field.name] = field.value
-        records.append(record_data)
+    print("Parsing .FIT file to dataframe...")
+    df = parse_fit_to_dataframe(temp_file)
 
-    df = pd.DataFrame(records)
+    if df.empty:
+        raise Exception("Parsed DataFrame is empty. Possible parsing error.")
 
-    # Save to SQLite
-    engine = create_engine("sqlite:///ride_data.db")
+    print(f"Saving to database: {DB_FILE}")
+    engine = create_engine(f"sqlite:///{DB_FILE}")
     df.to_sql("rides", con=engine, if_exists="append", index=False)
+    engine.dispose()
 
-    return {"message": "Latest ride saved to database", "records_saved": len(df)}
+    print("Ride saved successfully.")
+    return {"message": "Ride saved", "rows": len(df), "file": file_path}
