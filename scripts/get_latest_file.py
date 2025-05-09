@@ -1,34 +1,23 @@
-import os
-import dropbox
-from dropbox.files import FileMetadata
-from datetime import datetime
-from dotenv import load_dotenv
+# scripts/get_latest_file.py
 
-load_dotenv()
+def get_latest_dropbox_file(dbx, folder_path):
+    """
+    Fetch the most recently modified file from the given Dropbox folder.
+    """
+    try:
+        result = dbx.files_list_folder(folder_path)
 
-DROPBOX_TOKEN = os.environ.get("DROPBOX_TOKEN")
-DROPBOX_FOLDER = os.environ.get("DROPBOX_FOLDER", "/")
+        if not result.entries:
+            raise Exception(f"No files found in folder: {folder_path}")
 
-def create_dropbox_client():
-    if not DROPBOX_TOKEN:
-        raise Exception("Missing DROPBOX_TOKEN environment variable.")
-    return dropbox.Dropbox(DROPBOX_TOKEN)
+        latest_entry = max(
+            result.entries,
+            key=lambda entry: entry.server_modified
+        )
 
-def get_latest_dropbox_file(folder_path=DROPBOX_FOLDER):
-    dbx = create_dropbox_client()
-    entries = dbx.files_list_folder(folder_path).entries
+        metadata, response = dbx.files_download(latest_entry.path_display)
+        return response
 
-    fit_files = [entry for entry in entries if isinstance(entry, FileMetadata) and entry.name.endswith(".fit")]
-
-    if not fit_files:
-        raise Exception("No .fit files found in Dropbox folder.")
-
-    latest_file = max(fit_files, key=lambda file: file.server_modified)
-
-    metadata, res = dbx.files_download(latest_file.path_lower)
-    file_bytes = res.content
-
-    return type('LatestFile', (), {
-        "name": latest_file.name,
-        "bytes": file_bytes
-    })()
+    except Exception as e:
+        print(f"Error fetching latest Dropbox file: {e}")
+        raise
