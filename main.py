@@ -1,30 +1,35 @@
-# main.py
-
 import os
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from api.routes import router
 from dropbox_auth import refresh_dropbox_token
+from api.routes import router as api_router
 
 load_dotenv()
 
 app = FastAPI()
 
-# Include routes
-app.include_router(router)
+# Optional CORS if needed for frontend access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.on_event("startup")
+def startup_event():
+    print("Starting FastAPI app...")
+    try:
+        access_token = refresh_dropbox_token()
+        print("Dropbox token refreshed successfully.")
+    except Exception as e:
+        print(f"Failed to refresh Dropbox token at startup: {e}")
+
+# Attach API routes
+app.include_router(api_router)
 
 @app.get("/")
 def root():
-    return {"status": "OK"}
-
-@app.get("/latest-ride-data")
-def get_latest_ride_data():
-    try:
-        print("Refreshing Dropbox token...")
-        access_token = refresh_dropbox_token()
-        from scripts.save_latest_ride_to_db import save_latest_ride_to_db
-        result = save_latest_ride_to_db(access_token)
-        return JSONResponse(content=result)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"message": "Cycling Coach API is live"}
