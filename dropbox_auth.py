@@ -1,19 +1,24 @@
 import os
 import requests
 
-def refresh_dropbox_token():
+def get_dropbox_access_token():
+    refresh_token = os.getenv("DROPBOX_REFRESH_TOKEN")
+    app_key = os.getenv("DROPBOX_APP_KEY")
+    app_secret = os.getenv("DROPBOX_APP_SECRET")
+
+    if not refresh_token or not app_key or not app_secret:
+        raise Exception("Missing Dropbox environment variables")
+
     print("Refreshing Dropbox token...")
-    url = "https://api.dropbox.com/oauth2/token"
-    data = {
-        "grant_type": "refresh_token",
-        "refresh_token": os.environ["DROPBOX_REFRESH_TOKEN"],
-        "client_id": os.environ["DROPBOX_APP_KEY"],
-        "client_secret": os.environ["DROPBOX_APP_SECRET"],
-    }
 
-    response = requests.post(url, data=data)
-    response.raise_for_status()
+    response = requests.post(
+        "https://api.dropbox.com/oauth2/token",
+        auth=(app_key, app_secret),
+        data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+    )
 
-    new_token = response.json()["access_token"]
-    os.environ["DROPBOX_TOKEN"] = new_token
-    return new_token
+    if response.status_code != 200:
+        raise Exception(f"Failed to refresh token: {response.text}")
+
+    access_token = response.json()["access_token"]
+    return access_token
