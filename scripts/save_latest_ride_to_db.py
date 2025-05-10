@@ -4,9 +4,9 @@ from datetime import datetime
 import pandas as pd
 from scripts.get_latest_dropbox_file import get_latest_dropbox_file
 from scripts.parse_fit_to_df import fitfile_to_dataframe
-from scripts.calculate_power_zones import calculate_power_zones
 
 DB_PATH = "ride_data.db"
+FTP = 308  # Set your current FTP here
 
 def save_latest_ride_to_db(access_token: str) -> dict:
     dropbox_folder = os.environ.get("DROPBOX_FOLDER", "")
@@ -16,10 +16,6 @@ def save_latest_ride_to_db(access_token: str) -> dict:
     df = fitfile_to_dataframe(latest_file.name, access_token)
     print(f"[INFO] Parsed {len(df)} rows of ride data.")
 
-    if df.empty:
-        print("[ERROR] Dataframe is empty.")
-        return {"error": "No data found in FIT file."}
-
     timestamp = df["timestamp"].iloc[0]
     duration_s = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
     avg_power = df["power"].mean()
@@ -27,12 +23,27 @@ def save_latest_ride_to_db(access_token: str) -> dict:
     avg_hr = df["heart_rate"].mean()
     max_hr = df["heart_rate"].max()
 
-    ftp = 308  # Fixed FTP for now
-    intensity_factor = (avg_power / ftp)
-    tss = (duration_s * (intensity_factor ** 2)) / 36  # Correct TSS calc
+    # --- TSS Calculation ---
+    normalized_power = df["power"].pow(4).mean() ** 0.25
+    intensity_factor = normalized_power / FTP
+    tss = (duration_s * normalized_power * intensity_factor) / (FTP * 3600) * 100
 
-    # Time in zones
-    zone_times = calculate_power_zones(df["power"], ftp)
+    # --- Time in Zones ---
+    zone_bounds = [
+        (0, 0.55 * FTP),       # Zone 1
+        (0.55 * FTP, 0.75 * FTP),  # Zone 2
+        (0.75 * FTP, 0.90 * FTP),  # Zone 3
+        (0.90 * FTP, 1.05 * FTP),  # Zone 4
+        (1.05 * FTP, 1.20 * FTP),  # Zone 5
+        (1.20 * FTP, float("inf"))  # Zone 6+
+    ]
+
+    time_in_zones = [0] * 6
+    for power in df["power"]:
+        for i, (low, high) in enumerate(zone_bounds):
+            if low <= power < high:
+                time_in_zones[i] += 1
+                break
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -48,13 +59,12 @@ def save_latest_ride_to_db(access_token: str) -> dict:
             avg_heart_rate REAL,
             max_heart_rate REAL,
             tss REAL,
-            z1 INTEGER,
-            z2 INTEGER,
-            z3 INTEGER,
-            z4 INTEGER,
-            z5 INTEGER,
-            z6 INTEGER,
-            z7 INTEGER,
+            zone1_s INTEGER,
+            zone2_s INTEGER,
+            zone3_s INTEGER,
+            zone4_s INTEGER,
+            zone5_s INTEGER,
+            zone6_s INTEGER,
             UNIQUE(filename, timestamp)
         )
     """)
@@ -65,8 +75,8 @@ def save_latest_ride_to_db(access_token: str) -> dict:
             filename, rows, timestamp, duration_s,
             avg_power, max_power, avg_heart_rate,
             max_heart_rate, tss,
-            z1, z2, z3, z4, z5, z6, z7
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            zone1_s, zone2_s, zone3_s, zone4_s, zone5_s, zone6_s
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         latest_file.name,
         len(df),
@@ -77,13 +87,7 @@ def save_latest_ride_to_db(access_token: str) -> dict:
         round(avg_hr, 1),
         round(max_hr, 1),
         round(tss, 1),
-        zone_times["Z1"],
-        zone_times["Z2"],
-        zone_times["Z3"],
-        zone_times["Z4"],
-        zone_times["Z5"],
-        zone_times["Z6"],
-        zone_times["Z7"]
+        *time_in_zones
     ))
     conn.commit()
     conn.close()
@@ -98,5 +102,12 @@ def save_latest_ride_to_db(access_token: str) -> dict:
         "avg_heart_rate": round(avg_hr, 1),
         "max_heart_rate": round(max_hr, 1),
         "tss": round(tss, 1),
-        "time_in_zones": zone_times
+        "time_in_zones": {
+            "zone1_s": time_in_zones[0],
+            "zone2_s": time_in_zones[1],
+            "zone3_s": time_in_zones[2],
+            "zone4_s": time_in_zones[3],
+            "zone5_s": time_in_zones[4],
+            "zone6_s": time_in_zones[5],
+        }
     }
