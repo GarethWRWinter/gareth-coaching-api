@@ -1,68 +1,101 @@
-# scripts/save_latest_ride_to_db.py
 import os
-import dropbox
-from dropbox.files import FileMetadata
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-import pandas as pd
-
+import sqlite3
+import datetime
+from dropbox import Dropbox
 from scripts.get_latest_dropbox_file import get_latest_dropbox_file
 from scripts.parse_fit_to_df import fitfile_to_dataframe
-from scripts.models import Base, Ride
+
 
 DROPBOX_FOLDER = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
-DB_PATH = "sqlite:///ride_data.db"
 
-def save_latest_ride_to_db(access_token: str) -> dict:
-    dbx = dropbox.Dropbox(oauth2_access_token=access_token)
-    latest_file: FileMetadata = get_latest_dropbox_file(dbx, DROPBOX_FOLDER)
 
-    # Download FIT file
-    metadata, response = dbx.files_download(latest_file.path_display)
-    fit_data = response.content
+def create_rides_table_if_missing(conn):
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS rides (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT,
+            timestamp TEXT,
+            duration_seconds INTEGER,
+            avg_power REAL,
+            avg_heart_rate REAL,
+            avg_cadence REAL,
+            max_power REAL,
+            max_heart_rate REAL,
+            max_cadence REAL
+        )
+    ''')
+    conn.commit()
 
-    # Parse to DataFrame
+
+def save_latest_ride_to_db(access_token: str):
+    # Step 1: Connect to Dropbox
+    dbx = Dropbox(oauth2_access_token=access_token)
+
+    # Step 2: Get latest FIT file
+    latest_file_metadata = get_latest_dropbox_file(dbx, DROPBOX_FOLDER)
+    file_path = latest_file_metadata.path_display
+    file_name = os.path.basename(file_path)
+    print(f"[INFO] Latest file: {file_name}")
+
+    # Step 3: Download FIT file to memory
+    metadata, res = dbx.files_download(file_path)
+    fit_data = res.content
+
+    # Step 4: Parse FIT data into DataFrame
     df = fitfile_to_dataframe(fit_data)
+    print(f"[INFO] Parsed {len(df)} rows of ride data.")
 
-    # Basic metrics
-    timestamp = df["timestamp"].iloc[0]
-    duration_seconds = int((df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds())
-    avg_power = df["power"].mean()
-    max_power = df["power"].max()
-    avg_hr = df["heart_rate"].mean()
-    max_hr = df["heart_rate"].max()
-    tss = (duration_seconds * avg_power) / (3600 * 250) * 100  # crude estimate for now
+    if df.empty:
+        raise ValueError("Parsed DataFrame is empty — cannot save ride.")
 
-    # Setup DB
-    engine = create_engine(DB_PATH)
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    # Step 5: Extract ride metrics
+    duration_seconds = int((df['timestamp'].iloc[-1] - df['timestamp'].iloc[0]).total_seconds())
+    avg_power = df['power'].mean()
+    avg_hr = df['heart_rate'].mean()
+    avg_cadence = df['cadence'].mean()
+    max_power = df['power'].max()
+    max_hr = df['heart_rate'].max()
+    max_cadence = df['cadence'].max()
+    ride_timestamp = df['timestamp'].iloc[0].isoformat()
 
-    ride = Ride(
-        filename=latest_file.name,
-        timestamp=timestamp,
-        duration_seconds=duration_seconds,
-        avg_power=avg_power,
-        max_power=max_power,
-        avg_heart_rate=avg_hr,
-        max_heart_rate=max_hr,
-        tss=tss,
-    )
+    # Step 6: Save to SQLite
+    conn = sqlite3.connect("ride_data.db")
+    create_rides_table_if_missing(conn)
 
-    session.add(ride)
-    session.commit()
-    session.close()
+    conn.execute('''
+        INSERT INTO rides (
+            filename,
+            timestamp,
+            duration_seconds,
+            avg_power,
+            avg_heart_rate,
+            avg_cadence,
+            max_power,
+            max_heart_rate,
+            max_cadence
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        file_name,
+        ride_timestamp,
+        duration_seconds,
+        avg_power,
+        avg_hr,
+        avg_cadence,
+        max_power,
+        max_hr,
+        max_cadence
+    ))
+    conn.commit()
+    conn.close()
 
     return {
-        "filename": latest_file.name,
-        "rows": len(df),
-        "timestamp": str(timestamp),
-        "duration_s": duration_seconds,
-        "avg_power": round(avg_power, 1),
-        "max_power": round(max_power, 1),
-        "avg_heart_rate": round(avg_hr, 1),
-        "max_heart_rate": round(max_hr, 1),
-        "tss": round(tss, 1),
+        "filename": file_name,
+        "timestamp": ride_timestamp,
+        "duration_seconds": duration_seconds,
+        "avg_power": avg_power,
+        "avg_heart_rate": avg_hr,
+        "avg_cadence": avg_cadence,
+        "max_power": max_power,
+        "max_heart_rate": max_hr,
+        "max_cadence": max_cadence
     }
