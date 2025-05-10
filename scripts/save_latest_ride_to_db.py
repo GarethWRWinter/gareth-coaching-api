@@ -6,7 +6,6 @@ from scripts.get_latest_dropbox_file import get_latest_dropbox_file
 from scripts.parse_fit_to_df import fitfile_to_dataframe
 
 DB_PATH = "ride_data.db"
-FTP = 308  # Set your current FTP here
 
 def save_latest_ride_to_db(access_token: str) -> dict:
     dropbox_folder = os.environ.get("DROPBOX_FOLDER", "")
@@ -23,28 +22,29 @@ def save_latest_ride_to_db(access_token: str) -> dict:
     avg_hr = df["heart_rate"].mean()
     max_hr = df["heart_rate"].max()
 
-    # --- TSS Calculation ---
-    normalized_power = df["power"].pow(4).mean() ** 0.25
-    intensity_factor = normalized_power / FTP
-    tss = (duration_s * normalized_power * intensity_factor) / (FTP * 3600) * 100
+    # TSS calculation using FTP
+    FTP = 308
+    intensity_factor = avg_power / FTP
+    tss = (duration_s * (intensity_factor ** 2)) / 3600 * 100
 
-    # --- Time in Zones ---
-    zone_bounds = [
-        (0, 0.55 * FTP),       # Zone 1
-        (0.55 * FTP, 0.75 * FTP),  # Zone 2
-        (0.75 * FTP, 0.90 * FTP),  # Zone 3
-        (0.90 * FTP, 1.05 * FTP),  # Zone 4
-        (1.05 * FTP, 1.20 * FTP),  # Zone 5
-        (1.20 * FTP, float("inf"))  # Zone 6+
-    ]
+    # Time in zones calculation (per second)
+    zone_counts = {
+        "zone1": ((df["power"] < 0.55 * FTP).sum()),
+        "zone2": ((df["power"] >= 0.55 * FTP) & (df["power"] < 0.75 * FTP)).sum(),
+        "zone3": ((df["power"] >= 0.75 * FTP) & (df["power"] < 0.90 * FTP)).sum(),
+        "zone4": ((df["power"] >= 0.90 * FTP) & (df["power"] < 1.05 * FTP)).sum(),
+        "zone5": ((df["power"] >= 1.05 * FTP) & (df["power"] < 1.20 * FTP)).sum(),
+        "zone6": ((df["power"] >= 1.20 * FTP)).sum()
+    }
 
-    time_in_zones = [0] * 6
-    for power in df["power"]:
-        for i, (low, high) in enumerate(zone_bounds):
-            if low <= power < high:
-                time_in_zones[i] += 1
-                break
+    # Compose zone metrics into seconds, minutes, and percentage
+    time_in_zones = {}
+    for zone, seconds in zone_counts.items():
+        time_in_zones[f"{zone}_s"] = seconds
+        time_in_zones[f"{zone}_min"] = round(seconds / 60, 1)
+        time_in_zones[f"{zone}_pct"] = round((seconds / duration_s) * 100, 1)
 
+    # Save to SQLite
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -59,12 +59,6 @@ def save_latest_ride_to_db(access_token: str) -> dict:
             avg_heart_rate REAL,
             max_heart_rate REAL,
             tss REAL,
-            zone1_s INTEGER,
-            zone2_s INTEGER,
-            zone3_s INTEGER,
-            zone4_s INTEGER,
-            zone5_s INTEGER,
-            zone6_s INTEGER,
             UNIQUE(filename, timestamp)
         )
     """)
@@ -74,9 +68,8 @@ def save_latest_ride_to_db(access_token: str) -> dict:
         INSERT OR IGNORE INTO rides (
             filename, rows, timestamp, duration_s,
             avg_power, max_power, avg_heart_rate,
-            max_heart_rate, tss,
-            zone1_s, zone2_s, zone3_s, zone4_s, zone5_s, zone6_s
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            max_heart_rate, tss
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         latest_file.name,
         len(df),
@@ -86,8 +79,7 @@ def save_latest_ride_to_db(access_token: str) -> dict:
         round(max_power, 1),
         round(avg_hr, 1),
         round(max_hr, 1),
-        round(tss, 1),
-        *time_in_zones
+        round(tss, 1)
     ))
     conn.commit()
     conn.close()
@@ -102,12 +94,5 @@ def save_latest_ride_to_db(access_token: str) -> dict:
         "avg_heart_rate": round(avg_hr, 1),
         "max_heart_rate": round(max_hr, 1),
         "tss": round(tss, 1),
-        "time_in_zones": {
-            "zone1_s": time_in_zones[0],
-            "zone2_s": time_in_zones[1],
-            "zone3_s": time_in_zones[2],
-            "zone4_s": time_in_zones[3],
-            "zone5_s": time_in_zones[4],
-            "zone6_s": time_in_zones[5],
-        }
+        "time_in_zones": time_in_zones
     }
