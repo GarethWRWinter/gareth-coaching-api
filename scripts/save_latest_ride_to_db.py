@@ -2,6 +2,7 @@ import os
 import sqlite3
 from datetime import datetime
 import pandas as pd
+from fastapi import HTTPException
 from scripts.get_latest_dropbox_file import get_latest_dropbox_file
 from scripts.parse_fit_to_df import fitfile_to_dataframe
 
@@ -12,10 +13,9 @@ def save_latest_ride_to_db(access_token: str) -> dict:
     latest_file = get_latest_dropbox_file(access_token, dropbox_folder)
 
     if latest_file is None:
-        raise ValueError("No .FIT file found in the Dropbox folder.")
+        raise HTTPException(status_code=404, detail="No .FIT file found in the Dropbox folder.")
 
     print(f"[INFO] Latest file: {latest_file.name}")
-
     df = fitfile_to_dataframe(latest_file.name, access_token)
     print(f"[INFO] Parsed {len(df)} rows of ride data.")
 
