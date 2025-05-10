@@ -8,24 +8,21 @@ from scripts.parse_fit_to_df import fitfile_to_dataframe
 DB_PATH = "ride_data.db"
 
 def save_latest_ride_to_db(access_token: str) -> dict:
-    # Fetch the latest file from Dropbox
-    latest_file = get_latest_dropbox_file(access_token)
+    dropbox_folder = os.environ.get("DROPBOX_FOLDER", "")
+    latest_file = get_latest_dropbox_file(access_token, dropbox_folder)
     print(f"[INFO] Latest file: {latest_file.name}")
 
-    # Download and parse the FIT file
     df = fitfile_to_dataframe(latest_file.name, access_token)
     print(f"[INFO] Parsed {len(df)} rows of ride data.")
 
-    # Calculate ride metrics
     timestamp = df["timestamp"].iloc[0]
     duration_s = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
     avg_power = df["power"].mean()
     max_power = df["power"].max()
     avg_hr = df["heart_rate"].mean()
     max_hr = df["heart_rate"].max()
-    tss = (duration_s * avg_power) / 3600  # Simple TSS approximation
+    tss = (duration_s * avg_power) / 3600  # Approximate Training Stress Score
 
-    # Ensure DB and table exist
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -45,7 +42,6 @@ def save_latest_ride_to_db(access_token: str) -> dict:
     """)
     conn.commit()
 
-    # Insert ride with deduplication
     cursor.execute("""
         INSERT OR IGNORE INTO rides (
             filename, rows, timestamp, duration_s,
