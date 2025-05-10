@@ -1,21 +1,26 @@
+import io
+import dropbox
 import pandas as pd
 from fitparse import FitFile
+import os
 
-def fitfile_to_dataframe(file_path_or_bytes):
-    """
-    Converts a .FIT file (from a path or raw bytes) to a Pandas DataFrame.
-    Returns DataFrame with all valid record fields (timestamp, power, hr, cadence, etc).
-    """
-    fitfile = FitFile(file_path_or_bytes)
+def fitfile_to_dataframe(filename: str, access_token: str) -> pd.DataFrame:
+    dbx = dropbox.Dropbox(access_token)
+    dropbox_path = f"{os.environ.get('DROPBOX_FOLDER', '')}/{filename}"
 
+    # Download the file into a BytesIO buffer
+    metadata, res = dbx.files_download(dropbox_path)
+    file_stream = io.BytesIO(res.content)
+
+    # Parse the FIT file
+    fitfile = FitFile(file_stream)
     records = []
+
     for record in fitfile.get_messages("record"):
-        fields = {field.name: field.value for field in record}
-        records.append(fields)
+        row = {}
+        for field in record:
+            row[field.name] = field.value
+        records.append(row)
 
-    if not records:
-        raise ValueError("No records found in the FIT file.")
-
-    df = pd.DataFrame.from_records(records)
-    df.dropna(axis=1, how="all", inplace=True)
+    df = pd.DataFrame(records)
     return df
