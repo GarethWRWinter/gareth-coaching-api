@@ -19,16 +19,16 @@ def save_latest_ride_to_db(access_token):
     if not latest_file:
         raise Exception("No .FIT files found in Dropbox.")
 
-    print(f"[INFO] Latest file: {latest_file['name']}")
+    print(f"[INFO] Latest file: {latest_file.name}")
 
     # Download and parse the .FIT file
-    metadata, res = dbx.files_download(latest_file["path_lower"])
+    metadata, res = dbx.files_download(latest_file.path_lower)
     df = fitfile_to_dataframe(res.content)
     print(f"[INFO] Parsed {len(df)} rows of ride data.")
 
     # Generate summary
     summary = {
-        "filename": latest_file["name"],
+        "filename": latest_file.name,
         "rows": len(df),
         "timestamp": df["timestamp"].min().strftime("%Y-%m-%d %H:%M:%S"),
         "duration_s": int((df["timestamp"].max() - df["timestamp"].min()).total_seconds()),
