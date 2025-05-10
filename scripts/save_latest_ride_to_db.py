@@ -10,6 +10,9 @@ DB_PATH = "ride_data.db"
 def save_latest_ride_to_db(access_token: str) -> dict:
     dropbox_folder = os.environ.get("DROPBOX_FOLDER", "")
     latest_file = get_latest_dropbox_file(access_token, dropbox_folder)
+    if latest_file is None:
+        raise ValueError("No .FIT file found in Dropbox.")
+
     print(f"[INFO] Latest file: {latest_file.name}")
 
     df = fitfile_to_dataframe(latest_file.name, access_token)
