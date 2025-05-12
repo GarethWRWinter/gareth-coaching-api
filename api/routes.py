@@ -23,7 +23,7 @@ def read_root():
 
 @router.get("/latest-ride-data")
 def get_latest_ride_data():
-    access_token = get_dropbox_access_token()  # ✅ cleaner naming
+    access_token = get_dropbox_access_token()
     result = save_latest_ride_to_db(access_token)
     clean_result = sanitize(result)
     return JSONResponse(content=clean_result)

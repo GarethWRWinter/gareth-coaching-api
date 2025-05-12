@@ -1,32 +1,16 @@
 import os
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()  # Optional: loads from .env file
+def refresh_token():
+    url = "https://api.dropbox.com/oauth2/token"
+    data = {
+        "grant_type": "refresh_token",
+        "refresh_token": os.environ["DROPBOX_REFRESH_TOKEN"],
+        "client_id": os.environ["DROPBOX_APP_KEY"],
+        "client_secret": os.environ["DROPBOX_APP_SECRET"],
+    }
 
-APP_KEY = "3ge3h3mssudmqzk"
-APP_SECRET = "u0bt5xb35zcsrfz"
-REFRESH_TOKEN = "SVwgdziU4HAAAAAAAAAAASSBx0chH1-qP7vM0IcYLXecS_2Ttj1n2DSfdhDhOU32"
-
-def get_new_access_token():
-    response = requests.post(
-        "https://api.dropboxapi.com/oauth2/token",
-        auth=(APP_KEY, APP_SECRET),
-        data={
-            "grant_type": "refresh_token",
-            "refresh_token": REFRESH_TOKEN
-        }
-    )
-
-    if response.status_code == 200:
-        token = response.json()["access_token"]
-        print("✅ New access token:\n")
-        print(token)
-        return token
-    else:
-        print("❌ Failed to refresh token")
-        print(response.text)
-        return None
-
-if __name__ == "__main__":
-    get_new_access_token()
+    response = requests.post(url, data=data)
+    response.raise_for_status()
+    access_token = response.json()["access_token"]
+    return access_token
