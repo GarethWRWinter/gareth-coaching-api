@@ -1,7 +1,7 @@
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter
 from scripts.save_latest_ride_to_db import save_latest_ride_to_db
-from scripts.refresh_token import refresh_token  # ✅ correct name
+from scripts.refresh_token import refresh_token as get_dropbox_access_token
 import numpy as np
 import sqlite3
 
@@ -23,7 +23,7 @@ def read_root():
 
 @router.get("/latest-ride-data")
 def get_latest_ride_data():
-    access_token = refresh_token()  # ✅ now calling correct function
+    access_token = get_dropbox_access_token()  # ✅ cleaner naming
     result = save_latest_ride_to_db(access_token)
     clean_result = sanitize(result)
     return JSONResponse(content=clean_result)
