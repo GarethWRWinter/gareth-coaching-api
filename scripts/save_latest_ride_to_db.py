@@ -1,98 +1,82 @@
 import os
-import sqlite3
-from datetime import datetime
+import dropbox
 import pandas as pd
-from scripts.get_latest_dropbox_file import get_latest_dropbox_file
-from scripts.parse_fit_to_df import fitfile_to_dataframe
+import numpy as np
+from fitparse import FitFile
+from scripts.ride_database import save_ride_summary
+from scripts.refresh_token import get_dropbox_access_token
+from io import BytesIO
+from datetime import timedelta
 
-DB_PATH = "ride_data.db"
+def calculate_tss(power_series, ftp, duration_seconds):
+    normalized_power = np.power(np.mean(np.power(power_series, 4)), 0.25)
+    intensity_factor = normalized_power / ftp
+    tss = (duration_seconds * normalized_power * intensity_factor) / (ftp * 3600) * 100
+    return round(tss, 1)
 
-def save_latest_ride_to_db(access_token: str) -> dict:
-    dropbox_folder = os.environ.get("DROPBOX_FOLDER", "")
-    latest_file = get_latest_dropbox_file(access_token, dropbox_folder)
-    print(f"[INFO] Latest file: {latest_file.name}")
-
-    df = fitfile_to_dataframe(latest_file.name, access_token)
-    print(f"[INFO] Parsed {len(df)} rows of ride data.")
-
-    timestamp = df["timestamp"].iloc[0]
-    duration_s = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
-    avg_power = df["power"].mean()
-    max_power = df["power"].max()
-    avg_hr = df["heart_rate"].mean()
-    max_hr = df["heart_rate"].max()
-
-    # TSS calculation using FTP
-    FTP = 308
-    intensity_factor = avg_power / FTP
-    tss = (duration_s * (intensity_factor ** 2)) / 3600 * 100
-
-    # Time in zones calculation (per second)
-    zone_counts = {
-        "zone1": ((df["power"] < 0.55 * FTP).sum()),
-        "zone2": ((df["power"] >= 0.55 * FTP) & (df["power"] < 0.75 * FTP)).sum(),
-        "zone3": ((df["power"] >= 0.75 * FTP) & (df["power"] < 0.90 * FTP)).sum(),
-        "zone4": ((df["power"] >= 0.90 * FTP) & (df["power"] < 1.05 * FTP)).sum(),
-        "zone5": ((df["power"] >= 1.05 * FTP) & (df["power"] < 1.20 * FTP)).sum(),
-        "zone6": ((df["power"] >= 1.20 * FTP)).sum()
+def calculate_time_in_zones(power_series, ftp):
+    zones = {
+        "zone1": (0, 0.55 * ftp),
+        "zone2": (0.55 * ftp, 0.75 * ftp),
+        "zone3": (0.75 * ftp, 0.9 * ftp),
+        "zone4": (0.9 * ftp, 1.05 * ftp),
+        "zone5": (1.05 * ftp, 1.2 * ftp),
+        "zone6": (1.2 * ftp, float("inf")),
     }
 
-    # Compose zone metrics into seconds, minutes, and percentage
-    time_in_zones = {}
-    for zone, seconds in zone_counts.items():
-        time_in_zones[f"{zone}_s"] = seconds
-        time_in_zones[f"{zone}_min"] = round(seconds / 60, 1)
-        time_in_zones[f"{zone}_pct"] = round((seconds / duration_s) * 100, 1)
+    total_seconds = len(power_series)
+    result = {}
 
-    # Save to SQLite
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS rides (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT,
-            rows INTEGER,
-            timestamp TEXT,
-            duration_s REAL,
-            avg_power REAL,
-            max_power REAL,
-            avg_heart_rate REAL,
-            max_heart_rate REAL,
-            tss REAL,
-            UNIQUE(filename, timestamp)
-        )
-    """)
-    conn.commit()
+    for zone, (low, high) in zones.items():
+        zone_seconds = np.sum((power_series >= low) & (power_series < high))
+        zone_minutes = round(zone_seconds / 60, 1)
+        zone_pct = round(zone_seconds / total_seconds * 100, 1)
+        result[f"{zone}_s"] = int(zone_seconds)
+        result[f"{zone}_min"] = zone_minutes
+        result[f"{zone}_pct"] = zone_pct
 
-    cursor.execute("""
-        INSERT OR IGNORE INTO rides (
-            filename, rows, timestamp, duration_s,
-            avg_power, max_power, avg_heart_rate,
-            max_heart_rate, tss
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        latest_file.name,
-        len(df),
-        timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-        duration_s,
-        round(avg_power, 1),
-        round(max_power, 1),
-        round(avg_hr, 1),
-        round(max_hr, 1),
-        round(tss, 1)
-    ))
-    conn.commit()
-    conn.close()
+    return result
 
-    return {
+def process_latest_fit_file(access_token, ftp=308):
+    dbx = dropbox.Dropbox(access_token)
+    folder = os.environ.get("DROPBOX_FOLDER", "")
+    entries = dbx.files_list_folder(folder).entries
+    fit_files = [f for f in entries if f.name.endswith(".fit")]
+    latest_file = sorted(fit_files, key=lambda x: x.server_modified, reverse=True)[0]
+    metadata, res = dbx.files_download(latest_file.path_display)
+
+    fitfile = FitFile(BytesIO(res.content))
+    records = [r.get_values() for r in fitfile.get_messages("record")]
+    df = pd.DataFrame(records)
+
+    if "timestamp" not in df or df.empty:
+        raise ValueError("Invalid or empty FIT file")
+
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["power"] = df["power"].fillna(0).astype(int)
+    df["heart_rate"] = df["heart_rate"].fillna(0).astype(int)
+
+    start_time = df["timestamp"].iloc[0]
+    duration_s = int((df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds())
+    avg_power = round(df["power"].mean(), 1)
+    max_power = int(df["power"].max())
+    avg_hr = round(df["heart_rate"].mean(), 1)
+    max_hr = int(df["heart_rate"].max())
+    tss = calculate_tss(df["power"].values, ftp, duration_s)
+    zones = calculate_time_in_zones(df["power"].values, ftp)
+
+    result = {
         "filename": latest_file.name,
         "rows": len(df),
-        "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-        "duration_s": int(duration_s),
-        "avg_power": round(avg_power, 1),
-        "max_power": round(max_power, 1),
-        "avg_heart_rate": round(avg_hr, 1),
-        "max_heart_rate": round(max_hr, 1),
-        "tss": round(tss, 1),
-        "time_in_zones": time_in_zones
+        "timestamp": start_time.strftime("%Y-%m-%d %H:%M:%S"),
+        "duration_s": duration_s,
+        "avg_power": avg_power,
+        "max_power": max_power,
+        "avg_heart_rate": avg_hr,
+        "max_heart_rate": max_hr,
+        "tss": tss,
+        "time_in_zones": zones
     }
+
+    save_ride_summary(result)
+    return result
