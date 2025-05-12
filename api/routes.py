@@ -1,13 +1,12 @@
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter
 from scripts.save_latest_ride_to_db import save_latest_ride_to_db
-from scripts.refresh_token import refresh_access_token  # ✅ FIXED: correct import
+from scripts.refresh_token import refresh_token  # ✅ correct name
 import numpy as np
 import sqlite3
 
 router = APIRouter()
 
-# 🔧 Recursive sanitizer for NumPy objects (int64, float64, etc.)
 def sanitize(obj):
     if isinstance(obj, dict):
         return {k: sanitize(v) for k, v in obj.items()}
@@ -24,9 +23,9 @@ def read_root():
 
 @router.get("/latest-ride-data")
 def get_latest_ride_data():
-    access_token = refresh_access_token()  # ✅ Get fresh token
+    access_token = refresh_token()  # ✅ now calling correct function
     result = save_latest_ride_to_db(access_token)
-    clean_result = sanitize(result)        # ✅ Sanitize all NumPy values
+    clean_result = sanitize(result)
     return JSONResponse(content=clean_result)
 
 @router.get("/rides")
@@ -37,5 +36,5 @@ def list_saved_rides():
     rows = cursor.fetchall()
     columns = [desc[0] for desc in cursor.description]
     conn.close()
-    clean_rows = [sanitize(dict(zip(columns, row))) for row in rows]  # ✅ Sanitize rows too
+    clean_rows = [sanitize(dict(zip(columns, row))) for row in rows]
     return JSONResponse(content=clean_rows)
