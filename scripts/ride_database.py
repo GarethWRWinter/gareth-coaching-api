@@ -1,26 +1,48 @@
+# scripts/ride_database.py
+
 import sqlite3
-import os
-import numpy as np
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "../ride_data.db")
+def save_ride_summary(ride_summary):
+    conn = sqlite3.connect("ride_data.db")
+    c = conn.cursor()
+    
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS rides (
+            filename TEXT PRIMARY KEY,
+            timestamp TEXT,
+            duration_s INTEGER,
+            avg_power REAL,
+            max_power REAL,
+            avg_heart_rate REAL,
+            max_heart_rate REAL,
+            tss REAL,
+            zone1_s INTEGER,
+            zone2_s INTEGER,
+            zone3_s INTEGER,
+            zone4_s INTEGER,
+            zone5_s INTEGER,
+            zone6_s INTEGER
+        )
+    ''')
+    
+    c.execute('''
+        INSERT OR REPLACE INTO rides VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        ride_summary["filename"],
+        ride_summary["timestamp"],
+        ride_summary["duration_s"],
+        ride_summary["avg_power"],
+        ride_summary["max_power"],
+        ride_summary["avg_heart_rate"],
+        ride_summary["max_heart_rate"],
+        ride_summary["tss"],
+        ride_summary["time_in_zones"]["zone1_s"],
+        ride_summary["time_in_zones"]["zone2_s"],
+        ride_summary["time_in_zones"]["zone3_s"],
+        ride_summary["time_in_zones"]["zone4_s"],
+        ride_summary["time_in_zones"]["zone5_s"],
+        ride_summary["time_in_zones"]["zone6_s"]
+    ))
 
-def sanitize(obj):
-    if isinstance(obj, dict):
-        return {k: sanitize(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [sanitize(i) for i in obj]
-    elif isinstance(obj, np.generic):
-        return obj.item()
-    return obj
-
-def fetch_ride_history():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM rides ORDER BY timestamp DESC")
-    rows = cursor.fetchall()
-
-    col_names = [description[0] for description in cursor.description]
-    rides = [dict(zip(col_names, row)) for row in rows]
-
+    conn.commit()
     conn.close()
-    return sanitize(rides)
