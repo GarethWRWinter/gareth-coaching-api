@@ -1,55 +1,46 @@
 import os
 import dropbox
-import pandas as pd
-from fitparse import FitFile
-from datetime import datetime
+from dotenv import load_dotenv
 from scripts.dropbox_auth import refresh_access_token
 from scripts.ride_database import save_ride_summary
+from scripts.parse_fit import parse_fit_file
 from scripts.time_in_zones import calculate_time_in_zones
-from scripts.sanitize import sanitize_dict
+from scripts.sanitize import sanitize
 
-DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+load_dotenv()
 
-def get_latest_dropbox_file_path(dbx, folder_path):
-    entries = dbx.files_list_folder(folder_path).entries
-    fit_files = [f for f in entries if f.name.endswith(".fit")]
-    latest_file = max(fit_files, key=lambda f: f.client_modified)
+DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER")
+FTP = int(os.getenv("FTP", "308"))
+
+def get_dropbox_client():
+    access_token = refresh_access_token()
+    return dropbox.Dropbox(oauth2_access_token=access_token)
+
+def get_latest_fit_file_path(dbx):
+    entries = dbx.files_list_folder(DROPBOX_FOLDER).entries
+    fit_files = [entry for entry in entries if entry.name.endswith(".fit")]
+    if not fit_files:
+        raise FileNotFoundError("No .FIT files found in Dropbox folder.")
+    latest_file = max(fit_files, key=lambda x: x.client_modified)
     return latest_file.path_display
 
-def parse_fit_file(file_stream):
-    fitfile = FitFile(file_stream)
-    records = [record.get_values() for record in fitfile.get_messages("record")]
-    df = pd.DataFrame(records)
+def process_latest_fit_file(access_token: str):
+    dbx = dropbox.Dropbox(oauth2_access_token=access_token)
+    dbx_path = get_latest_fit_file_path(dbx)
+    metadata, res = dbx.files_download(dbx_path)
 
-    session = list(fitfile.get_messages("session"))[0].get_values()
-    ftp = session.get("threshold_power", 250)
+    data = parse_fit_file(res.content)
+    zones = calculate_time_in_zones(data, FTP)
 
     summary = {
-        "start_time": session.get("start_time"),
-        "duration_sec": session.get("total_timer_time"),
-        "distance_km": session.get("total_distance", 0) / 1000,
-        "avg_speed_kph": session.get("avg_speed", 0) * 3.6,
-        "avg_power": session.get("avg_power"),
-        "max_power": session.get("max_power"),
-        "normalized_power": session.get("normalized_power"),
-        "intensity_factor": session.get("intensity_factor"),
-        "tss": session.get("training_stress_score"),
-        "avg_hr": session.get("avg_heart_rate"),
-        "max_hr": session.get("max_heart_rate"),
-        "avg_cadence": session.get("avg_cadence"),
-        "max_cadence": session.get("max_cadence"),
-        "ftp_used": ftp,
+        "filename": os.path.basename(dbx_path),
+        "total_seconds": int(data["timestamp"].max() - data["timestamp"].min()),
+        "avg_power": int(data["power"].mean()),
+        "avg_heart_rate": int(data["heart_rate"].mean()),
+        "total_kj": int((data["power"].sum() * 1) / 1000),
+        "time_in_zones": zones,
+        "ftp": FTP,
     }
 
-    zones = calculate_time_in_zones(df, ftp)
-    return sanitize_dict({**summary, **zones})
-
-def process_latest_fit_file(access_token):
-    dbx = dropbox.Dropbox(access_token)
-    dbx_path = get_latest_dropbox_file_path(dbx, DROPBOX_FOLDER)
-    metadata, res = dbx.files_download(dbx_path)
-    data = parse_fit_file(res.content)
-
-    # Save to DB
-    save_ride_summary(data)
-    return data
+    save_ride_summary(data, summary)  # ✅ FIXED LINE
+    return sanitize(summary)
