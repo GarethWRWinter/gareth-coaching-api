@@ -1,66 +1,47 @@
 import sqlite3
-import json
+from typing import Any, Dict, List
 import os
+from scripts.sanitize import sanitize_dict
 
-DB_PATH = "ride_data.db"
+DB_PATH = os.path.join(os.path.dirname(__file__), "../ride_data.db")
 
-def save_ride_summary(summary: dict):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS rides (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT,
-            timestamp TEXT,
-            duration_s INTEGER,
-            avg_power REAL,
-            max_power REAL,
-            avg_heart_rate REAL,
-            max_heart_rate REAL,
-            tss REAL,
-            time_in_zones TEXT
-        )
-    ''')
-    c.execute('''
-        INSERT INTO rides (
-            filename, timestamp, duration_s,
-            avg_power, max_power,
-            avg_heart_rate, max_heart_rate,
-            tss, time_in_zones
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        summary["filename"],
-        summary["timestamp"],
-        summary["duration_s"],
-        summary["avg_power"],
-        summary["max_power"],
-        summary["avg_heart_rate"],
-        summary["max_heart_rate"],
-        summary["tss"],
-        json.dumps(summary["time_in_zones"])
-    ))
-    conn.commit()
-    conn.close()
+def init_db():
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ride_summaries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                filename TEXT,
+                summary TEXT
+            )
+        """)
+        conn.commit()
 
-def fetch_ride_history():
-    if not os.path.exists(DB_PATH):
-        return []
+def save_ride_summary(filename: str, summary: Dict[str, Any]) -> None:
+    init_db()
+    summary_clean = sanitize_dict(summary)
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO ride_summaries (timestamp, filename, summary)
+            VALUES (datetime('now'), ?, ?)
+        """, (filename, str(summary_clean)))
+        conn.commit()
 
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT * FROM rides ORDER BY timestamp DESC")
-    rows = c.fetchall()
-    conn.close()
+def fetch_ride_history(limit: int = 10) -> List[Dict[str, Any]]:
+    init_db()
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT timestamp, filename, summary
+            FROM ride_summaries
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (limit,))
+        rows = cursor.fetchall()
 
-    keys = [
-        "id", "filename", "timestamp", "duration_s", "avg_power",
-        "max_power", "avg_heart_rate", "max_heart_rate", "tss", "time_in_zones"
+    return [
+        {"timestamp": row[0], "filename": row[1], "summary": row[2]}
+        for row in rows
     ]
-
-    history = []
-    for row in rows:
-        ride = dict(zip(keys, row))
-        ride["time_in_zones"] = json.loads(ride["time_in_zones"])
-        history.append(ride)
-
-    return history
