@@ -1,82 +1,89 @@
 import os
-import dropbox
-import pandas as pd
-import numpy as np
 from fitparse import FitFile
+from datetime import datetime
 from scripts.ride_database import save_ride_summary
-from scripts.refresh_token import get_dropbox_access_token
-from io import BytesIO
-from datetime import timedelta
+from scripts.refresh_token import refresh_token as get_dropbox_access_token
+import dropbox
+import io
+import numpy as np
 
-def calculate_tss(power_series, ftp, duration_seconds):
-    normalized_power = np.power(np.mean(np.power(power_series, 4)), 0.25)
-    intensity_factor = normalized_power / ftp
-    tss = (duration_seconds * normalized_power * intensity_factor) / (ftp * 3600) * 100
+FTP = 308  # ✅ Gareth's current FTP
+
+def calculate_tss(duration_seconds, avg_power):
+    intensity_factor = avg_power / FTP
+    tss = (duration_seconds * avg_power * intensity_factor) / (FTP * 3600) * 100
     return round(tss, 1)
 
-def calculate_time_in_zones(power_series, ftp):
+def calculate_power_zones(power_series):
     zones = {
-        "zone1": (0, 0.55 * ftp),
-        "zone2": (0.55 * ftp, 0.75 * ftp),
-        "zone3": (0.75 * ftp, 0.9 * ftp),
-        "zone4": (0.9 * ftp, 1.05 * ftp),
-        "zone5": (1.05 * ftp, 1.2 * ftp),
-        "zone6": (1.2 * ftp, float("inf")),
+        "zone1": (0, 0.55 * FTP),
+        "zone2": (0.55 * FTP, 0.75 * FTP),
+        "zone3": (0.75 * FTP, 0.90 * FTP),
+        "zone4": (0.90 * FTP, 1.05 * FTP),
+        "zone5": (1.05 * FTP, 1.20 * FTP),
+        "zone6": (1.20 * FTP, float("inf"))
     }
 
-    total_seconds = len(power_series)
-    result = {}
+    seconds_in_zones = {zone: 0 for zone in zones}
 
-    for zone, (low, high) in zones.items():
-        zone_seconds = np.sum((power_series >= low) & (power_series < high))
-        zone_minutes = round(zone_seconds / 60, 1)
-        zone_pct = round(zone_seconds / total_seconds * 100, 1)
-        result[f"{zone}_s"] = int(zone_seconds)
-        result[f"{zone}_min"] = zone_minutes
-        result[f"{zone}_pct"] = zone_pct
+    for power in power_series:
+        for zone, (low, high) in zones.items():
+            if low <= power < high:
+                seconds_in_zones[zone] += 1
+                break
 
-    return result
+    total = len(power_series)
+    zone_data = {}
+    for zone in zones:
+        sec = seconds_in_zones[zone]
+        zone_data[f"{zone}_s"] = sec
+        zone_data[f"{zone}_min"] = round(sec / 60, 1)
+        zone_data[f"{zone}_pct"] = round(100 * sec / total, 1)
 
-def process_latest_fit_file(access_token, ftp=308):
+    return zone_data
+
+def process_latest_fit_file(dbx_path):
+    access_token = get_dropbox_access_token()
     dbx = dropbox.Dropbox(access_token)
-    folder = os.environ.get("DROPBOX_FOLDER", "")
-    entries = dbx.files_list_folder(folder).entries
-    fit_files = [f for f in entries if f.name.endswith(".fit")]
-    latest_file = sorted(fit_files, key=lambda x: x.server_modified, reverse=True)[0]
-    metadata, res = dbx.files_download(latest_file.path_display)
+    metadata, res = dbx.files_download(dbx_path)
+    fitfile = FitFile(io.BytesIO(res.content))
+    records = [r for r in fitfile.get_messages("record")]
 
-    fitfile = FitFile(BytesIO(res.content))
-    records = [r.get_values() for r in fitfile.get_messages("record")]
-    df = pd.DataFrame(records)
+    power_series = []
+    heart_rate_series = []
 
-    if "timestamp" not in df or df.empty:
-        raise ValueError("Invalid or empty FIT file")
+    for record in records:
+        power = record.get_value("power")
+        hr = record.get_value("heart_rate")
+        if power is not None:
+            power_series.append(power)
+        if hr is not None:
+            heart_rate_series.append(hr)
 
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df["power"] = df["power"].fillna(0).astype(int)
-    df["heart_rate"] = df["heart_rate"].fillna(0).astype(int)
+    if not records:
+        raise ValueError("No record data found in FIT file")
 
-    start_time = df["timestamp"].iloc[0]
-    duration_s = int((df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds())
-    avg_power = round(df["power"].mean(), 1)
-    max_power = int(df["power"].max())
-    avg_hr = round(df["heart_rate"].mean(), 1)
-    max_hr = int(df["heart_rate"].max())
-    tss = calculate_tss(df["power"].values, ftp, duration_s)
-    zones = calculate_time_in_zones(df["power"].values, ftp)
+    timestamp = records[0].get_value("timestamp")
+    duration_seconds = len(power_series)
+    avg_power = round(np.mean(power_series), 1) if power_series else 0
+    max_power = round(np.max(power_series), 1) if power_series else 0
+    avg_hr = round(np.mean(heart_rate_series), 1) if heart_rate_series else 0
+    max_hr = round(np.max(heart_rate_series), 1) if heart_rate_series else 0
+    tss = calculate_tss(duration_seconds, avg_power)
+    time_in_zones = calculate_power_zones(power_series)
 
-    result = {
-        "filename": latest_file.name,
-        "rows": len(df),
-        "timestamp": start_time.strftime("%Y-%m-%d %H:%M:%S"),
-        "duration_s": duration_s,
+    summary = {
+        "filename": os.path.basename(dbx_path),
+        "rows": len(records),
+        "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+        "duration_s": duration_seconds,
         "avg_power": avg_power,
         "max_power": max_power,
         "avg_heart_rate": avg_hr,
         "max_heart_rate": max_hr,
         "tss": tss,
-        "time_in_zones": zones
+        "time_in_zones": time_in_zones
     }
 
-    save_ride_summary(result)
-    return result
+    save_ride_summary(summary)
+    return summary
