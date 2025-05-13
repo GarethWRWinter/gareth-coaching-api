@@ -1,22 +1,18 @@
-def sanitize(obj):
-    """
-    Recursively convert all numpy types and other non-serializables to native Python types.
-    """
-    import numpy as np
+import numpy as np
 
-    if isinstance(obj, dict):
-        return {sanitize(k): sanitize(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [sanitize(i) for i in obj]
-    elif isinstance(obj, tuple):
-        return tuple(sanitize(i) for i in obj)
-    elif isinstance(obj, set):
-        return {sanitize(i) for i in obj}
-    elif isinstance(obj, (np.integer,)):
-        return int(obj)
-    elif isinstance(obj, (np.floating,)):
-        return float(obj)
-    elif isinstance(obj, (np.ndarray,)):
-        return obj.tolist()
+def sanitize(value):
+    if isinstance(value, (np.int64, np.int32)):
+        return int(value)
+    elif isinstance(value, (np.float64, np.float32)):
+        return float(value)
+    elif isinstance(value, (np.bool_)):
+        return bool(value)
+    return value
+
+def sanitize_dict(d):
+    if isinstance(d, dict):
+        return {k: sanitize_dict(v) for k, v in d.items()}
+    elif isinstance(d, list):
+        return [sanitize_dict(i) for i in d]
     else:
-        return obj
+        return sanitize(d)
