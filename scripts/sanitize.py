@@ -1,15 +1,22 @@
-import numpy as np
-import pandas as pd
+def sanitize(obj):
+    """
+    Recursively convert all numpy types and other non-serializables to native Python types.
+    """
+    import numpy as np
 
-def sanitize_value(value):
-    if isinstance(value, (np.generic, pd.Timestamp)):
-        return value.item() if hasattr(value, "item") else str(value)
-    elif isinstance(value, (list, tuple)):
-        return [sanitize_value(v) for v in value]
-    elif isinstance(value, dict):
-        return {k: sanitize_value(v) for k, v in value.items()}
+    if isinstance(obj, dict):
+        return {sanitize(k): sanitize(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize(i) for i in obj]
+    elif isinstance(obj, tuple):
+        return tuple(sanitize(i) for i in obj)
+    elif isinstance(obj, set):
+        return {sanitize(i) for i in obj}
+    elif isinstance(obj, (np.integer,)):
+        return int(obj)
+    elif isinstance(obj, (np.floating,)):
+        return float(obj)
+    elif isinstance(obj, (np.ndarray,)):
+        return obj.tolist()
     else:
-        return value
-
-def sanitize_dict(data: dict) -> dict:
-    return sanitize_value(data)
+        return obj
