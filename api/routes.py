@@ -1,9 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from scripts.save_latest_ride_to_db import process_latest_fit_file
 from scripts.refresh_token import get_dropbox_access_token
+from scripts.save_latest_ride_to_db import process_latest_fit_file
 from scripts.ride_database import fetch_ride_history
-from scripts.utils import sanitize
 
 router = APIRouter()
 
@@ -11,9 +10,9 @@ router = APIRouter()
 def get_latest_ride_data():
     access_token = get_dropbox_access_token()
     result = process_latest_fit_file(access_token)
-    return JSONResponse(content=sanitize(result))
+    return JSONResponse(content=result)
 
 @router.get("/ride-history")
-def get_ride_history(limit: int = 7):
-    history = fetch_ride_history(limit=limit)
-    return JSONResponse(content=sanitize(history))
+def get_ride_history():
+    rides = fetch_ride_history()
+    return JSONResponse(content=rides)
