@@ -1,14 +1,16 @@
-# scripts/ride_database.py
-
 import sqlite3
+import json
+import os
 
-def save_ride_summary(ride_summary):
-    conn = sqlite3.connect("ride_data.db")
+DB_PATH = "ride_data.db"
+
+def save_ride_summary(summary: dict):
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    
     c.execute('''
         CREATE TABLE IF NOT EXISTS rides (
-            filename TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT,
             timestamp TEXT,
             duration_s INTEGER,
             avg_power REAL,
@@ -16,33 +18,49 @@ def save_ride_summary(ride_summary):
             avg_heart_rate REAL,
             max_heart_rate REAL,
             tss REAL,
-            zone1_s INTEGER,
-            zone2_s INTEGER,
-            zone3_s INTEGER,
-            zone4_s INTEGER,
-            zone5_s INTEGER,
-            zone6_s INTEGER
+            time_in_zones TEXT
         )
     ''')
-    
     c.execute('''
-        INSERT OR REPLACE INTO rides VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO rides (
+            filename, timestamp, duration_s,
+            avg_power, max_power,
+            avg_heart_rate, max_heart_rate,
+            tss, time_in_zones
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        ride_summary["filename"],
-        ride_summary["timestamp"],
-        ride_summary["duration_s"],
-        ride_summary["avg_power"],
-        ride_summary["max_power"],
-        ride_summary["avg_heart_rate"],
-        ride_summary["max_heart_rate"],
-        ride_summary["tss"],
-        ride_summary["time_in_zones"]["zone1_s"],
-        ride_summary["time_in_zones"]["zone2_s"],
-        ride_summary["time_in_zones"]["zone3_s"],
-        ride_summary["time_in_zones"]["zone4_s"],
-        ride_summary["time_in_zones"]["zone5_s"],
-        ride_summary["time_in_zones"]["zone6_s"]
+        summary["filename"],
+        summary["timestamp"],
+        summary["duration_s"],
+        summary["avg_power"],
+        summary["max_power"],
+        summary["avg_heart_rate"],
+        summary["max_heart_rate"],
+        summary["tss"],
+        json.dumps(summary["time_in_zones"])
     ))
-
     conn.commit()
     conn.close()
+
+def fetch_ride_history():
+    if not os.path.exists(DB_PATH):
+        return []
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT * FROM rides ORDER BY timestamp DESC")
+    rows = c.fetchall()
+    conn.close()
+
+    keys = [
+        "id", "filename", "timestamp", "duration_s", "avg_power",
+        "max_power", "avg_heart_rate", "max_heart_rate", "tss", "time_in_zones"
+    ]
+
+    history = []
+    for row in rows:
+        ride = dict(zip(keys, row))
+        ride["time_in_zones"] = json.loads(ride["time_in_zones"])
+        history.append(ride)
+
+    return history
