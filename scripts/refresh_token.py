@@ -1,7 +1,7 @@
 import os
 import requests
 
-def refresh_token():
+def get_dropbox_access_token():
     url = "https://api.dropbox.com/oauth2/token"
     data = {
         "grant_type": "refresh_token",
