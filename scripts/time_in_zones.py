@@ -12,21 +12,28 @@ def get_power_zones(ftp):
     }
 
 def calculate_time_in_zones(df, ftp):
-    zones = get_power_zones(ftp)  # ✅ Ensure zones is a dict
-
-    time_in_zone = {zone: 0 for zone in zones.keys()}  # ✅ FIXED
+    zones = get_power_zones(ftp)
+    time_in_zone = {zone: 0 for zone in zones.keys()}
 
     for i in range(1, len(df)):
-        power = df.at[i, "power"]
-        duration = df.iloc[i]["timestamp"] - df.iloc[i - 1]["timestamp"]
-        duration_seconds = duration.total_seconds()
+        try:
+            power = df.iloc[i]["power"]
+            timestamp = df.iloc[i]["timestamp"]
+            previous_timestamp = df.iloc[i - 1]["timestamp"]
+            duration = timestamp - previous_timestamp
+            duration_seconds = float(duration / np.timedelta64(1, 's'))  # ✅ CORRECTED
 
-        for zone, (low, high) in zones.items():
-            if low <= power < high:
-                time_in_zone[zone] += duration_seconds
-                break
+            for zone, (low, high) in zones.items():
+                if low <= power < high:
+                    time_in_zone[zone] += duration_seconds
+                    break
+        except Exception as e:
+            continue
 
+    # Format output
     return {
-        "seconds_per_zone": time_in_zone,
-        "minutes_per_zone": {k: round(v / 60, 2) for k, v in time_in_zone.items()},
+        zone: {
+            "seconds": round(time, 2),
+            "minutes": round(time / 60, 2)
+        } for zone, time in time_in_zone.items()
     }
