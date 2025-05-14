@@ -1,56 +1,34 @@
-import sqlite3
-import os
-
-DB_FILE = os.path.join(os.path.dirname(__file__), "../ride_data.db")
-
-def initialize_db():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS rides (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT,
-            duration_minutes REAL,
-            distance_km REAL,
-            avg_power REAL,
-            max_power REAL,
-            avg_hr REAL,
-            max_hr REAL,
-            avg_cadence REAL,
-            max_cadence REAL,
-            time_in_zones TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
-
 def save_ride_summary(data, summary):
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect("ride_data.db")
     cursor = conn.cursor()
+
+    # 🔧 Ensure table exists
     cursor.execute("""
-        INSERT INTO rides (
-            date,
-            duration_minutes,
-            distance_km,
-            avg_power,
-            max_power,
-            avg_hr,
-            max_hr,
-            avg_cadence,
-            max_cadence,
-            time_in_zones
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    CREATE TABLE IF NOT EXISTS rides (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT,
+        distance REAL,
+        avg_power REAL,
+        avg_hr REAL,
+        tss REAL,
+        duration REAL,
+        zones TEXT
+    )
+    """)
+
+    # ✅ Insert summary
+    cursor.execute("""
+    INSERT INTO rides (timestamp, distance, avg_power, avg_hr, tss, duration, zones)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
-        summary.get("date"),
-        summary.get("duration_minutes"),
-        summary.get("distance_km"),
-        summary.get("avg_power"),
-        summary.get("max_power"),
-        summary.get("avg_hr"),
-        summary.get("max_hr"),
-        summary.get("avg_cadence"),
-        summary.get("max_cadence"),
-        str(summary.get("time_in_zones"))
+        summary["timestamp"],
+        summary["distance_km"],
+        summary["avg_power"],
+        summary["avg_heart_rate"],
+        summary["tss"],
+        summary["duration_minutes"],
+        json.dumps(summary["time_in_zones"])
     ))
+
     conn.commit()
     conn.close()
