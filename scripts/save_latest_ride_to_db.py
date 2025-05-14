@@ -1,42 +1,39 @@
 import os
-import pandas as pd
-from scripts.get_latest_dropbox_file import get_latest_fit_file_from_dropbox
-from scripts.fitparser import parse_fit_file
-from scripts.time_in_zones import calculate_time_in_zones
-from scripts.ride_sanitizer import sanitize_for_json
-from scripts.ride_database import save_ride_summary
-from scripts.dropbox_auth import refresh_access_token
+from scripts.fetch_and_parse import get_latest_fit_file_from_dropbox
+from scripts.ride_database import save_ride_summary, initialize_db
+from scripts.summary_generator import generate_summary
+from scripts.sanitizer import sanitize_numpy
+import dropbox
 from dotenv import load_dotenv
 
 load_dotenv()
 
-DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "")
-FTP = int(os.getenv("FTP", 308))  # Default FTP if not set
+DROPBOX_TOKEN = os.environ.get("DROPBOX_TOKEN")
+DROPBOX_FOLDER = os.environ.get("DROPBOX_FOLDER", "")
 
-def process_latest_fit_file(access_token: str):
-    # 1. Get the latest .fit file from Dropbox
-    filename, fit_bytes = get_latest_fit_file_from_dropbox(access_token, DROPBOX_FOLDER)
-    if not filename or not fit_bytes:
-        raise FileNotFoundError("No .fit file found in Dropbox.")
+def process_latest_fit_file(access_token):
+    print("📥 Fetching latest FIT file from Dropbox...")
+    data = get_latest_fit_file_from_dropbox(access_token)
+    print("✅ FIT file parsed. Generating summary...")
 
-    # 2. Parse the FIT file
-    data = parse_fit_file(fit_bytes)
+    summary = generate_summary(data)
+    print("🧠 Summary generated. Saving to DB...")
 
-    # 3. Calculate time in zones
-    zones = calculate_time_in_zones(data, FTP)
+    initialize_db()
+    save_ride_summary({
+        "filename": data["metadata"]["filename"],
+        "timestamp": data["metadata"]["timestamp"],
+        "duration_s": summary["duration_s"],
+        "distance_km": summary["distance_km"],
+        "avg_power": summary["avg_power"],
+        "avg_heart_rate": summary["avg_heart_rate"],
+        "tss": summary["tss"],
+        "normalized_power": summary["normalized_power"],
+        "time_in_zones": summary["time_in_zones"]
+    })
 
-    # 4. Summarize the ride
-    summary = {
-        "filename": filename,
-        "total_seconds": len(data),
-        "zones": zones
-    }
-
-    # 5. Save ride summary to DB
-    save_ride_summary(filename, summary)  # ✅ FIXED LINE
-
-    # 6. Return sanitized data
-    return sanitize_for_json({
-        "summary": summary,
-        "data": data.to_dict(orient="records")
+    print("💾 Ride saved to DB.")
+    return sanitize_numpy({
+        "metadata": data["metadata"],
+        "summary": summary
     })
