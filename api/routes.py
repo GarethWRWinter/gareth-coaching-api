@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from scripts.save_latest_ride_to_db import process_latest_fit_file
 from scripts.dropbox_auth import refresh_access_token
-from scripts.ride_database import fetch_ride_history
+from scripts.ride_database import initialize_db, save_ride_summary
 from scripts.time_in_zones import calculate_time_in_zones
 from scripts.sanitize import sanitize_dict  # ✅ FIXED
 
