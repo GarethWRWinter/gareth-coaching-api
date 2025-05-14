@@ -1,8 +1,11 @@
-def save_ride_summary(data, summary):
-    conn = sqlite3.connect("ride_data.db")
-    cursor = conn.cursor()
+import sqlite3
+import json
 
-    # 🔧 Ensure table exists
+DB_NAME = "ride_data.db"
+
+def initialize_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS rides (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,20 +18,38 @@ def save_ride_summary(data, summary):
         zones TEXT
     )
     """)
-
-    # ✅ Insert summary
-    cursor.execute("""
-    INSERT INTO rides (timestamp, distance, avg_power, avg_hr, tss, duration, zones)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        summary["timestamp"],
-        summary["distance_km"],
-        summary["avg_power"],
-        summary["avg_heart_rate"],
-        summary["tss"],
-        summary["duration_minutes"],
-        json.dumps(summary["time_in_zones"])
-    ))
-
     conn.commit()
     conn.close()
+
+def save_ride_summary(summary: dict):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO rides (
+        timestamp,
+        distance,
+        avg_power,
+        avg_hr,
+        tss,
+        duration,
+        zones
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        summary.get("timestamp"),
+        summary.get("distance"),
+        summary.get("avg_power"),
+        summary.get("avg_hr"),
+        summary.get("tss"),
+        summary.get("duration"),
+        json.dumps(summary.get("zones"))
+    ))
+    conn.commit()
+    conn.close()
+
+def fetch_ride_history():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM rides ORDER BY timestamp DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
