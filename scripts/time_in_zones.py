@@ -1,6 +1,6 @@
 # scripts/time_in_zones.py
 
-import pandas as pd
+import numpy as np  # ✅ required for timedelta conversion
 
 def get_power_zones(ftp):
     return {
@@ -19,16 +19,8 @@ def calculate_time_in_zones(df, ftp):
 
     for i in range(1, len(df)):
         power = df.iloc[i]["power"]
-        ts_curr = df.iloc[i]["timestamp"]
-        ts_prev = df.iloc[i - 1]["timestamp"]
-
-        # Convert to pandas datetime if not already
-        if not isinstance(ts_curr, pd.Timestamp):
-            ts_curr = pd.to_datetime(ts_curr)
-        if not isinstance(ts_prev, pd.Timestamp):
-            ts_prev = pd.to_datetime(ts_prev)
-
-        duration_seconds = (ts_curr - ts_prev).total_seconds()
+        duration = df.iloc[i]["timestamp"] - df.iloc[i - 1]["timestamp"]
+        duration_seconds = duration / np.timedelta64(1, 's')  # ✅ FIXED
 
         for zone, (low, high) in zones.items():
             if low <= power < high:
