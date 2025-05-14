@@ -1,39 +1,31 @@
-# scripts/time_in_zones.py
-
-def get_power_zones(ftp):
-    return {
-        "Z1": (0, 0.55 * ftp),
-        "Z2": (0.55 * ftp, 0.75 * ftp),
-        "Z3": (0.75 * ftp, 0.9 * ftp),
-        "Z4": (0.9 * ftp, 1.05 * ftp),
-        "Z5": (1.05 * ftp, 1.2 * ftp),
-        "Z6": (1.2 * ftp, 1.5 * ftp),
-        "Z7": (1.5 * ftp, float('inf')),
+def calculate_time_in_zones(data: pd.DataFrame, ftp: int) -> dict:
+    zones = {
+        "Z1 (Recovery)": (0, 0.55 * ftp),
+        "Z2 (Endurance)": (0.55 * ftp, 0.75 * ftp),
+        "Z3 (Tempo)": (0.75 * ftp, 0.90 * ftp),
+        "Z4 (Threshold)": (0.90 * ftp, 1.05 * ftp),
+        "Z5 (VO2max)": (1.05 * ftp, 1.20 * ftp),
+        "Z6 (Anaerobic)": (1.20 * ftp, 1.50 * ftp),
+        "Z7 (Neuromuscular)": (1.50 * ftp, float('inf')),
     }
 
-def calculate_time_in_zones(df, ftp):
-    zones = get_power_zones(ftp)
-    time_in_zone = {zone: 0 for zone in zones.keys()}
+    time_in_zone = {zone: 0 for zone in zones}
 
-    for i in range(1, len(df)):
-        try:
-            power = df.iloc[i]["power"]
-            timestamp = df.iloc[i]["timestamp"]
-            previous_timestamp = df.iloc[i - 1]["timestamp"]
-            duration = timestamp - previous_timestamp
-            duration_seconds = float(duration / np.timedelta64(1, 's'))  # ✅ CORRECTED
-
-            for zone, (low, high) in zones.items():
-                if low <= power < high:
-                    time_in_zone[zone] += duration_seconds
-                    break
-        except Exception as e:
+    previous_timestamp = None
+    for i, row in data.iterrows():
+        timestamp = row["timestamp"]
+        if pd.isnull(timestamp):
             continue
+        if previous_timestamp is None:
+            previous_timestamp = timestamp
+            continue
+        duration = timestamp - previous_timestamp
+        duration_seconds = float(duration / np.timedelta64(1, 's'))  # ✅ CORRECTED
 
-    # Format output
-    return {
-        zone: {
-            "seconds": round(time, 2),
-            "minutes": round(time / 60, 2)
-        } for zone, time in time_in_zone.items()
-    }
+        for zone, (low, high) in zones.items():
+            if low <= row["power"] < high:
+                time_in_zone[zone] += duration_seconds
+                break
+        previous_timestamp = timestamp
+
+    return time_in_zone
