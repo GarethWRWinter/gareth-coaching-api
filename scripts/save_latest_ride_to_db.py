@@ -1,46 +1,42 @@
 import os
-import dropbox
-from dotenv import load_dotenv
-from scripts.dropbox_auth import refresh_access_token
-from scripts.ride_database import save_ride_summary
-from scripts.parse_fit import parse_fit_file
+import pandas as pd
+from scripts.dropbox_utils import get_latest_fit_file_from_dropbox
+from scripts.fitparser import parse_fit_file
 from scripts.time_in_zones import calculate_time_in_zones
-from scripts.sanitize import sanitize
+from scripts.ride_sanitizer import sanitize_for_json
+from scripts.ride_database import save_ride_summary
+from scripts.dropbox_auth import refresh_access_token
+from dotenv import load_dotenv
 
 load_dotenv()
 
-DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER")
-FTP = int(os.getenv("FTP", "308"))
-
-def get_dropbox_client():
-    access_token = refresh_access_token()
-    return dropbox.Dropbox(oauth2_access_token=access_token)
-
-def get_latest_fit_file_path(dbx):
-    entries = dbx.files_list_folder(DROPBOX_FOLDER).entries
-    fit_files = [entry for entry in entries if entry.name.endswith(".fit")]
-    if not fit_files:
-        raise FileNotFoundError("No .FIT files found in Dropbox folder.")
-    latest_file = max(fit_files, key=lambda x: x.client_modified)
-    return latest_file.path_display
+DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "")
+FTP = int(os.getenv("FTP", 308))  # Default FTP if not set
 
 def process_latest_fit_file(access_token: str):
-    dbx = dropbox.Dropbox(oauth2_access_token=access_token)
-    dbx_path = get_latest_fit_file_path(dbx)
-    metadata, res = dbx.files_download(dbx_path)
+    # 1. Get the latest .fit file from Dropbox
+    filename, fit_bytes = get_latest_fit_file_from_dropbox(access_token, DROPBOX_FOLDER)
+    if not filename or not fit_bytes:
+        raise FileNotFoundError("No .fit file found in Dropbox.")
 
-    data = parse_fit_file(res.content)
+    # 2. Parse the FIT file
+    data = parse_fit_file(fit_bytes)
+
+    # 3. Calculate time in zones
     zones = calculate_time_in_zones(data, FTP)
 
+    # 4. Summarize the ride
     summary = {
-        "filename": os.path.basename(dbx_path),
-        "total_seconds": int(data["timestamp"].max() - data["timestamp"].min()),
-        "avg_power": int(data["power"].mean()),
-        "avg_heart_rate": int(data["heart_rate"].mean()),
-        "total_kj": int((data["power"].sum() * 1) / 1000),
-        "time_in_zones": zones,
-        "ftp": FTP,
+        "filename": filename,
+        "total_seconds": len(data),
+        "zones": zones
     }
 
-    save_ride_summary(data, summary)  # ✅ FIXED LINE
-    return sanitize(summary)
+    # 5. Save ride summary to DB
+    save_ride_summary(filename, summary)  # ✅ FIXED LINE
+
+    # 6. Return sanitized data
+    return sanitize_for_json({
+        "summary": summary,
+        "data": data.to_dict(orient="records")
+    })
