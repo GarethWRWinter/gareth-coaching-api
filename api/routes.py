@@ -12,4 +12,4 @@ def get_latest_ride_data():
         result = process_latest_fit_file(access_token)
         return JSONResponse(content=result)
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(status_code=500, content={"error": f"Failed to load ride: {str(e)}"})
