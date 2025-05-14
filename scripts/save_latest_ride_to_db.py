@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from scripts.dropbox_utils import get_latest_fit_file_from_dropbox
+from scripts.get_latest_dropbox_file import get_latest_fit_file_from_dropbox
 from scripts.fitparser import parse_fit_file
 from scripts.time_in_zones import calculate_time_in_zones
 from scripts.ride_sanitizer import sanitize_for_json
