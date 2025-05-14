@@ -24,7 +24,7 @@ def initialize_db():
     conn.commit()
     conn.close()
 
-def save_ride_summary(summary):
+def save_ride_summary(data, summary):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute("""
