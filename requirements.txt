@@ -26,3 +26,6 @@ fitparse==1.2.0
 
 # HTTP requests
 requests==2.32.3
+
+# OpenAI API for GPT integration
+openai==1.25.2
