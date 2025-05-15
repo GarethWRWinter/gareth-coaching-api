@@ -6,35 +6,42 @@ from scripts.summary_generator import generate_ride_summary
 from models.pydantic_models import RideSummary
 
 def process_latest_fit_file(access_token: str) -> RideSummary:
-    print("[Step 1] Access token:", type(access_token))
-
+    print("✅ [START] process_latest_fit_file")
     local_filename = "latest_ride.fit"
 
-    # Step 2: Download .FIT file
+    # Step 1: Download .FIT file from Dropbox
+    print("📥 [Step 1] Fetching latest FIT file from Dropbox...")
     file_data = get_latest_fit_file_from_dropbox(access_token, local_filename)
-    print("[Step 2] FIT file downloaded:", type(file_data))
+    print("📄 file_data returned:", type(file_data), file_data)
 
-    if file_data is None or file_data.get("content") is None:
-        raise ValueError("No FIT file content returned from Dropbox.")
+    if not file_data or "content" not in file_data or not file_data["content"]:
+        raise ValueError("❌ No FIT file content returned from Dropbox. Check if file exists and token is valid.")
 
-    # Step 3: Save the file locally
+    # Step 2: Save FIT content to disk
+    print("💾 [Step 2] Saving file to disk:", local_filename)
     with open(local_filename, "wb") as f:
         f.write(file_data["content"])
 
-    # Step 4: Parse .FIT into list of dicts
+    # Step 3: Parse FIT file
+    print("🔍 [Step 3] Parsing FIT file...")
     data = parse_fit_file(local_filename)
-    print("[Step 4] Parsed FIT data:", type(data), "Sample:", data[0] if data else "EMPTY")
+    print("📊 Parsed FIT data type:", type(data))
+    if not data:
+        raise ValueError("❌ FIT parsing returned empty data.")
 
-    # Step 5: Generate summary as dict
+    # Step 4: Generate summary from FIT data
+    print("📈 [Step 4] Generating ride summary...")
     summary_dict = generate_ride_summary(data)
-    print("[Step 5] Summary dict:", type(summary_dict), summary_dict)
+    print("🧪 Summary dict keys:", summary_dict.keys())
 
-    # Step 6: Validate with Pydantic
+    # Step 5: Validate with Pydantic
+    print("🧱 [Step 5] Validating with RideSummary model...")
     validated_summary = RideSummary(**summary_dict)
-    print("[Step 6] Validated summary:", type(validated_summary))
+    print("✅ RideSummary object created:", validated_summary)
 
-    # Step 7: Save to DB
+    # Step 6: Save to SQLite
+    print("📦 [Step 6] Saving to DB...")
     save_ride_summary(validated_summary)
-    print("[Step 7] Saved to DB.")
 
+    print("🏁 [DONE] FIT file processed successfully.")
     return validated_summary
