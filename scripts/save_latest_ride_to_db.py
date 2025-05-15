@@ -7,6 +7,7 @@ from scripts.summary_generator import generate_ride_summary
 from scripts.ride_database import save_ride_summary
 from models.pydantic_models import RideSummary
 from scripts.sanitize import sanitize
+import json
 
 def process_latest_fit_file(access_token: str):
     print("✅ [START] process_latest_fit_file")
@@ -25,7 +26,9 @@ def process_latest_fit_file(access_token: str):
 
     # Inject required fields
     summary_dict["ride_id"] = f"{datetime.date.today()}_{uuid4().hex[:6]}"
-    summary_dict["full_data"] = df.to_dict(orient="records")
+    summary_dict["full_data"] = json.loads(
+        df.astype(object).where(df.notnull(), None).to_json(orient="records")
+    )
 
     validated_summary = RideSummary(**summary_dict)
     save_ride_summary(validated_summary)
