@@ -1,13 +1,16 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
+from auth.dropbox_auth import get_valid_access_token
 from scripts.save_latest_ride_to_db import process_latest_fit_file
-from scripts.dropbox_auth import refresh_access_token
-from models.pydantic_models import RideSummary
 
 router = APIRouter()
 
-@router.get("/latest-ride-data", response_model=RideSummary)
+@router.get("/latest-ride-data")
 def get_latest_ride_data():
-    access_token = refresh_access_token()
+    access_token = get_valid_access_token()
     result = process_latest_fit_file(access_token)
     return JSONResponse(content=result)
+
+@router.get("/")  # Healthcheck
+def healthcheck():
+    return {"status": "ok"}

@@ -1,11 +1,8 @@
 import io
 from fitparse import FitFile
 
-def parse_fit_file(filepath: str) -> list[dict]:
-    with open(filepath, "rb") as f:  # ✅ Binary mode
-        fit_content = f.read()
-
-    fitfile = FitFile(io.BytesIO(fit_content))
+def parse_fit_file(fit_bytes: bytes) -> list[dict]:
+    fitfile = FitFile(io.BytesIO(fit_bytes))
 
     data = []
     for record in fitfile.get_messages("record"):
