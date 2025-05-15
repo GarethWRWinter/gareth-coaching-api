@@ -1,18 +1,13 @@
-import numpy as np
-
-def sanitize(value):
-    if isinstance(value, (np.int64, np.int32)):
-        return int(value)
-    elif isinstance(value, (np.float64, np.float32)):
-        return float(value)
-    elif isinstance(value, (np.bool_)):
-        return bool(value)
-    return value
-
-def sanitize_dict(d):
-    if isinstance(d, dict):
-        return {k: sanitize_dict(v) for k, v in d.items()}
-    elif isinstance(d, list):
-        return [sanitize_dict(i) for i in d]
+def sanitize(obj):
+    if isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    elif hasattr(obj, 'item'):
+        return obj.item()
     else:
-        return sanitize(d)
+        return obj
+
+
+def sanitize_dict(d: dict) -> dict:
+    return sanitize(d)

@@ -1,11 +1,8 @@
-
-FTP = 308
-ZONE_THRESHOLDS = {
-    "Z1": (0, 0.55),
-    "Z2": (0.55, 0.75),
-    "Z3": (0.75, 0.90),
-    "Z4": (0.90, 1.05),
-    "Z5": (1.05, 1.20),
-    "Z6": (1.20, 1.50),
-    "Z7": (1.50, float("inf"))
-}
+POWER_ZONES = [
+    {"name": "Z1 - Active Recovery", "min": 0, "max": 143},
+    {"name": "Z2 - Endurance", "min": 143, "max": 199},
+    {"name": "Z3 - Tempo", "min": 199, "max": 246},
+    {"name": "Z4 - Threshold", "min": 246, "max": 276},
+    {"name": "Z5 - VO2 Max", "min": 276, "max": 322},
+    {"name": "Z6 - Anaerobic", "min": 322, "max": 5000},
+]

@@ -1,52 +1,33 @@
-
 import pandas as pd
+from scripts.constants import POWER_ZONES
 
-def generate_summary(data: pd.DataFrame) -> dict:
-    summary = {
-        "duration_sec": int((data["timestamp"].iloc[-1] - data["timestamp"].iloc[0]).total_seconds()),
-        "avg_power": round(data["power"].mean(), 1),
-        "max_power": int(data["power"].max()),
-        "avg_hr": round(data["heart_rate"].mean(), 1) if "heart_rate" in data else None,
-        "max_hr": int(data["heart_rate"].max()) if "heart_rate" in data else None,
-        "avg_cadence": round(data["cadence"].mean(), 1) if "cadence" in data else None,
-        "max_cadence": int(data["cadence"].max()) if "cadence" in data else None,
-        "distance_km": round(data["distance"].iloc[-1] / 1000, 2) if "distance" in data else None,
-        "total_work_kj": round(data["power"].sum() * data.shape[0] / 1000 / 60, 2),  # in kJ
-        "time_in_zones": get_time_in_zones(data["power"]),
-    }
-    return summary
+def generate_summary(df: pd.DataFrame) -> dict:
+    df['power'] = pd.to_numeric(df.get('power', 0), errors='coerce').fillna(0)
+    df['heart_rate'] = pd.to_numeric(df.get('heart_rate', 0), errors='coerce').fillna(0)
+    df['cadence'] = pd.to_numeric(df.get('cadence', 0), errors='coerce').fillna(0)
+    df['distance'] = pd.to_numeric(df.get('distance', 0), errors='coerce').fillna(0)
 
-def get_time_in_zones(power_series: pd.Series) -> dict:
-    zones = {
-        "Z1 (<55%)": 0,
-        "Z2 (56–75%)": 0,
-        "Z3 (76–90%)": 0,
-        "Z4 (91–105%)": 0,
-        "Z5 (106–120%)": 0,
-        "Z6 (121–150%)": 0,
-        "Z7 (150%+)": 0,
-    }
-    ftp = 308  # Gareth's FTP
+    duration_sec = df.shape[0]
+    total_work = df['power'].sum() * 1 / 1000  # kJ assuming 1s intervals
+    distance_km = df['distance'].iloc[-1] / 1000 if not df['distance'].empty else 0
 
-    for p in power_series:
-        if p < 0.55 * ftp:
-            zones["Z1 (<55%)"] += 1
-        elif p <= 0.75 * ftp:
-            zones["Z2 (56–75%)"] += 1
-        elif p <= 0.90 * ftp:
-            zones["Z3 (76–90%)"] += 1
-        elif p <= 1.05 * ftp:
-            zones["Z4 (91–105%)"] += 1
-        elif p <= 1.20 * ftp:
-            zones["Z5 (106–120%)"] += 1
-        elif p <= 1.50 * ftp:
-            zones["Z6 (121–150%)"] += 1
-        else:
-            zones["Z7 (150%+)"] += 1
+    time_in_zones = {zone['name']: 0 for zone in POWER_ZONES}
+    for power in df['power']:
+        for zone in POWER_ZONES:
+            if zone['min'] <= power < zone['max']:
+                time_in_zones[zone['name']] += 1
+                break
 
     return {
-        zone: {
-            "seconds": seconds,
-            "minutes": round(seconds / 60, 2)
-        } for zone, seconds in zones.items()
+        "date": str(df['timestamp'].iloc[0]) if 'timestamp' in df else None,
+        "duration_sec": duration_sec,
+        "avg_power": df['power'].mean(),
+        "max_power": df['power'].max(),
+        "avg_hr": df['heart_rate'].mean(),
+        "max_hr": df['heart_rate'].max(),
+        "avg_cadence": df['cadence'].mean(),
+        "max_cadence": df['cadence'].max(),
+        "distance_km": distance_km,
+        "total_work_kj": total_work,
+        "time_in_zones": time_in_zones
     }

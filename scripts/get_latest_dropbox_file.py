@@ -1,28 +1,24 @@
 import dropbox
-from dropbox.exceptions import ApiError
+import os
+from scripts.refresh_token import refresh_access_token
 
-def get_latest_dropbox_file(access_token: str, folder_path: str):
-    print(f"Looking for .FIT files in: {folder_path}")
-    try:
-        dbx = dropbox.Dropbox(access_token)
-        result = dbx.files_list_folder(folder_path)
-    except Exception as e:
-        print(f"Error accessing Dropbox folder: {e}")
-        return None
+def get_latest_fit_file_from_dropbox() -> dict:
+    access_token = refresh_access_token()
+    dbx = dropbox.Dropbox(access_token)
+    folder_path = os.environ.get("DROPBOX_FOLDER", "")
 
-    latest_file = None
-    latest_time = None
+    res = dbx.files_list_folder(folder_path)
+    files = [f for f in res.entries if f.name.endswith(".fit")]
 
-    for entry in result.entries:
-        if isinstance(entry, dropbox.files.FileMetadata) and entry.name.endswith(".fit"):
-            file_time = entry.server_modified
-            if latest_time is None or file_time > latest_time:
-                latest_file = entry
-                latest_time = file_time
+    if not files:
+        return {}
 
-    if latest_file:
-        print(f"Latest .FIT file found: {latest_file.name} ({latest_time})")
-    else:
-        print("No .FIT files found in Dropbox.")
+    files.sort(key=lambda f: f.client_modified, reverse=True)
+    latest_file = files[0]
+    metadata, res = dbx.files_download(latest_file.path_lower)
 
-    return latest_file
+    return {
+        "name": latest_file.name,
+        "path": latest_file.path_lower,
+        "content": res.content
+    }
