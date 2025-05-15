@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.get("/latest-ride-data")
 async def get_latest_ride_data():
-    access_token = await get_valid_access_token()
+    access_token = get_valid_access_token()
     result = process_latest_fit_file(access_token)
     return JSONResponse(content=result)
 
