@@ -1,7 +1,7 @@
 import pandas as pd
 from scripts.constants import POWER_ZONES
 
-def generate_summary(df: pd.DataFrame) -> dict:
+def generate_ride_summary(df: pd.DataFrame) -> dict:
     df['power'] = pd.to_numeric(df.get('power', 0), errors='coerce').fillna(0)
     df['heart_rate'] = pd.to_numeric(df.get('heart_rate', 0), errors='coerce').fillna(0)
     df['cadence'] = pd.to_numeric(df.get('cadence', 0), errors='coerce').fillna(0)
