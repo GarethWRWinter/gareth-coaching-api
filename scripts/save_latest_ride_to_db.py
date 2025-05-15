@@ -13,7 +13,5 @@ def process_latest_fit_file(access_token: str) -> dict:
     summary = generate_ride_summary(data)
 
     save_ride_summary(summary)  # Already sanitized
-
-    # (Optional validation with Pydantic model)
     validated_summary = RideSummary(**summary)
     return validated_summary.dict()
