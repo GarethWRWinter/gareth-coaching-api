@@ -6,11 +6,16 @@ from scripts.ride_database import get_all_ride_summaries, get_ride_by_id
 
 router = APIRouter()
 
-@router.get("/latest-ride-data")
-async def get_latest_ride_data():
+@router.get("/latest-ride-summary")
+async def latest_ride_summary():
     access_token = get_valid_access_token()
-    result = process_latest_fit_file(access_token)
-    return JSONResponse(content=result)
+    full_summary = process_latest_fit_file(access_token)
+
+    # Remove full_data from API response to avoid GPT overflow
+    if "full_data" in full_summary:
+        full_summary.pop("full_data")
+
+    return JSONResponse(content=full_summary)
 
 @router.get("/ride-history")
 async def ride_history():
