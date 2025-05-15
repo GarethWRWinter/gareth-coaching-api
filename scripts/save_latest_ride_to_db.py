@@ -7,21 +7,20 @@ from models.pydantic_models import RideSummary
 
 def process_latest_fit_file(access_token: str) -> dict:
     local_filename = "latest.fit"
-    
-    # Step 1: Download latest .fit file
-    get_latest_fit_file_from_dropbox(access_token, local_filename)
 
-    # Step 2: Parse .fit file to extract second-by-second data
-    data = parse_fit_file(local_filename)
+    # Fetch FIT file
+    file_data = get_latest_fit_file_from_dropbox(access_token, local_filename)
+    with open(local_filename, "wb") as f:
+        f.write(file_data["content"])
 
-    # Step 3: Generate ride summary dictionary
-    summary_dict = generate_ride_summary(data)
+    # Parse and summarize
+    df = parse_fit_file(local_filename)
+    summary_dict = generate_ride_summary(df)
 
-    # Step 4: Validate with Pydantic model
+    # Validate with Pydantic
     validated_summary = RideSummary(**summary_dict)
 
-    # Step 5: Save to SQLite database
+    # Save to DB
     save_ride_summary(validated_summary.dict())
 
-    # Step 6: Return response
     return validated_summary.dict()
