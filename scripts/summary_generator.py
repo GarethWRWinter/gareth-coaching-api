@@ -1,8 +1,8 @@
+
 import pandas as pd
 from datetime import datetime
-from models.pydantic_models import RideSummary
 
-def generate_ride_summary(data: list[dict]) -> RideSummary:
+def generate_ride_summary(data: list[dict]) -> dict:
     df = pd.DataFrame(data)
 
     if df.empty:
@@ -39,20 +39,23 @@ def generate_ride_summary(data: list[dict]) -> RideSummary:
         'Z6': (1.21 * ftp, 1.50 * ftp),
         'Z7': (1.51 * ftp, 2000),
     }
-    time_in_zones = {z: int(((df['power'] >= rng[0]) & (df['power'] <= rng[1])).sum()) for z, rng in zones.items()}
+    time_in_zones = {
+        z: int(((df['power'] >= rng[0]) & (df['power'] <= rng[1])).sum())
+        for z, rng in zones.items()
+    }
 
-    summary = RideSummary(
-        date=ride_date,
-        duration_sec=duration_sec,
-        avg_power=round(df['power'].mean(), 1),
-        max_power=int(df['power'].max()),
-        avg_hr=round(df['heart_rate'].mean(), 1),
-        max_hr=int(df['heart_rate'].max()),
-        avg_cadence=round(df['cadence'].mean(), 1),
-        max_cadence=int(df['cadence'].max()),
-        distance_km=distance_km,
-        total_work_kj=total_work_kj,
-        time_in_zones=time_in_zones,
-    )
+    summary_dict = {
+        "date": ride_date,
+        "duration_sec": duration_sec,
+        "avg_hr": round(df['heart_rate'].mean(), 1),
+        "max_hr": int(df['heart_rate'].max()),
+        "avg_power": round(df['power'].mean(), 1),
+        "max_power": int(df['power'].max()),
+        "avg_cadence": round(df['cadence'].mean(), 1),
+        "max_cadence": int(df['cadence'].max()),
+        "distance_km": distance_km,
+        "total_work_kj": total_work_kj,
+        "time_in_zones": time_in_zones
+    }
 
-    return summary
+    return summary_dict
