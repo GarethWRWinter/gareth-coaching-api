@@ -1,13 +1,13 @@
 import sqlite3
-import os
+from models.pydantic_models import RideSummary
 
-DB_PATH = "ride_data.db"
-
-def initialize_db():
-    conn = sqlite3.connect(DB_PATH)
+def save_ride_summary(summary: RideSummary):
+    conn = sqlite3.connect("ride_data.db")
     cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS rides (
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS ride_summaries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT,
             duration_sec INTEGER,
@@ -21,33 +21,40 @@ def initialize_db():
             total_work_kj REAL,
             time_in_zones TEXT
         )
-    """)
-    conn.commit()
-    conn.close()
+        """
+    )
 
-def save_ride_summary(summary):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT INTO rides (
-            date, duration_sec, avg_power, max_power,
-            avg_hr, max_hr, avg_cadence, max_cadence,
-            distance_km, total_work_kj, time_in_zones
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        summary.get("date"),
-        summary.get("duration_sec"),
-        summary.get("avg_power"),
-        summary.get("max_power"),
-        summary.get("avg_hr"),
-        summary.get("max_hr"),
-        summary.get("avg_cadence"),
-        summary.get("max_cadence"),
-        summary.get("distance_km"),
-        summary.get("total_work_kj"),
-        str(summary.get("time_in_zones")),
-    ))
+    cursor.execute(
+        """
+        INSERT INTO ride_summaries (
+            date,
+            duration_sec,
+            avg_power,
+            max_power,
+            avg_hr,
+            max_hr,
+            avg_cadence,
+            max_cadence,
+            distance_km,
+            total_work_kj,
+            time_in_zones
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            summary.date,
+            summary.duration_sec,
+            summary.avg_power,
+            summary.max_power,
+            summary.avg_hr,
+            summary.max_hr,
+            summary.avg_cadence,
+            summary.max_cadence,
+            summary.distance_km,
+            summary.total_work_kj,
+            str(summary.time_in_zones),
+        ),
+    )
 
     conn.commit()
     conn.close()
