@@ -1,5 +1,5 @@
 import os
-from scripts.dropbox_utils import get_latest_fit_file_from_dropbox
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
 from scripts.ride_parser import parse_fit_file
 from scripts.ride_database import save_ride_summary
 from scripts.summary_generator import generate_ride_summary
