@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from auth.dropbox_auth import get_valid_access_token
+from scripts.dropbox_auth import get_valid_access_token
 from scripts.save_latest_ride_to_db import process_latest_fit_file
 
 router = APIRouter()
