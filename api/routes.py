@@ -1,33 +1,28 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
-from scripts.dropbox_auth import get_valid_access_token
-from scripts.save_latest_ride_to_db import process_latest_fit_file
-from scripts.ride_database import get_all_ride_summaries, get_ride_by_id
+from fastapi import APIRouter, HTTPException, Query
+from scripts.ride_database import get_all_rides, get_ride_by_id
+from scripts.coach_notes import generate_coach_notes
 
 router = APIRouter()
 
-@router.get("/latest-ride-summary")
-async def latest_ride_summary():
-    access_token = get_valid_access_token()
-    full_summary = process_latest_fit_file(access_token)
-
-    # Remove full_data from API response to avoid GPT overflow
-    if "full_data" in full_summary:
-        full_summary.pop("full_data")
-
-    return JSONResponse(content=full_summary)
-
 @router.get("/ride-history")
-async def ride_history():
-    return get_all_ride_summaries()
+def get_ride_history():
+    try:
+        return get_all_rides()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/ride/{ride_id}")
-async def ride_detail(ride_id: str):
-    data = get_ride_by_id(ride_id)
-    if data:
-        return JSONResponse(content=data)
-    raise HTTPException(status_code=404, detail="Ride not found")
-
-@router.get("/")  # Healthcheck
-def healthcheck():
-    return {"status": "ok"}
+@router.get("/ride/{ride_id}/coach-notes")
+def get_coach_notes(ride_id: str):
+    try:
+        if ride_id == "latest":
+            rides = get_all_rides()
+            if not rides:
+                raise HTTPException(status_code=404, detail="No rides found.")
+            ride_id = rides[-1]["ride_id"]
+        ride = get_ride_by_id(ride_id)
+        if not ride:
+            raise HTTPException(status_code=404, detail="Ride not found")
+        notes = generate_coach_notes(ride)
+        return notes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
