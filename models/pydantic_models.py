@@ -1,8 +1,8 @@
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 class RideSummary(BaseModel):
-    ride_id: str  # ✅ this was missing
+    ride_id: str
     date: str
     duration_sec: int
     avg_power: float
@@ -14,4 +14,4 @@ class RideSummary(BaseModel):
     distance_km: float
     total_work_kj: float
     time_in_zones: Dict[str, Any]
-    full_data: Dict[str, Any]
+    full_data: List[Dict[str, Any]]  # ✅ FIXED
