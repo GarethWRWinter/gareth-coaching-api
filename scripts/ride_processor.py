@@ -1,50 +1,29 @@
 import os
-import dropbox
-from fitparse import FitFile
-from datetime import datetime
-from scripts.ride_database import save_ride_summary
-from scripts.fit_sanitizer import sanitize_fit_data
-from scripts.fit_metrics import calculate_ride_metrics
+import pandas as pd
+from scripts.dropbox_fetcher import fetch_latest_fit_file
+from scripts.parse_fit_to_df import parse_fitfile_to_dataframe
+from scripts.sanitize import sanitize_fit_data
+from scripts.ride_database import store_ride_data
+from scripts.dropbox_auth import refresh_dropbox_token
 
-def process_latest_fit_file(access_token: str):
-    dbx = dropbox.Dropbox(access_token)
-    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
 
-    # List and sort .FIT files by latest modified
-    files = dbx.files_list_folder(folder_path).entries
-    fit_files = [f for f in files if f.name.endswith(".fit")]
-    if not fit_files:
-        raise Exception("No .FIT files found in Dropbox folder")
+def process_latest_fit_file(access_token: str) -> dict:
+    print("🔄 Refreshing Dropbox token...")
+    access_token = refresh_dropbox_token()
 
-    latest_file = sorted(fit_files, key=lambda x: x.client_modified, reverse=True)[0]
-    metadata, res = dbx.files_download(f"{folder_path}/{latest_file.name}")
-    local_path = f"/tmp/{latest_file.name}"
+    print("📥 Fetching latest FIT file from Dropbox...")
+    local_fit_path = fetch_latest_fit_file(access_token)
 
-    with open(local_path, "wb") as f:
-        f.write(res.content)
+    print("📊 Parsing FIT file to DataFrame...")
+    df = parse_fitfile_to_dataframe(local_fit_path)
 
-    # Parse and sanitize FIT file
-    fitfile = FitFile(local_path)
-    fitfile.parse()
-    sanitized = sanitize_fit_data(fitfile)
+    print("🧹 Sanitizing DataFrame...")
+    sanitized_df = sanitize_fit_data(df)
 
-    # Calculate metrics
-    summary = calculate_ride_metrics(sanitized)
-    ride_id = summary["ride_id"]
-    timestamp = datetime.fromisoformat(summary["timestamp"])
-
-    # Store ride summary
-    save_ride_summary(
-        ride_id=ride_id,
-        timestamp=timestamp,
-        duration=summary["duration"],
-        avg_power=summary["avg_power"],
-        tss=summary["training_stress_score"]
-    )
+    print("💾 Storing ride data in database...")
+    ride_metadata = store_ride_data(sanitized_df)
 
     return {
-        "ride_id": ride_id,
-        "timestamp": summary["timestamp"],
-        "summary": summary,
-        "data": sanitized
+        "message": "✅ Ride processed and stored successfully.",
+        "ride_metadata": ride_metadata,
     }
