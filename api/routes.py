@@ -1,6 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from scripts.ride_database import get_all_rides, get_ride_by_id
-from scripts.coach_notes import generate_coach_notes
 
 router = APIRouter()
 
@@ -11,8 +10,9 @@ def get_ride_history():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/ride/{ride_id}/coach-notes")
-def get_coach_notes(ride_id: str):
+
+@router.get("/ride/{ride_id}")
+def get_ride_by_id_route(ride_id: str):
     try:
         if ride_id == "latest":
             rides = get_all_rides()
@@ -21,8 +21,7 @@ def get_coach_notes(ride_id: str):
             ride_id = rides[-1]["ride_id"]
         ride = get_ride_by_id(ride_id)
         if not ride:
-            raise HTTPException(status_code=404, detail="Ride not found")
-        notes = generate_coach_notes(ride)
-        return notes
+            raise HTTPException(status_code=404, detail="Ride not found.")
+        return ride
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
