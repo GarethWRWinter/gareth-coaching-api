@@ -1,33 +1,33 @@
-# scripts/dropbox_utils.py
-
 import os
 import dropbox
 from dropbox.files import FileMetadata
+from dotenv import load_dotenv
 
-def get_latest_fit_file_metadata(access_token: str) -> dict:
+load_dotenv()
+
+DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+
+def get_latest_fit_file_path(access_token: str) -> str:
+    """Fetch path of the most recent .FIT file in the configured Dropbox folder."""
     dbx = dropbox.Dropbox(access_token)
-    folder = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+    response = dbx.files_list_folder(DROPBOX_FOLDER)
 
-    try:
-        entries = dbx.files_list_folder(folder).entries
-        fit_files = [f for f in entries if isinstance(f, FileMetadata) and f.name.endswith(".fit")]
-        if not fit_files:
-            return {}
+    latest_file = None
+    latest_time = None
 
-        latest = max(fit_files, key=lambda f: f.client_modified)
-        return {
-            "name": latest.name,
-            "path_display": latest.path_display,
-            "client_modified": latest.client_modified.isoformat()
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    for entry in response.entries:
+        if isinstance(entry, FileMetadata) and entry.name.endswith(".fit"):
+            if latest_time is None or entry.server_modified > latest_time:
+                latest_file = entry
+                latest_time = entry.server_modified
 
-def download_file(access_token: str, dropbox_path: str, local_path: str):
+    if latest_file:
+        return latest_file.path_lower
+    return ""
+
+def download_file(access_token: str, dropbox_path: str, local_path: str) -> None:
+    """Download file from Dropbox to local path."""
     dbx = dropbox.Dropbox(access_token)
-    try:
-        with open(local_path, "wb") as f:
-            metadata, res = dbx.files_download(path=dropbox_path)
-            f.write(res.content)
-    except Exception as e:
-        raise RuntimeError(f"Download failed: {e}")
+    with open(local_path, "wb") as f:
+        metadata, res = dbx.files_download(path=dropbox_path)
+        f.write(res.content)
