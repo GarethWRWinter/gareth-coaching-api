@@ -2,7 +2,7 @@ import os
 import dropbox
 from fitparse import FitFile
 from datetime import datetime
-from scripts.ride_database import store_ride_data
+from scripts.ride_database import save_ride_summary
 from scripts.fit_sanitizer import sanitize_fit_data
 from scripts.fit_metrics import calculate_ride_metrics
 
@@ -33,8 +33,14 @@ def process_latest_fit_file(access_token: str):
     ride_id = summary["ride_id"]
     timestamp = datetime.fromisoformat(summary["timestamp"])
 
-    # Store ride
-    store_ride_data(ride_id, timestamp, summary["duration"], summary["avg_power"], summary["training_stress_score"])
+    # Store ride summary
+    save_ride_summary(
+        ride_id=ride_id,
+        timestamp=timestamp,
+        duration=summary["duration"],
+        avg_power=summary["avg_power"],
+        tss=summary["training_stress_score"]
+    )
 
     return {
         "ride_id": ride_id,
