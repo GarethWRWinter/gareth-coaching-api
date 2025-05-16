@@ -1,29 +1,40 @@
 import os
-import pandas as pd
-from scripts.dropbox_fetcher import fetch_latest_fit_file
-from scripts.parse_fit_to_df import parse_fitfile_to_dataframe
-from scripts.sanitize import sanitize_fit_data
-from scripts.ride_database import store_ride_data
-from scripts.dropbox_auth import refresh_dropbox_token
+import dropbox
+from fitparse import FitFile
+from datetime import datetime
+from scripts.ride_database import save_ride_summary
+from scripts.sanitize import sanitize_fit_data  # ✅ Correct reference
+from scripts.fit_metrics import calculate_ride_metrics
 
+def process_latest_fit_file(access_token: str):
+    dbx = dropbox.Dropbox(access_token)
+    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
 
-def process_latest_fit_file(access_token: str) -> dict:
-    print("🔄 Refreshing Dropbox token...")
-    access_token = refresh_dropbox_token()
+    # List and sort .FIT files by latest modified
+    files = dbx.files_list_folder(folder_path).entries
+    fit_files = [f for f in files if f.name.endswith(".fit")]
+    if not fit_files:
+        raise Exception("No .FIT files found in Dropbox folder")
 
-    print("📥 Fetching latest FIT file from Dropbox...")
-    local_fit_path = fetch_latest_fit_file(access_token)
+    latest_file = sorted(fit_files, key=lambda x: x.client_modified, reverse=True)[0]
+    metadata, res = dbx.files_download(f"{folder_path}/{latest_file.name}")
+    local_path = f"/tmp/{latest_file.name}"
 
-    print("📊 Parsing FIT file to DataFrame...")
-    df = parse_fitfile_to_dataframe(local_fit_path)
+    with open(local_path, "wb") as f:
+        f.write(res.content)
 
-    print("🧹 Sanitizing DataFrame...")
-    sanitized_df = sanitize_fit_data(df)
+    # Parse and sanitize FIT file
+    fitfile = FitFile(local_path)
+    fitfile.parse()
+    sanitized = sanitize_fit_data(fitfile)
 
-    print("💾 Storing ride data in database...")
-    ride_metadata = store_ride_data(sanitized_df)
+    # Calculate metrics
+    summary = calculate_ride_metrics(sanitized)
+    save_ride_summary(summary)  # ✅ This function exists and is correct
 
     return {
-        "message": "✅ Ride processed and stored successfully.",
-        "ride_metadata": ride_metadata,
+        "ride_id": summary["ride_id"],
+        "timestamp": summary["timestamp"],
+        "summary": summary,
+        "data": sanitized
     }
