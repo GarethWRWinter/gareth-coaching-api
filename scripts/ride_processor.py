@@ -1,43 +1,37 @@
 import os
-import dropbox
-from fitparse import FitFile
-from datetime import datetime
-from scripts.ride_database import save_ride_summary
-from scripts.sanitize import sanitize_fit_data
+from dotenv import load_dotenv
+from scripts.dropbox_utils import get_latest_fit_file_metadata, download_file
+from scripts.fit_parser import parse_fit_file
+from scripts.fit_sanitizer import sanitize_fit_data
 from scripts.fit_metrics import calculate_ride_metrics
+from scripts.ride_database import save_ride_summary
 
-def process_latest_fit_file(access_token: str):
-    dbx = dropbox.Dropbox(access_token)
-    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
+load_dotenv()
 
-    # List and sort .FIT files by latest modified
-    files = dbx.files_list_folder(folder_path).entries
-    fit_files = [f for f in files if f.name.endswith(".fit")]
-    if not fit_files:
-        raise Exception("No .FIT files found in Dropbox folder")
+def process_latest_fit_file(access_token: str) -> dict:
+    try:
+        # 🧠 Step 1: Get latest file metadata
+        latest_file = get_latest_fit_file_metadata(access_token)
+        if not latest_file:
+            return {"error": "No .fit file found."}
 
-    latest_file = sorted(fit_files, key=lambda x: x.client_modified, reverse=True)[0]
-    metadata, res = dbx.files_download(f"{folder_path}/{latest_file.name}")
-    local_path = f"/tmp/{latest_file.name}"
+        file_name = latest_file["name"]
 
-    with open(local_path, "wb") as f:
-        f.write(res.content)
+        # 💾 Step 2: Download to local temp
+        local_path = f"/tmp/{file_name}"
+        download_file(access_token, latest_file["path_display"], local_path)
 
-    # Parse and sanitize FIT file
-    fitfile = FitFile(local_path)
-    fitfile.parse()
-    sanitized = sanitize_fit_data(fitfile)
+        # 📊 Step 3: Parse + sanitize
+        df = parse_fit_file(local_path)
+        sanitized = sanitize_fit_data(df)
 
-    # Calculate metrics
-    summary = calculate_ride_metrics(sanitized)
-    summary["timestamp"] = latest_file.client_modified.isoformat()  # ✅ ensure timestamp exists
-    summary["duration"] = summary.get("duration_seconds", 0)        # ✅ ensure duration exists
+        # 🔍 Step 4: Calculate metrics
+        summary = calculate_ride_metrics(sanitized)
 
-    save_ride_summary(summary)
+        # 💾 Step 5: Save to SQLite
+        save_ride_summary(summary)
 
-    return {
-        "ride_id": summary.get("ride_id"),
-        "timestamp": summary["timestamp"],
-        "summary": summary,
-        "data": sanitized
-    }
+        return summary
+
+    except Exception as e:
+        return {"error": str(e)}
