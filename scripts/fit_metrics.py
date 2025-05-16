@@ -2,7 +2,9 @@
 
 import pandas as pd
 
-def calculate_ride_metrics(df: pd.DataFrame) -> dict:
+def calculate_ride_metrics(data_list) -> dict:
+    df = pd.DataFrame(data_list)
+
     if df.empty:
         return {"error": "No data in FIT file."}
 
@@ -19,7 +21,7 @@ def calculate_ride_metrics(df: pd.DataFrame) -> dict:
     def safe_max(col):
         return float(df[col].max()) if col in df else None
 
-    # Zones (basic threshold defaults, you may replace later)
+    # Zones (basic threshold defaults, can be customized)
     def time_in_zones(column: str, zones: list[tuple[int, int]]) -> dict:
         if column not in df:
             return {}
