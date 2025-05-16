@@ -1,30 +1,33 @@
+# scripts/dropbox_utils.py
+
 import os
-import requests
-from dotenv import load_dotenv
+import dropbox
+from dropbox.files import FileMetadata
 
-load_dotenv()
+def get_latest_fit_file_metadata(access_token: str) -> dict:
+    dbx = dropbox.Dropbox(access_token)
+    folder = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
 
-DROPBOX_APP_KEY = os.getenv("DROPBOX_APP_KEY")
-DROPBOX_APP_SECRET = os.getenv("DROPBOX_APP_SECRET")
-DROPBOX_REFRESH_TOKEN = os.getenv("DROPBOX_REFRESH_TOKEN")
+    try:
+        entries = dbx.files_list_folder(folder).entries
+        fit_files = [f for f in entries if isinstance(f, FileMetadata) and f.name.endswith(".fit")]
+        if not fit_files:
+            return {}
 
-def refresh_dropbox_token() -> str:
-    if not all([DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN]):
-        raise Exception("Missing Dropbox credentials in environment variables.")
+        latest = max(fit_files, key=lambda f: f.client_modified)
+        return {
+            "name": latest.name,
+            "path_display": latest.path_display,
+            "client_modified": latest.client_modified.isoformat()
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
-    response = requests.post(
-        "https://api.dropbox.com/oauth2/token",
-        data={
-            "grant_type": "refresh_token",
-            "refresh_token": DROPBOX_REFRESH_TOKEN,
-            "client_id": DROPBOX_APP_KEY,
-            "client_secret": DROPBOX_APP_SECRET,
-        },
-    )
-
-    if response.status_code != 200:
-        raise Exception(f"Failed to refresh token: {response.text}")
-
-    new_token = response.json()["access_token"]
-    os.environ["DROPBOX_TOKEN"] = new_token  # Update token in runtime
-    return new_token
+def download_file(access_token: str, dropbox_path: str, local_path: str):
+    dbx = dropbox.Dropbox(access_token)
+    try:
+        with open(local_path, "wb") as f:
+            metadata, res = dbx.files_download(path=dropbox_path)
+            f.write(res.content)
+    except Exception as e:
+        raise RuntimeError(f"Download failed: {e}")
