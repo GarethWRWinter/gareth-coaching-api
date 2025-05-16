@@ -1,22 +1,37 @@
 import pandas as pd
 
-
-def calculate_ride_metrics(df):
+def calculate_ride_metrics(df: pd.DataFrame) -> dict:
     if not isinstance(df, pd.DataFrame) or df.empty:
-        return {"error": "FIT file contained no ride data."}
+        return {
+            "duration": 0,
+            "avg_power": 0,
+            "avg_heart_rate": 0,
+            "avg_cadence": 0,
+            "max_power": 0,
+            "max_heart_rate": 0,
+            "max_cadence": 0,
+            "total_distance_km": 0,
+            "total_work_kj": 0
+        }
 
-    # ✅ Handle missing columns gracefully
-    duration = len(df) if "timestamp" in df.columns else 0
-    avg_power = df["power"].mean() if "power" in df.columns else None
-    avg_hr = df["heart_rate"].mean() if "heart_rate" in df.columns else None
-    avg_cadence = df["cadence"].mean() if "cadence" in df.columns else None
-    max_power = df["power"].max() if "power" in df.columns else None
-    total_kj = df["power"].sum() * 1 / 1000 if "power" in df.columns else None
+    duration = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
+    avg_power = df.get("power", pd.Series([0])).mean()
+    avg_heart_rate = df.get("heart_rate", pd.Series([0])).mean()
+    avg_cadence = df.get("cadence", pd.Series([0])).mean()
+    max_power = df.get("power", pd.Series([0])).max()
+    max_heart_rate = df.get("heart_rate", pd.Series([0])).max()
+    max_cadence = df.get("cadence", pd.Series([0])).max()
+    total_distance_km = df.get("distance", pd.Series([0])).max() / 1000
+    total_work_kj = df.get("power", pd.Series([0])).sum() * (1/60/60)  # Power in watts * hours = kJ
 
-    # Return all keys, even if None
     return {
-        "duration": duration,
-        "avg_power": round(avg_power, 2) if avg_power is not None else None,
-        "avg_heart_rate": round(avg_hr, 2) if avg_hr is not None else None,
-        "avg_cadence": round(avg_cadence, 2) if avg_cadence is not None else None,
-        "max_power_
+        "duration": round(duration, 2),
+        "avg_power": round(avg_power, 2),
+        "avg_heart_rate": round(avg_heart_rate, 2),
+        "avg_cadence": round(avg_cadence, 2),
+        "max_power": int(max_power),
+        "max_heart_rate": int(max_heart_rate),
+        "max_cadence": int(max_cadence),
+        "total_distance_km": round(total_distance_km, 2),
+        "total_work_kj": round(total_work_kj, 2)
+    }
