@@ -1,57 +1,55 @@
 import sqlite3
-import json
-import os
 
 DB_PATH = "ride_data.db"
 
-def initialize_db():
+def init_db():
+    print("🔧 Initializing database...")
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # 🚧 COMMENT THIS IN PROD AFTER TESTING
+    # cursor.execute("DROP TABLE IF EXISTS rides")
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS rides (
-            ride_id TEXT PRIMARY KEY,
+            ride_id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT,
             duration INTEGER,
-            distance REAL,
             avg_power REAL,
-            avg_heart_rate REAL,
+            avg_hr REAL,
             avg_cadence REAL,
+            distance REAL,
+            tss REAL,
+            zone_durations TEXT,
+            pedal_balance REAL,
             normalized_power REAL,
-            intensity_factor REAL,
-            training_stress_score REAL,
-            total_work REAL,
-            ftp INTEGER,
-            time_in_zones TEXT,
-            full_data TEXT
+            variability_index REAL
         )
     """)
     conn.commit()
     conn.close()
+    print("✅ rides table created or confirmed")
 
 def save_ride_summary(summary):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT OR REPLACE INTO rides (
-            ride_id, timestamp, duration, distance, avg_power, avg_heart_rate,
-            avg_cadence, normalized_power, intensity_factor,
-            training_stress_score, total_work, ftp, time_in_zones, full_data
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO rides (
+            timestamp, duration, avg_power, avg_hr, avg_cadence, distance, tss,
+            zone_durations, pedal_balance, normalized_power, variability_index
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        summary["ride_id"],
-        summary["timestamp"],
-        summary["duration"],
-        summary["distance"],
-        summary["avg_power"],
-        summary["avg_heart_rate"],
-        summary["avg_cadence"],
-        summary["normalized_power"],
-        summary["intensity_factor"],
-        summary["training_stress_score"],
-        summary["total_work"],
-        summary["ftp"],
-        json.dumps(summary["time_in_zones"]),
-        json.dumps(summary["full_data"])
+        summary.get("timestamp"),
+        summary.get("duration"),
+        summary.get("avg_power"),
+        summary.get("avg_hr"),
+        summary.get("avg_cadence"),
+        summary.get("distance"),
+        summary.get("training_stress_score"),
+        str(summary.get("time_in_zones")),
+        summary.get("pedal_balance"),
+        summary.get("normalized_power"),
+        summary.get("variability_index")
     ))
     conn.commit()
     conn.close()
@@ -59,33 +57,17 @@ def save_ride_summary(summary):
 def get_all_rides():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT ride_id, timestamp, duration, avg_power, training_stress_score FROM rides ORDER BY timestamp DESC")
-    rides = cursor.fetchall()
+    cursor.execute("""
+        SELECT ride_id, timestamp, duration, avg_power, tss FROM rides ORDER BY timestamp DESC
+    """)
+    rows = cursor.fetchall()
     conn.close()
-    return [
-        {
-            "ride_id": row[0],
-            "timestamp": row[1],
-            "duration": row[2],
-            "avg_power": row[3],
-            "training_stress_score": row[4]
-        }
-        for row in rides
-    ]
+    return rows
 
 def get_ride_by_id(ride_id):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT * FROM rides WHERE ride_id = ?", (ride_id,))
-        row = cursor.fetchone()
-        if row is None:
-            return None
-        column_names = [desc[0] for desc in cursor.description]
-        ride_dict = dict(zip(column_names, row))
-        for key in ["time_in_zones", "full_data"]:
-            if key in ride_dict and ride_dict[key]:
-                ride_dict[key] = json.loads(ride_dict[key])
-        return ride_dict
-    finally:
-        conn.close()
+    cursor.execute("SELECT * FROM rides WHERE ride_id = ?", (ride_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row

@@ -1,10 +1,10 @@
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as api_router
-from dotenv import load_dotenv
+from scripts.ride_database import init_db
 
-load_dotenv()
+# 🔧 Ensure database and `rides` table exist
+init_db()
 
 app = FastAPI()
 
