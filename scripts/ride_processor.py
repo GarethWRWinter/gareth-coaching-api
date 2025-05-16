@@ -1,45 +1,43 @@
 import os
-import tempfile
+import dropbox
+from fitparse import FitFile
 from datetime import datetime
-from scripts.dropbox_utils import get_latest_fit_file_metadata, download_file
-from scripts.fit_sanitizer import sanitize_fit_data
-from scripts.fit_metrics import calculate_ride_metrics
 from scripts.ride_database import save_ride_summary
-
+from scripts.sanitize import sanitize_fit_data
+from scripts.fit_metrics import calculate_ride_metrics
 
 def process_latest_fit_file(access_token: str):
-    # 🧠 Get latest FIT file metadata
-    metadata = get_latest_fit_file_metadata(access_token)
-    if not metadata:
-        return {"error": "No FIT file found in Dropbox."}
+    dbx = dropbox.Dropbox(access_token)
+    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
 
-    file_name = metadata["name"]
-    dropbox_path = metadata["path_display"]
+    # List and sort .FIT files by latest modified
+    files = dbx.files_list_folder(folder_path).entries
+    fit_files = [f for f in files if f.name.endswith(".fit")]
+    if not fit_files:
+        raise Exception("No .FIT files found in Dropbox folder")
 
-    # 💾 Download to temp file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".fit") as tmp_file:
-        download_file(access_token, dropbox_path, tmp_file.name)
-        local_path = tmp_file.name
+    latest_file = sorted(fit_files, key=lambda x: x.client_modified, reverse=True)[0]
+    metadata, res = dbx.files_download(f"{folder_path}/{latest_file.name}")
+    local_path = f"/tmp/{latest_file.name}"
 
-    # 🔍 Parse + sanitize
-    sanitized = sanitize_fit_data(local_path)
+    with open(local_path, "wb") as f:
+        f.write(res.content)
 
-    # 📊 Compute metrics
+    # Parse and sanitize FIT file
+    fitfile = FitFile(local_path)
+    fitfile.parse()
+    sanitized = sanitize_fit_data(fitfile)
+
+    # Calculate metrics
     summary = calculate_ride_metrics(sanitized)
+    summary["timestamp"] = latest_file.client_modified.isoformat()  # ✅ ensure timestamp exists
+    summary["duration"] = summary.get("duration_seconds", 0)        # ✅ ensure duration exists
 
-    # 🛡 Skip DB write if parse failed
-    if "error" in summary:
-        return {
-            "error": summary["error"],
-            "ride_id": None,
-            "timestamp": datetime.now().isoformat()
-        }
-
-    # 📌 Add fallback IDs
-    summary["ride_id"] = int(datetime.now().timestamp())
-    summary["timestamp"] = datetime.now().isoformat()
-
-    # 💾 Save to DB
     save_ride_summary(summary)
 
-    return summary
+    return {
+        "ride_id": summary.get("ride_id"),
+        "timestamp": summary["timestamp"],
+        "summary": summary,
+        "data": sanitized
+    }
