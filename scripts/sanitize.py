@@ -1,13 +1,12 @@
-def sanitize(obj):
-    if isinstance(obj, dict):
-        return {k: sanitize(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [sanitize(v) for v in obj]
-    elif hasattr(obj, 'item'):
-        return obj.item()
-    else:
-        return obj
-
-
-def sanitize_dict(d: dict) -> dict:
-    return sanitize(d)
+def sanitize_fit_data(data):
+    """
+    Extracts clean second-by-second power, HR, cadence etc.
+    from a parsed FIT file's 'record' messages.
+    """
+    clean = []
+    for record in data.get_messages("record"):
+        entry = {}
+        for field in record:
+            entry[field.name] = field.value
+        clean.append(entry)
+    return clean
