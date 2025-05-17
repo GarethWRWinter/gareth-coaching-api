@@ -42,3 +42,34 @@ def get_latest_ride_data():
     if "error" in result:
         return JSONResponse(content=result, status_code=500)
     return result
+
+@router.post("/run-backfill")
+def run_backfill():
+    from scripts.dropbox_utils import list_fit_files_in_folder, download_file
+    from scripts.dropbox_auth import refresh_dropbox_token
+    from scripts.parse_fit_to_df import parse_fit_file_to_dataframe
+    from scripts.sanitize import sanitize_fit_data
+    from scripts.fit_metrics import generate_ride_summary
+    from scripts.ride_database import save_ride_summary
+    import time
+
+    access_token = refresh_dropbox_token()
+    fit_files = list_fit_files_in_folder(access_token)
+    fit_files.sort()
+
+    results = []
+
+    for path in fit_files:
+        filename = path.split("/")[-1]
+        try:
+            download_file(access_token, path, "temp.fit")
+            df = parse_fit_file_to_dataframe("temp.fit")
+            df = sanitize_fit_data(df)
+            summary = generate_ride_summary(df)
+            save_ride_summary(summary)
+            results.append({"file": filename, "status": "✅ saved", "ride_id": summary["ride_id"]})
+        except Exception as e:
+            results.append({"file": filename, "status": "❌ error", "error": str(e)})
+        time.sleep(1)
+
+    return {"backfill_summary": results}
