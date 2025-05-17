@@ -1,33 +1,35 @@
+# scripts/dropbox_utils.py
+
 import os
 import dropbox
-from dropbox.files import FileMetadata
+from dropbox.exceptions import AuthError
 from dotenv import load_dotenv
 
 load_dotenv()
 
 DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
 
-def get_latest_fit_file_path(access_token: str) -> str:
-    """Fetch path of the most recent .FIT file in the configured Dropbox folder."""
+def list_fit_files_in_folder(access_token: str):
+    """List all .fit files in the Dropbox folder."""
     dbx = dropbox.Dropbox(access_token)
-    response = dbx.files_list_folder(DROPBOX_FOLDER)
+    try:
+        response = dbx.files_list_folder(DROPBOX_FOLDER)
+        files = [entry.path_lower for entry in response.entries if entry.name.endswith(".fit")]
+        while response.has_more:
+            response = dbx.files_list_folder_continue(response.cursor)
+            files.extend([entry.path_lower for entry in response.entries if entry.name.endswith(".fit")])
+        return files
+    except AuthError as e:
+        raise Exception(f"Dropbox Auth Error: {e}")
+    except Exception as e:
+        raise Exception(f"Dropbox file listing failed: {e}")
 
-    latest_file = None
-    latest_time = None
-
-    for entry in response.entries:
-        if isinstance(entry, FileMetadata) and entry.name.endswith(".fit"):
-            if latest_time is None or entry.server_modified > latest_time:
-                latest_file = entry
-                latest_time = entry.server_modified
-
-    if latest_file:
-        return latest_file.path_lower
-    return ""
-
-def download_file(access_token: str, dropbox_path: str, local_path: str) -> None:
-    """Download file from Dropbox to local path."""
+def download_file(access_token: str, dropbox_path: str, local_path: str):
+    """Download a file from Dropbox to local disk."""
     dbx = dropbox.Dropbox(access_token)
-    with open(local_path, "wb") as f:
-        metadata, res = dbx.files_download(path=dropbox_path)
-        f.write(res.content)
+    try:
+        with open(local_path, "wb") as f:
+            metadata, res = dbx.files_download(path=dropbox_path)
+            f.write(res.content)
+    except Exception as e:
+        raise Exception(f"Dropbox download failed for {dropbox_path}: {e}")
