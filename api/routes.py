@@ -1,14 +1,25 @@
+# api/routes.py
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.ride_processor import process_latest_fit_file
 from scripts.ride_database import get_ride_by_id, get_all_rides
+import json
 
 router = APIRouter()
 
 @router.get("/ride-history")
 def get_ride_history():
-    return get_all_rides()
+    rides = get_all_rides()
+    parsed = []
+    for ride in rides:
+        if 'summary' in ride:
+            try:
+                summary = json.loads(ride['summary']) if isinstance(ride['summary'], str) else ride['summary']
+                parsed.append(summary)
+            except Exception as e:
+                print(f"Error parsing ride summary: {e}")
+    return parsed
 
 @router.get("/ride/{ride_id}")
 def get_ride(ride_id: str):
