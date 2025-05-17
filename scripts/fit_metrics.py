@@ -1,6 +1,7 @@
 # scripts/fit_metrics.py
 
 import numpy as np
+import pandas as pd
 from scripts.calculate_power_zones import get_power_zones
 from scripts.calculate_tss import calculate_tss
 
@@ -22,7 +23,18 @@ def calculate_time_in_zones(power_series: list, ftp: int) -> dict:
         for zone, seconds in zone_times.items()
     }
 
-def calculate_ride_metrics(df, ftp: int) -> dict:
+def calculate_ride_metrics(raw_data, ftp: int) -> dict:
+    # ✅ Safely convert list-of-dicts into DataFrame
+    if isinstance(raw_data, list):
+        df = pd.DataFrame(raw_data)
+    elif isinstance(raw_data, pd.DataFrame):
+        df = raw_data
+    else:
+        raise ValueError("Unsupported data type. Expected list or DataFrame.")
+
+    if df.empty:
+        raise ValueError("DataFrame is empty. No ride data to process.")
+
     start_time = df["timestamp"].iloc[0]
     end_time = df["timestamp"].iloc[-1]
     duration_sec = (end_time - start_time).total_seconds()
@@ -33,10 +45,12 @@ def calculate_ride_metrics(df, ftp: int) -> dict:
     max_hr = df["heart_rate"].max()
     avg_cadence = df["cadence"].mean()
     max_cadence = df["cadence"].max()
-    total_work = (df["power"].sum() * df["timestamp"].diff().dt.total_seconds().fillna(0)).sum()
 
-    tss = calculate_tss(df["power"].tolist(), duration_sec, ftp)
-    time_in_zones = calculate_time_in_zones(df["power"].tolist(), ftp)
+    total_work = (df["power"] * df["timestamp"].diff().dt.total_seconds().fillna(0)).sum()
+
+    power_series = df["power"].tolist()
+    tss = calculate_tss(power_series, ftp)
+    time_in_zones = calculate_time_in_zones(power_series, ftp)
 
     return {
         "ride_id": str(start_time),

@@ -1,41 +1,31 @@
+# models/models.py
+
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, Float, DateTime, String
+from sqlalchemy import Column, String, Float, Integer, DateTime, JSON
 
 Base = declarative_base()
 
 class RideData(Base):
-    __tablename__ = "ride_data"
+    __tablename__ = "rides"
 
-    id = Column(Integer, primary_key=True, index=True)
-    timestamp = Column(DateTime, index=True)
-    power = Column(Float)
-    heart_rate = Column(Float)
-    cadence = Column(Float)
-    speed = Column(Float)
-    distance = Column(Float)
-    temperature = Column(Float)
-    filename = Column(String)
-
-class TimeInZone(Base):
-    __tablename__ = "time_in_zone"
-
-    id = Column(Integer, primary_key=True, index=True)
-    zone = Column(String)
-    seconds = Column(Integer)
-    filename = Column(String)
-
-class HRTimeInZone(Base):
-    __tablename__ = "hr_time_in_zone"
-
-    id = Column(Integer, primary_key=True, index=True)
-    zone = Column(String)
-    seconds = Column(Integer)
-    filename = Column(String)
+    ride_id = Column(String, primary_key=True, index=True)
+    start_time = Column(DateTime)
+    end_time = Column(DateTime)
+    duration_sec = Column(Integer)
+    distance_km = Column(Float)
+    avg_power = Column(Float)
+    max_power = Column(Integer)
+    avg_heart_rate = Column(Float)
+    max_heart_rate = Column(Integer)
+    avg_cadence = Column(Float)
+    max_cadence = Column(Integer)
+    total_work = Column(Float)
+    tss = Column(Float)
+    time_in_zones = Column(JSON)
 
 class FTPRecord(Base):
     __tablename__ = "ftp_records"
 
     id = Column(Integer, primary_key=True, index=True)
     ftp = Column(Float)
-    date_set = Column(DateTime)
-    source = Column(String)
+    date = Column(DateTime)
