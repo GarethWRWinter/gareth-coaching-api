@@ -1,61 +1,35 @@
-import os
+# scripts/calculate_tss.py
 import pandas as pd
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
-from models import RideData, FTPRecord, Base
-from dotenv import load_dotenv
+import numpy as np
 
-# Load environment variables
-load_dotenv()
-DATABASE_URL = "sqlite:///ride_data.db"
+def calculate_tss(df: pd.DataFrame, ftp: int) -> float:
+    """
+    Calculate Training Stress Score (TSS).
+    TSS = (sec * NP * IF) / (FTP * 3600) * 100
+    """
+    if df.empty or 'power' not in df.columns:
+        return 0.0
 
-# Setup DB
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
-session = Session()
+    # Drop NaNs and clip bad data
+    power_data = df['power'].dropna().astype(float)
+    if power_data.empty:
+        return 0.0
 
-# --- Get current FTP ---
-ftp_record = session.query(FTPRecord).order_by(FTPRecord.date.desc()).first()
-if ftp_record is None:
-    print("❌ No FTP record found. Please set one using ftp_tracking.py.")
-    exit()
+    # Time diff per row in seconds
+    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+    df['time_diff'] = df['timestamp'].diff().dt.total_seconds().fillna(0)
+    df['time_diff'] = df['time_diff'].clip(lower=0, upper=10)
 
-ftp = ftp_record.ftp
-print(f"📌 Using FTP: {ftp} watts")
+    # Normalized Power (NP)
+    rolling_avg = power_data.rolling(window=30, min_periods=1).mean() ** 4
+    np_value = (rolling_avg.mean()) ** 0.25 if not rolling_avg.empty else 0
 
-# --- Get ride data ---
-rides = session.query(RideData).all()
+    # Intensity Factor (IF)
+    IF = np_value / ftp if ftp > 0 else 0
 
-updated_count = 0
-for ride in rides:
-    # Load all power values for this ride from CSV
-    filename = ride.filename.replace(".fit", ".csv")
-    csv_path = os.path.join("data", filename)
+    # Total time in seconds
+    total_time = df['time_diff'].sum()
 
-    if not os.path.exists(csv_path):
-        print(f"⚠️ CSV not found: {filename}")
-        continue
-
-    df = pd.read_csv(csv_path)
-    power_series = df.get("power")
-
-    if power_series is None or power_series.isna().all():
-        print(f"⚠️ No valid power data for {filename}")
-        continue
-
-    power_series = power_series.fillna(0)
-
-    # --- Calculate TSS ---
-    duration_hours = len(power_series) / 3600  # seconds to hours
-    avg_power = power_series.mean()
-    norm_power = (power_series.pow(4).mean()) ** 0.25  # NP = 4th root of avg(P^4)
-    intensity_factor = norm_power / ftp
-    tss = (duration_hours * intensity_factor**2 * 100)
-
-    # --- Update the DB record ---
-    ride.tss = round(tss, 2)
-    updated_count += 1
-
-session.commit()
-print(f"✅ Updated TSS for {updated_count} rides.")
+    # TSS Calculation
+    tss = ((total_time * np_value * IF) / (ftp * 3600)) * 100 if ftp > 0 else 0
+    return round(tss, 2)
