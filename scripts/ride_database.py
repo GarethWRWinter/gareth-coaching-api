@@ -1,5 +1,8 @@
+# scripts/ride_database.py
+
 import sqlite3
 import os
+import json
 
 DB_PATH = os.path.join(os.path.dirname(__file__), '../ride_data.db')
 
@@ -48,24 +51,24 @@ def save_ride_summary(summary):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         summary["ride_id"],
-        summary["timestamp"],
-        summary["duration"],
+        summary["start_time"],  # ✅ FIXED KEY
+        summary["duration_sec"],
         summary["avg_power"],
         summary["avg_heart_rate"],
-        summary["avg_cadence"],
+        summary.get("avg_cadence"),
         summary["max_power"],
         summary["max_heart_rate"],
-        summary["max_cadence"],
-        summary["distance"],
-        summary["energy_output"],
-        summary["training_stress_score"],
-        summary["time_in_zones"]["Z1"],
-        summary["time_in_zones"]["Z2"],
-        summary["time_in_zones"]["Z3"],
-        summary["time_in_zones"]["Z4"],
-        summary["time_in_zones"]["Z5"],
-        summary["time_in_zones"]["Z6"],
-        summary["pedal_balance"]
+        summary.get("max_cadence"),
+        summary["distance_km"],
+        summary.get("energy_output", 0),
+        summary.get("training_stress_score", 0),
+        summary["time_in_zones"].get("Z1", 0),
+        summary["time_in_zones"].get("Z2", 0),
+        summary["time_in_zones"].get("Z3", 0),
+        summary["time_in_zones"].get("Z4", 0),
+        summary["time_in_zones"].get("Z5", 0),
+        summary["time_in_zones"].get("Z6", 0),
+        summary.get("pedal_balance", 50.0)
     ))
     conn.commit()
     conn.close()
