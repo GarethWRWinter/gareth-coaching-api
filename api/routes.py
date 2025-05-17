@@ -43,7 +43,7 @@ def get_latest_ride_data():
         return JSONResponse(content=result, status_code=500)
     return result
 
-@router.post("/run-backfill")
+@router.get("/run-backfill")
 def run_backfill():
     from scripts.dropbox_utils import list_fit_files_in_folder, download_file
     from scripts.dropbox_auth import refresh_dropbox_token
