@@ -1,10 +1,11 @@
+# scripts/ride_processor.py
+
 import os
 from scripts.dropbox_utils import get_latest_fit_file_path, download_file
 from scripts.parse_fit_to_df import parse_fit_file_to_dataframe
 from scripts.sanitize import sanitize_fit_data
-from scripts.fit_metrics import calculate_ride_metrics
+from scripts.fit_metrics import generate_ride_summary
 from scripts.ride_database import save_ride_summary
-
 
 def process_latest_fit_file(access_token: str) -> dict:
     """
@@ -26,10 +27,10 @@ def process_latest_fit_file(access_token: str) -> dict:
     sanitized_df = sanitize_fit_data(raw_df)
 
     # Step 4: Compute ride metrics
-    summary = calculate_ride_metrics(sanitized_df)
+    summary = generate_ride_summary(sanitized_df)
 
     # ✅ Safety check for required keys before DB write
-    required_keys = ["ride_id", "start_time", "duration", "distance_km", "avg_power", "avg_heart_rate"]
+    required_keys = ["ride_id", "start_time", "duration_sec", "distance_km", "avg_power", "avg_heart_rate"]
     for key in required_keys:
         if key not in summary:
             raise KeyError(f"Missing required field in summary: {key}")
