@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Gareth's Coach API",
+  "name_for_model": "gareth_coach_api",
+  "description_for_human": "Access Gareth's latest rides, metrics, and training insights.",
+  "description_for_model": "Plugin for retrieving cycling training data and metrics for Gareth.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://gareth-coaching-api.onrender.com/.well-known/openapi.json",
+    "is_user_authenticated": false
+  },
+  "logo_url": "https://raw.githubusercontent.com/GarethWRWinter/gareth-coaching-api/main/logo.png",
+  "contact_email": "gareth@example.com",
+  "legal_info_url": "https://gareth-coaching-api.onrender.com/legal"
+}

@@ -1,0 +1,4 @@
+dropbox
+fitparse
+python-dotenv
+pandas

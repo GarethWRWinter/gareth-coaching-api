@@ -1,0 +1,6 @@
+fastapi==0.115.2
+uvicorn==0.23.2
+pandas==2.2.2
+dropbox==11.36.2
+python-dotenv==1.0.1
+fitparse==1.2.0
