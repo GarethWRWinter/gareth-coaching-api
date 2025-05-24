@@ -1,65 +1,39 @@
-import datetime
-from typing import Dict, Any, List
-from scripts.ride_database import load_all_rides
-from scripts.constants import DEFAULT_FTP
+from datetime import datetime
+import pandas as pd
+from scripts.ride_database import get_all_rides
 
-
-def compute_trend_metrics() -> Dict[str, Any]:
-    """
-    Analyze all stored rides and compute long-term training metrics.
-    Returns:
-        A dictionary with CTL, ATL, TSB, FTP, 7-day tags, and weekly load.
-    """
-    rides = load_all_rides()
+def compute_trend_metrics():
+    rides = get_all_rides()
     if not rides:
-        return {
-            "message": "No ride data available for trend analysis."
-        }
+        return {"message": "No ride data available for trend analysis."}
 
-    rides_sorted = sorted(rides, key=lambda x: x["start_time"])
-    today = datetime.datetime.now().date()
+    df = pd.DataFrame(rides)
+    df['date'] = pd.to_datetime(df['date'])
+    df = df.sort_values(by='date')
 
-    # Extract rolling data
-    tss_by_day = {}
-    for ride in rides_sorted:
-        ride_day = ride["start_time"].date()
-        tss_by_day.setdefault(ride_day, 0)
-        tss_by_day[ride_day] += ride.get("tss", 0)
+    df['TSS'] = pd.to_numeric(df['tss'], errors='coerce').fillna(0)
+    df.set_index('date', inplace=True)
 
-    all_days = sorted(tss_by_day.keys())
-    ctl, atl = 0, 0
-    ctl_constant = 1 - pow(2.718, -1 / 42)  # ~0.023
-    atl_constant = 1 - pow(2.718, -1 / 7)   # ~0.133
+    daily_tss = df['TSS'].resample('D').sum().fillna(0)
+    ctl = daily_tss.rolling(window=42).mean()
+    atl = daily_tss.rolling(window=7).mean()
+    tsb = ctl - atl
 
-    ctl_by_day = {}
-    atl_by_day = {}
-
-    for day in all_days:
-        tss = tss_by_day[day]
-        ctl = ctl + ctl_constant * (tss - ctl)
-        atl = atl + atl_constant * (tss - atl)
-        ctl_by_day[day] = ctl
-        atl_by_day[day] = atl
-
-    latest_day = all_days[-1]
-    tsb = ctl_by_day[latest_day] - atl_by_day[latest_day]
-
-    # Weekly load and tag aggregation
-    one_week_ago = today - datetime.timedelta(days=7)
-    recent_rides = [r for r in rides_sorted if r["start_time"].date() >= one_week_ago]
-
-    weekly_load = sum(r.get("tss", 0) for r in recent_rides)
-    tags = [tag for r in recent_rides for tag in r.get("tags", [])]
-    tag_counts = {tag: tags.count(tag) for tag in set(tags)}
-
-    # Latest known FTP
-    latest_ftp = max((r.get("ftp", 0) or 0) for r in rides_sorted if r.get("ftp")) or DEFAULT_FTP
-
-    return {
-        "ftp": latest_ftp,
-        "ctl": round(ctl_by_day[latest_day], 2),
-        "atl": round(atl_by_day[latest_day], 2),
-        "tsb": round(tsb, 2),
-        "weekly_load": round(weekly_load, 2),
-        "recent_tags": tag_counts
+    trend = {
+        "7_day_tss_avg": round(daily_tss[-7:].mean(), 2),
+        "28_day_tss_avg": round(daily_tss[-28:].mean(), 2),
+        "CTL": round(ctl[-1], 2),
+        "ATL": round(atl[-1], 2),
+        "TSB": round(tsb[-1], 2),
+        "last_updated": str(df.index.max().date())
     }
+
+    tsb_value = trend["TSB"]
+    if tsb_value < -10:
+        trend["status_flag"] = "Overreaching"
+    elif tsb_value > 10:
+        trend["status_flag"] = "Fresh"
+    else:
+        trend["status_flag"] = "Neutral"
+
+    return trend
