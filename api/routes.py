@@ -1,37 +1,18 @@
-# api/routes.py
-
 from fastapi import APIRouter, HTTPException
-from scripts.ride_processor import process_latest_fit_file
-from scripts.ride_database import get_all_ride_summaries, get_ride_by_id
-from scripts.trend_analysis import compute_trend_metrics
+from fastapi.responses import JSONResponse
+from scripts.fetch_and_parse import process_latest_fit_file
 from scripts.save_latest_ride_to_db import save_ride_to_db
-from scripts.dropbox_auth import refresh_dropbox_token
+from scripts.sanitize import sanitize
+import os
 
 router = APIRouter()
 
 @router.get("/latest-ride-data")
-def latest_ride_data():
+async def get_latest_ride_data():
     try:
-        access_token = refresh_dropbox_token()
-        full_data, summary = process_latest_fit_file(access_token=access_token)
-        save_ride_to_db(summary, full_data)
-        return {"summary": summary, "full_data": full_data}
+        access_token = os.getenv("DROPBOX_TOKEN")
+        ride_summary = process_latest_fit_file(access_token)
+        save_ride_to_db(ride_summary)
+        return JSONResponse(content=sanitize(ride_summary))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {e}")
-
-@router.get("/trend-analysis")
-def trend_analysis():
-    trends = compute_trend_metrics()
-    return trends
-
-@router.get("/ride-history")
-def ride_history():
-    rides = get_all_ride_summaries()
-    return {"rides": rides}
-
-@router.get("/ride/{ride_id}")
-def get_ride(ride_id: str):
-    ride = get_ride_by_id(ride_id)
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-    return ride
+        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
