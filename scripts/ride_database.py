@@ -56,3 +56,7 @@ def load_all_rides() -> List[Dict[str, Any]]:
     rows = cursor.fetchall()
     conn.close()
     return [json.loads(row[0]) for row in rows]
+
+# 🔁 Provide aliases to match route expectations
+get_ride_by_id = load_ride_by_id
+get_all_ride_summaries = load_all_rides
