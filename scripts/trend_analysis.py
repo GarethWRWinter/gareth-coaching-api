@@ -1,34 +1,50 @@
+# scripts/trend_analysis.py
+
+from datetime import datetime, timedelta
 import pandas as pd
-import matplotlib.pyplot as plt
-from sqlalchemy import create_engine
+from scripts.ride_database import load_all_rides
 
-# Connect to the database
-engine = create_engine("sqlite:///ride_data.db")
+def compute_trend_metrics():
+    rides = load_all_rides()
+    if not rides:
+        return {"error": "No ride data found."}
 
-# Load power zone data
-df_power = pd.read_sql_table("time_in_zone", engine)
+    df = pd.DataFrame(rides)
+    df['date'] = pd.to_datetime(df['start_time']).dt.date
+    df = df.sort_values(by='date')
 
-# Extract date from filename
-df_power["date"] = pd.to_datetime(df_power["filename"].str.extract(r"(\d{4}-\d{2}-\d{2})")[0])
+    df['TSS'] = pd.to_numeric(df['tss'], errors='coerce').fillna(0)
+    df['date'] = pd.to_datetime(df['date'])
 
-# Pivot table for power zones
-pivot_power = df_power.pivot_table(index="date", columns="zone", values="seconds", aggfunc="sum")
+    today = df['date'].max()
+    df['days_since'] = (today - df['date']).dt.days
 
-# Plot power zones
-pivot_power.plot(kind="bar", stacked=True, figsize=(12, 6), title="Time in Power Zones Over Time")
-plt.ylabel("Seconds")
-plt.xlabel("Ride Date")
-plt.tight_layout()
-plt.show()
+    # CTL = 42-day rolling avg, ATL = 7-day avg
+    df.set_index('date', inplace=True)
+    daily_tss = df.resample('D').sum()['TSS'].fillna(0)
+    ctl = daily_tss.rolling(window=42).mean()
+    atl = daily_tss.rolling(window=7).mean()
+    tsb = ctl - atl
 
-# Load HR zone data
-df_hr = pd.read_sql_table("hr_time_in_zone", engine)
-df_hr["date"] = pd.to_datetime(df_hr["filename"].str.extract(r"(\d{4}-\d{2}-\d{2})")[0])
-pivot_hr = df_hr.pivot_table(index="date", columns="zone", values="seconds", aggfunc="sum")
+    trend = {
+        "7_day_tss_avg": round(daily_tss[-7:].mean(), 2),
+        "28_day_tss_avg": round(daily_tss[-28:].mean(), 2),
+        "CTL": round(ctl[-1], 2),
+        "ATL": round(atl[-1], 2),
+        "TSB": round(tsb[-1], 2),
+        "last_updated": str(today)
+    }
 
-# Plot HR zones
-pivot_hr.plot(kind="bar", stacked=True, figsize=(12, 6), title="Time in Heart Rate Zones Over Time")
-plt.ylabel("Seconds")
-plt.xlabel("Ride Date")
-plt.tight_layout()
-plt.show()
+    if trend["TSB"] < -10:
+        trend["status_flag"] = "Overreaching"
+    elif trend["TSB"] > 10:
+        trend["status_flag"] = "Fresh"
+    else:
+        trend["status_flag"] = "Neutral"
+
+    try:
+        trend["FTP"] = int(df['ftp'].dropna().iloc[-1])
+    except:
+        trend["FTP"] = "Unknown"
+
+    return trend
