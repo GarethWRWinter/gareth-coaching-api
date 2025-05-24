@@ -60,7 +60,7 @@ def store_ride(summary: dict):
             summary["avg_power"],
             summary["avg_heart_rate"],
             summary["tss"],
-            json.dumps(summary, default=default_json)  # ✅ Safe dump
+            json.dumps(summary, default=default_json)
         ))
 
         conn.commit()
@@ -108,4 +108,17 @@ def get_ride_by_id(ride_id: str):
         return json.loads(row[0])
     except Exception as e:
         logger.exception(f"Error fetching ride {ride_id}")
+        raise
+
+def load_all_rides():
+    """✅ For trend analysis: returns all ride summaries as a list of dicts"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT full_data FROM rides")
+        rows = cursor.fetchall()
+        conn.close()
+        return [json.loads(row[0]) for row in rows]
+    except Exception as e:
+        logger.exception("Failed to load all rides for trend analysis")
         raise
