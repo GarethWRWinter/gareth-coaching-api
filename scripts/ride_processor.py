@@ -1,18 +1,17 @@
 # scripts/ride_processor.py
 
-from scripts.fetch_fit_from_dropbox import process_fit_file
-from scripts.save_latest_ride_to_db import save_ride_to_db
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
+from scripts.fit_metrics import calculate_ride_metrics
+from scripts.sanitize import sanitize
 
-def process_and_store_ride(file_path):
-    try:
-        fit_data, ride_summary = process_fit_file(file_path)
-        ride_id = ride_summary.get("ride_id")
-        if ride_id:
-            save_ride_to_db(ride_id, ride_summary)
-            print(f"[✅] Ride {ride_id} saved successfully.")
-        else:
-            print("[⚠️] No ride_id found in summary.")
-        return ride_summary
-    except Exception as e:
-        print(f"[❌] Failed to process and store ride: {e}")
-        return None
+def process_latest_fit_file():
+    """
+    Fetch, parse, and analyze the latest FIT file from Dropbox.
+    Returns sanitized full_data and summary dictionaries.
+    """
+    full_data, summary = get_latest_fit_file_from_dropbox()
+    if not full_data or not summary:
+        raise ValueError("Failed to process latest ride file")
+    
+    summary, full_data = calculate_ride_metrics(full_data, summary)
+    return sanitize(full_data), sanitize(summary)

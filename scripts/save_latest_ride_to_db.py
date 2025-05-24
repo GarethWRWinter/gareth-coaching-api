@@ -1,19 +1,12 @@
-import logging
-from scripts.ride_processor import process_latest_fit_file
+# scripts/save_latest_ride_to_db.py
+
 from scripts.ride_database import store_ride
+from scripts.ride_processor import process_latest_fit_file
 
-logger = logging.getLogger(__name__)
-
-def save_latest_ride_to_db():
+def save_ride_to_db():
     """
-    Processes the latest .fit file from Dropbox and stores the ride in the database.
-    Returns:
-        Tuple (full_data: list, summary: dict)
+    Processes the latest FIT file and stores it in the database.
     """
-    try:
-        full_data, summary = process_latest_fit_file()
-        store_ride(summary, full_data)
-        return full_data, summary
-    except Exception as e:
-        logger.error(f"Failed to process and save latest ride: {e}")
-        raise RuntimeError(f"Failed to process latest ride: {e}")
+    full_data, summary = process_latest_fit_file()
+    store_ride(summary, full_data)
+    return {"status": "success", "ride_id": summary.get("ride_id")}
