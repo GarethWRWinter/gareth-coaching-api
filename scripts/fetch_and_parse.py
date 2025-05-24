@@ -1,51 +1,84 @@
 import os
+import dropbox
+import io
 import logging
-from dotenv import load_dotenv
-from scripts.dropbox_utils import download_latest_fit_file
-from scripts.parse_fit import parse_fit_to_dataframe
+import pandas as pd
+from fitparse import FitFile
+from scripts.calculate_power_zones import get_power_zones
 from scripts.calculate_tss import calculate_tss
-from scripts.time_in_zones import calculate_time_in_zones
-from scripts.sanitize import sanitize
+from scripts.time_in_zones import compute_time_in_power_zones, compute_time_in_hr_zones
+from scripts.sanitize import sanitize_fit_data
 from scripts.dropbox_auth import refresh_dropbox_token
 
-load_dotenv()
-
-DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
-FTP = int(os.getenv("FTP", 250))  # Default fallback FTP
 logger = logging.getLogger(__name__)
 
-def process_latest_fit_file(access_token: str) -> dict:
+DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+FTP = int(os.getenv("FTP", "308"))
+
+def process_latest_fit_file(_: str = None):
     try:
-        # Step 1: Download latest FIT file from Dropbox
-        fit_path = download_latest_fit_file(access_token)
+        access_token = refresh_dropbox_token()
+        dbx = dropbox.Dropbox(access_token)
+        files = dbx.files_list_folder(DROPBOX_FOLDER).entries
+        fit_files = [f for f in files if f.name.endswith(".fit")]
 
-        # Step 2: Parse FIT file to DataFrame
-        df = parse_fit_to_dataframe(fit_path)
-        if df.empty or "power" not in df.columns:
-            raise ValueError("Parsed FIT file has no power data.")
+        if not fit_files:
+            raise FileNotFoundError("No .FIT files found in Dropbox folder.")
 
-        # Step 3: Compute metrics
+        latest_file = sorted(fit_files, key=lambda x: x.client_modified, reverse=True)[0]
+        _, res = dbx.files_download(latest_file.path_lower)
+        fit = FitFile(io.BytesIO(res.content))
+        fit.parse()
+
+        records = []
+        for record in fit.get_messages("record"):
+            fields = {field.name: field.value for field in record}
+            if "timestamp" in fields:
+                records.append(fields)
+
+        df = pd.DataFrame(records)
+        df = sanitize_fit_data(df)
+
+        if df.empty:
+            raise ValueError("Parsed FIT data is empty.")
+
+        duration_sec = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
+        duration_min = round(duration_sec / 60, 1)
+
+        avg_power = int(df["power"].mean())
+        max_power = int(df["power"].max())
+        avg_hr = int(df["heart_rate"].mean())
+        max_hr = int(df["heart_rate"].max())
+        avg_cadence = int(df["cadence"].mean())
+        start_time = df["timestamp"].iloc[0].strftime("%Y-%m-%d %H:%M:%S")
+        ride_id = df["timestamp"].iloc[0].strftime("%Y%m%d_%H%M%S")
+
+        power_zones = get_power_zones(FTP)
+        time_in_power = compute_time_in_power_zones(df["power"], power_zones)
+        time_in_hr = compute_time_in_hr_zones(df["heart_rate"])
         tss, np, intensity = calculate_tss(df["power"].values, FTP)
-        time_in_zones = calculate_time_in_zones(df["power"].values, FTP)
 
-        # Step 4: Create summary
+        full_data = df.to_dict(orient="records")
+
         summary = {
-            "ride_id": os.path.basename(fit_path).replace(".fit", ""),
-            "start_time": df["timestamp"].iloc[0] if "timestamp" in df else None,
-            "duration_sec": int(df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds() if "timestamp" in df else len(df),
-            "tss": round(tss, 2),
-            "np": round(np, 2),
-            "intensity": round(intensity, 3),
-            "avg_power": round(df["power"].mean(), 2),
-            "max_power": int(df["power"].max()),
-            "avg_hr": round(df["heart_rate"].mean(), 2) if "heart_rate" in df else None,
-            "avg_cadence": round(df["cadence"].mean(), 2) if "cadence" in df else None,
-            "time_in_zones": time_in_zones,
+            "ride_id": ride_id,
+            "start_time": start_time,
+            "duration_min": duration_min,
+            "avg_power": avg_power,
+            "max_power": max_power,
+            "avg_heart_rate": avg_hr,
+            "max_heart_rate": max_hr,
+            "avg_cadence": avg_cadence,
+            "tss": round(tss, 1),
+            "normalized_power": round(np, 1),
+            "intensity_factor": round(intensity, 2),
+            "time_in_power_zones_sec": time_in_power,
+            "time_in_hr_zones_sec": time_in_hr,
+            "full_data": full_data,
         }
 
-        # Step 5: Sanitize and return
-        return sanitize(summary)
+        return sanitize_fit_data(summary)
 
     except Exception as e:
         logger.exception("Error processing latest FIT file")
-        raise RuntimeError("Failed to process latest FIT file") from e
+        raise
