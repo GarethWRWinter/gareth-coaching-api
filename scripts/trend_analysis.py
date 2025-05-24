@@ -1,62 +1,76 @@
-# scripts/trend_analysis.py
-
+import math
+from typing import List, Dict
 from datetime import datetime
-import pandas as pd
+
 from scripts.ride_database import load_all_rides
 
-def compute_trend_metrics():
+def exponential_weighted_moving_average(data: List[float], alpha: float) -> List[float]:
+    if not data:
+        return []
+    ewma = [data[0]]
+    for value in data[1:]:
+        ewma.append(alpha * value + (1 - alpha) * ewma[-1])
+    return ewma
+
+def analyze_trends() -> Dict:
     rides = load_all_rides()
     if not rides:
-        return {"error": "No ride data found."}
+        return {
+            "error": "No ride data available",
+            "CTL": 0,
+            "ATL": 0,
+            "TSB": 0,
+            "weekly_load": {},
+            "flags": []
+        }
 
-    df = pd.DataFrame(rides)
+    # Sort rides by date
+    rides.sort(key=lambda r: r.get("start_time", ""))
 
-    # Parse and clean timestamps
-    df['date'] = pd.to_datetime(df['start_time'], errors='coerce')
-    df = df.dropna(subset=['date'])
-    df['date'] = df['date'].dt.date
-    df = df.sort_values(by='date')
+    # Extract TSS and dates
+    dates = []
+    tss_values = []
 
-    # Convert TSS to float, fill missing with 0
-    df['TSS'] = pd.to_numeric(df.get('tss', 0), errors='coerce').fillna(0)
-    df['date'] = pd.to_datetime(df['date'])
+    for ride in rides:
+        tss = ride.get("TSS")
+        start_time = ride.get("start_time")
+        if tss is not None and start_time:
+            try:
+                tss_values.append(float(tss))
+                dates.append(datetime.fromisoformat(start_time))
+            except Exception:
+                continue
 
-    if df.empty or df['TSS'].sum() == 0:
-        return {"error": "Insufficient ride data to compute trends."}
+    if not tss_values:
+        return {
+            "error": "No valid TSS data found",
+            "CTL": 0,
+            "ATL": 0,
+            "TSB": 0,
+            "weekly_load": {},
+            "flags": []
+        }
 
-    # Compute rolling metrics
-    df.set_index('date', inplace=True)
-    daily_tss = df.resample('D').sum()['TSS'].fillna(0)
-    ctl = daily_tss.rolling(window=42).mean()
-    atl = daily_tss.rolling(window=7).mean()
-    tsb = ctl - atl
+    # CTL ~ 42-day EWMA, ATL ~ 7-day EWMA
+    ctl = exponential_weighted_moving_average(tss_values, alpha=1 / 42)
+    atl = exponential_weighted_moving_average(tss_values, alpha=1 / 7)
 
-    today = daily_tss.index.max()
+    # Compute current values
+    ctl_value = round(ctl[-1], 2)
+    atl_value = round(atl[-1], 2)
+    tsb_value = round(ctl_value - atl_value, 2)
 
-    trend = {
-        "7_day_tss_avg": round(daily_tss[-7:].mean(), 2),
-        "28_day_tss_avg": round(daily_tss[-28:].mean(), 2),
-        "CTL": round(ctl[-1], 2) if not ctl.empty else None,
-        "ATL": round(atl[-1], 2) if not atl.empty else None,
-        "TSB": round(tsb[-1], 2) if not tsb.empty else None,
-        "last_updated": str(today.date()) if pd.notna(today) else None,
+    # Weekly load aggregation
+    weekly_load = {}
+    for date, tss in zip(dates, tss_values):
+        week_key = f"{date.year}-W{date.isocalendar().week}"
+        weekly_load.setdefault(week_key, 0)
+        weekly_load[week_key] += tss
+
+    return {
+        "CTL": ctl_value,
+        "ATL": atl_value,
+        "TSB": tsb_value,
+        "weekly_load": weekly_load,
+        "flags": []  # Optional: add fatigue/warning tags later
     }
-
-    # Interpret status flag from TSB (Training Stress Balance)
-    if trend["TSB"] is None:
-        trend["status_flag"] = "Unknown"
-    elif trend["TSB"] < -10:
-        trend["status_flag"] = "Overreaching"
-    elif trend["TSB"] > 10:
-        trend["status_flag"] = "Fresh"
-    else:
-        trend["status_flag"] = "Neutral"
-
-    # FTP tracking (if available)
-    try:
-        df['ftp'] = pd.to_numeric(df['ftp'], errors='coerce')
-        trend["FTP"] = int(df['ftp'].dropna().iloc[-1])
-    except:
-        trend["FTP"] = "Unknown"
-
-    return trend
