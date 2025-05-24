@@ -1,76 +1,65 @@
-import math
-from typing import List, Dict
-from datetime import datetime
-
+import datetime
+from typing import Dict, Any, List
 from scripts.ride_database import load_all_rides
+from scripts.constants import DEFAULT_FTP
 
-def exponential_weighted_moving_average(data: List[float], alpha: float) -> List[float]:
-    if not data:
-        return []
-    ewma = [data[0]]
-    for value in data[1:]:
-        ewma.append(alpha * value + (1 - alpha) * ewma[-1])
-    return ewma
 
-def analyze_trends() -> Dict:
+def compute_trend_metrics() -> Dict[str, Any]:
+    """
+    Analyze all stored rides and compute long-term training metrics.
+    Returns:
+        A dictionary with CTL, ATL, TSB, FTP, 7-day tags, and weekly load.
+    """
     rides = load_all_rides()
     if not rides:
         return {
-            "error": "No ride data available",
-            "CTL": 0,
-            "ATL": 0,
-            "TSB": 0,
-            "weekly_load": {},
-            "flags": []
+            "message": "No ride data available for trend analysis."
         }
 
-    # Sort rides by date
-    rides.sort(key=lambda r: r.get("start_time", ""))
+    rides_sorted = sorted(rides, key=lambda x: x["start_time"])
+    today = datetime.datetime.now().date()
 
-    # Extract TSS and dates
-    dates = []
-    tss_values = []
+    # Extract rolling data
+    tss_by_day = {}
+    for ride in rides_sorted:
+        ride_day = ride["start_time"].date()
+        tss_by_day.setdefault(ride_day, 0)
+        tss_by_day[ride_day] += ride.get("tss", 0)
 
-    for ride in rides:
-        tss = ride.get("TSS")
-        start_time = ride.get("start_time")
-        if tss is not None and start_time:
-            try:
-                tss_values.append(float(tss))
-                dates.append(datetime.fromisoformat(start_time))
-            except Exception:
-                continue
+    all_days = sorted(tss_by_day.keys())
+    ctl, atl = 0, 0
+    ctl_constant = 1 - pow(2.718, -1 / 42)  # ~0.023
+    atl_constant = 1 - pow(2.718, -1 / 7)   # ~0.133
 
-    if not tss_values:
-        return {
-            "error": "No valid TSS data found",
-            "CTL": 0,
-            "ATL": 0,
-            "TSB": 0,
-            "weekly_load": {},
-            "flags": []
-        }
+    ctl_by_day = {}
+    atl_by_day = {}
 
-    # CTL ~ 42-day EWMA, ATL ~ 7-day EWMA
-    ctl = exponential_weighted_moving_average(tss_values, alpha=1 / 42)
-    atl = exponential_weighted_moving_average(tss_values, alpha=1 / 7)
+    for day in all_days:
+        tss = tss_by_day[day]
+        ctl = ctl + ctl_constant * (tss - ctl)
+        atl = atl + atl_constant * (tss - atl)
+        ctl_by_day[day] = ctl
+        atl_by_day[day] = atl
 
-    # Compute current values
-    ctl_value = round(ctl[-1], 2)
-    atl_value = round(atl[-1], 2)
-    tsb_value = round(ctl_value - atl_value, 2)
+    latest_day = all_days[-1]
+    tsb = ctl_by_day[latest_day] - atl_by_day[latest_day]
 
-    # Weekly load aggregation
-    weekly_load = {}
-    for date, tss in zip(dates, tss_values):
-        week_key = f"{date.year}-W{date.isocalendar().week}"
-        weekly_load.setdefault(week_key, 0)
-        weekly_load[week_key] += tss
+    # Weekly load and tag aggregation
+    one_week_ago = today - datetime.timedelta(days=7)
+    recent_rides = [r for r in rides_sorted if r["start_time"].date() >= one_week_ago]
+
+    weekly_load = sum(r.get("tss", 0) for r in recent_rides)
+    tags = [tag for r in recent_rides for tag in r.get("tags", [])]
+    tag_counts = {tag: tags.count(tag) for tag in set(tags)}
+
+    # Latest known FTP
+    latest_ftp = max((r.get("ftp", 0) or 0) for r in rides_sorted if r.get("ftp")) or DEFAULT_FTP
 
     return {
-        "CTL": ctl_value,
-        "ATL": atl_value,
-        "TSB": tsb_value,
-        "weekly_load": weekly_load,
-        "flags": []  # Optional: add fatigue/warning tags later
+        "ftp": latest_ftp,
+        "ctl": round(ctl_by_day[latest_day], 2),
+        "atl": round(atl_by_day[latest_day], 2),
+        "tsb": round(tsb, 2),
+        "weekly_load": round(weekly_load, 2),
+        "recent_tags": tag_counts
     }
