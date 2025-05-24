@@ -1,33 +1,35 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+# api/routes.py
 
-from scripts.fetch_and_parse import process_latest_fit_file
+from fastapi import APIRouter, HTTPException
 from scripts.save_latest_ride_to_db import save_ride_to_db
-from scripts.sanitize import sanitize
+from scripts.ride_processor import process_latest_fit_file
+from scripts.ride_database import get_all_ride_summaries, get_ride_by_id
 from scripts.trend_analysis import compute_trend_metrics
 
 router = APIRouter()
 
-
 @router.get("/latest-ride-data")
-async def get_latest_ride_data():
+def latest_ride_data():
     try:
-        # Process the latest ride from Dropbox and extract summary data
-        ride_summary = process_latest_fit_file()
-
-        # Store sanitized summary in the database
-        save_ride_to_db(ride_summary)
-
-        # Sanitize response before returning to the client/GPT
-        return JSONResponse(content=sanitize(ride_summary))
+        full_data, summary = process_latest_fit_file()
+        save_ride_to_db(summary, full_data)
+        return {"summary": summary, "full_data": full_data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {e}")
 
 @router.get("/trend-analysis")
-def get_trend_analysis():
-    try:
-        data = compute_trend_metrics()
-        return sanitize(data)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Trend analysis failed: {str(e)}")
+def trend_analysis():
+    trends = compute_trend_metrics()
+    return trends
+
+@router.get("/ride-history")
+def ride_history():
+    rides = get_all_ride_summaries()
+    return {"rides": rides}
+
+@router.get("/ride/{ride_id}")
+def get_ride(ride_id: str):
+    ride = get_ride_by_id(ride_id)
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    return ride
