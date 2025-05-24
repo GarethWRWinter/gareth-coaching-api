@@ -7,7 +7,7 @@ from fitparse import FitFile
 from scripts.calculate_power_zones import get_power_zones
 from scripts.calculate_tss import calculate_tss
 from scripts.time_in_zones import compute_time_in_power_zones, compute_time_in_hr_zones
-from scripts.sanitize import sanitize_fit_data
+from scripts.sanitize import sanitize
 from scripts.dropbox_auth import refresh_dropbox_token
 
 logger = logging.getLogger(__name__)
@@ -37,10 +37,12 @@ def process_latest_fit_file(_: str = None):
                 records.append(fields)
 
         df = pd.DataFrame(records)
-        df = sanitize_fit_data(df)
 
         if df.empty:
             raise ValueError("Parsed FIT data is empty.")
+
+        df = df.dropna(subset=["timestamp", "power", "heart_rate", "cadence"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
 
         duration_sec = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
         duration_min = round(duration_sec / 60, 1)
@@ -77,7 +79,7 @@ def process_latest_fit_file(_: str = None):
             "full_data": full_data,
         }
 
-        return sanitize_fit_data(summary)
+        return sanitize(summary)
 
     except Exception as e:
         logger.exception("Error processing latest FIT file")
