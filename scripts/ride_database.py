@@ -1,65 +1,40 @@
-import os
 import sqlite3
 import json
 from scripts.sanitize import sanitize
 
-DB_PATH = os.environ.get("DB_PATH", "ride_data.db")
-
+DB_PATH = "ride_data.db"
 
 def initialize_database():
     with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
+        conn.execute('''
             CREATE TABLE IF NOT EXISTS rides (
                 ride_id TEXT PRIMARY KEY,
-                summary TEXT
+                summary_json TEXT
             )
-        """)
+        ''')
         conn.commit()
-
 
 def store_ride(ride_summary: dict):
     ride_id = ride_summary.get("ride_id")
     if not ride_id:
-        raise ValueError("Missing 'ride_id' in ride summary")
-
-    sanitized_summary = sanitize(ride_summary)
-
+        raise ValueError("Missing ride_id in ride_summary.")
+    summary_json = json.dumps(sanitize(ride_summary))
     with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT OR REPLACE INTO rides (ride_id, summary)
-            VALUES (?, ?)
-        """, (ride_id, json.dumps(sanitized_summary)))
+        conn.execute(
+            "REPLACE INTO rides (ride_id, summary_json) VALUES (?, ?)",
+            (ride_id, summary_json)
+        )
         conn.commit()
 
-
-def ride_exists(ride_id: str) -> bool:
+def get_all_ride_summaries():
     with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT 1 FROM rides WHERE ride_id = ?", (ride_id,))
-        return cursor.fetchone() is not None
+        rows = conn.execute("SELECT summary_json FROM rides").fetchall()
+    return [json.loads(row[0]) for row in rows]
 
-
-def get_ride_by_id(ride_id: str) -> dict | None:
+def get_ride_by_id(ride_id: str):
     with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT summary FROM rides WHERE ride_id = ?", (ride_id,))
-        result = cursor.fetchone()
-        return json.loads(result[0]) if result else None
-
-
-def get_all_ride_summaries() -> list:
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT summary FROM rides ORDER BY rowid DESC")
-        results = cursor.fetchall()
-        return [json.loads(row[0]) for row in results]
-
-
-def load_all_rides() -> list:
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT summary FROM rides")
-        results = cursor.fetchall()
-        return [json.loads(row[0]) for row in results]
+        row = conn.execute("SELECT summary_json FROM rides WHERE ride_id = ?", (ride_id,)).fetchone()
+    if row:
+        return json.loads(row[0])
+    else:
+        return {"detail": "Not Found"}
