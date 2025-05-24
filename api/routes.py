@@ -21,3 +21,15 @@ async def get_latest_ride_data():
         return JSONResponse(content=sanitize(ride_summary))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
+
+# In api/routes.py
+
+from scripts.trend_analysis import compute_trend_metrics
+
+@router.get("/trend-analysis")
+def get_trend_analysis():
+    try:
+        data = compute_trend_metrics()
+        return sanitize(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Trend analysis failed: {str(e)}")
