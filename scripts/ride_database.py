@@ -1,62 +1,65 @@
 import sqlite3
-import os
-import json
-from typing import Any, Dict, List
 
-DB_PATH = os.getenv("DB_PATH", "ride_data.db")
+DB_PATH = "data/ride_data.db"
 
 def initialize_database():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS rides (
-            ride_id TEXT PRIMARY KEY,
-            summary TEXT NOT NULL,
-            full_data TEXT NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
-    print("✅ ride_database initialized")
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS rides (
+                ride_id TEXT PRIMARY KEY,
+                timestamp TEXT,
+                summary_json TEXT,
+                full_data_json TEXT
+            )
+        """)
+        conn.commit()
 
-def store_ride(ride_id: str, summary: Dict[str, Any], full_data: List[Dict[str, Any]]):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT OR REPLACE INTO rides (ride_id, summary, full_data)
-        VALUES (?, ?, ?)
-    """, (ride_id, json.dumps(summary), json.dumps(full_data)))
-    conn.commit()
-    conn.close()
+def store_ride(ride_id, timestamp, summary, full_data):
+    import json
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR REPLACE INTO rides (ride_id, timestamp, summary_json, full_data_json)
+            VALUES (?, ?, ?, ?)
+        """, (
+            ride_id,
+            timestamp,
+            json.dumps(summary),
+            json.dumps(full_data)
+        ))
+        conn.commit()
 
-def ride_exists(ride_id: str) -> bool:
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM rides WHERE ride_id = ?", (ride_id,))
-    exists = cursor.fetchone() is not None
-    conn.close()
-    return exists
+def get_all_rides():
+    import json
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT ride_id, timestamp, summary_json FROM rides ORDER BY timestamp DESC")
+        rows = cursor.fetchall()
+        return [
+            {
+                "ride_id": row[0],
+                "timestamp": row[1],
+                "summary": json.loads(row[2])
+            }
+            for row in rows
+        ]
 
-def load_ride_by_id(ride_id: str) -> Dict[str, Any]:
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT summary, full_data FROM rides WHERE ride_id = ?", (ride_id,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        summary = json.loads(row[0])
-        full_data = json.loads(row[1])
-        return {"summary": summary, "full_data": full_data}
-    return {}
-
-def load_all_rides() -> List[Dict[str, Any]]:
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT summary FROM rides")
-    rows = cursor.fetchall()
-    conn.close()
-    return [json.loads(row[0]) for row in rows]
-
-# Aliases to ensure compatibility with other modules
-get_all_rides = load_all_rides
-get_ride_summary_by_id = load_ride_by_id
+def get_ride_by_id(ride_id):
+    import json
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT ride_id, timestamp, summary_json, full_data_json
+            FROM rides
+            WHERE ride_id = ?
+        """, (ride_id,))
+        row = cursor.fetchone()
+        if row:
+            return {
+                "ride_id": row[0],
+                "timestamp": row[1],
+                "summary": json.loads(row[2]),
+                "full_data": json.loads(row[3])
+            }
+        return None
