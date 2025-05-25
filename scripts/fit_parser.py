@@ -1,13 +1,12 @@
-from fitparse import FitFile
-import pandas as pd
 import io
+import pandas as pd
+from fitparse import FitFile
 
-def parse_fit_to_df(fit_binary: bytes) -> pd.DataFrame:
+def parse_fit_file(file_bytes):
     """
-    Parses a binary .FIT file into a pandas DataFrame.
-    Returns only 'record' messages (second-by-second ride data).
+    Parses a .FIT file from bytes and returns a pandas DataFrame with all relevant records.
     """
-    fitfile = FitFile(io.BytesIO(fit_binary))
+    fitfile = FitFile(io.BytesIO(file_bytes))
     records = []
 
     for record in fitfile.get_messages("record"):
