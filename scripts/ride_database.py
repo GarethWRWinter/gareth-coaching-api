@@ -25,14 +25,20 @@ def store_ride(ride_id, summary, seconds):
         ''', (ride_id, json.dumps(summary), json.dumps(seconds)))
         conn.commit()
 
-def fetch_all_ride_ids():
+def get_all_rides():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT ride_id FROM rides")
+        cursor.execute("SELECT ride_id, summary FROM rides ORDER BY ride_id DESC")
         rows = cursor.fetchall()
-        return [row[0] for row in rows]
+        return [
+            {
+                "ride_id": row[0],
+                "summary": json.loads(row[1])
+            }
+            for row in rows
+        ]
 
-def fetch_ride_by_id(ride_id):
+def get_ride_by_id(ride_id):
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT summary, seconds FROM rides WHERE ride_id = ?", (ride_id,))
