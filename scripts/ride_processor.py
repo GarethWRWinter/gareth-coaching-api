@@ -2,11 +2,14 @@ from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
 from scripts.parse_fit import parse_fit_file
 from scripts.fit_metrics import calculate_ride_metrics
 from scripts.sanitize import sanitize
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 def process_latest_fit_file(access_token: str):
-    # ✅ Unpack all 3 values correctly
-    fit_data, filename, metadata = get_latest_fit_file_from_dropbox(access_token)
-    fit_df, _ = parse_fit_file(fit_data)  # We already have metadata, so ignore it here
-    summary, full_data = calculate_ride_metrics(fit_df, metadata)
-    return sanitize(summary), sanitize(full_data)
+    file_bytes, filename, metadata = get_latest_fit_file_from_dropbox(access_token)
+    raw_data = parse_fit_file(file_bytes)
+    summary = calculate_ride_metrics(raw_data, filename)
+    sanitized = sanitize(summary)
+    return raw_data, sanitized, metadata
