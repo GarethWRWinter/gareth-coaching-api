@@ -1,26 +1,22 @@
-# scripts/fetch_fit_from_dropbox.py
-
 import os
 import dropbox
-from scripts.dropbox_auth import refresh_dropbox_token
+import logging
 
-DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+DROPBOX_FOLDER = os.environ.get("DROPBOX_FOLDER", "/WahooFitness")
 
-def get_latest_fit_file_from_dropbox(access_token: str):
-    dbx = dropbox.Dropbox(oauth2_access_token=access_token)
-    result = dbx.files_list_folder(DROPBOX_FOLDER)
-    fit_files = [entry for entry in result.entries if entry.name.endswith('.fit')]
+def get_latest_fit_file_from_dropbox(access_token):
+    dbx = dropbox.Dropbox(access_token)
+    logging.info("Fetching list of files from Dropbox...")
+
+    res = dbx.files_list_folder(DROPBOX_FOLDER)
+    fit_files = [entry for entry in res.entries if entry.name.endswith(".fit")]
 
     if not fit_files:
-        raise Exception("No .fit files found in Dropbox folder.")
+        raise FileNotFoundError("No .fit files found in Dropbox folder.")
 
-    # Sort by server_modified time (descending)
-    fit_files.sort(key=lambda x: x.server_modified, reverse=True)
-    latest_file = fit_files[0]
-
-    # Correct usage with dot notation (not subscripting)
+    latest_file = max(fit_files, key=lambda entry: entry.client_modified)
     metadata, response = dbx.files_download(latest_file.path_display)
     file_bytes = response.content
     filename = latest_file.name
 
-    return file_bytes, filename
+    return file_bytes, filename, metadata  # ✅ 3-tuple required
