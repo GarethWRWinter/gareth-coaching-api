@@ -1,4 +1,4 @@
-from scripts.ride_database import load_all_rides
+from scripts.ride_database import get_all_rides as load_all_rides
 
 
 def generate_trend_analysis():
