@@ -1,50 +1,26 @@
-import sqlite3
 import json
-import os
-
-DB_PATH = os.getenv("RIDE_DB_PATH", "ride_data.db")
-
-def initialize_database():
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS rides (
-                ride_id TEXT PRIMARY KEY,
-                summary TEXT,
-                seconds TEXT
-            )
-        ''')
-        conn.commit()
+import sqlite3
+from scripts.sanitize import sanitize
 
 def store_ride(ride_id, summary, seconds):
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT OR REPLACE INTO rides (ride_id, summary, seconds)
-            VALUES (?, ?, ?)
-        ''', (ride_id, json.dumps(summary), json.dumps(seconds)))
-        conn.commit()
+    conn = sqlite3.connect("ride_data.db")
+    c = conn.cursor()
 
-def get_all_rides():
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT ride_id, summary FROM rides ORDER BY ride_id DESC")
-        rows = cursor.fetchall()
-        return [
-            {
-                "ride_id": row[0],
-                "summary": json.loads(row[1])
-            }
-            for row in rows
-        ]
+    # Sanitize all values before json.dumps
+    summary_clean = sanitize(summary)
+    seconds_clean = sanitize(seconds)
 
-def get_ride_by_id(ride_id):
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT summary, seconds FROM rides WHERE ride_id = ?", (ride_id,))
-        row = cursor.fetchone()
-        if row:
-            summary = json.loads(row[0])
-            seconds = json.loads(row[1])
-            return summary, seconds
-        return None, None
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS rides (
+            ride_id TEXT PRIMARY KEY,
+            summary TEXT,
+            seconds TEXT
+        )
+    ''')
+    c.execute('''
+        INSERT OR REPLACE INTO rides (ride_id, summary, seconds)
+        VALUES (?, ?, ?)
+    ''', (ride_id, json.dumps(summary_clean), json.dumps(seconds_clean)))
+    
+    conn.commit()
+    conn.close()
