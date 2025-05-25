@@ -1,45 +1,48 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-
-from scripts.fetch_and_parse import process_latest_fit_file
-from scripts.ride_database import get_all_rides, get_ride_by_id, store_ride
-from scripts.trend_analysis import compute_trend_metrics
+from scripts.save_latest_ride_to_db import save_ride_to_db
 from scripts.sanitize import sanitize
+from scripts.trend_analysis import compute_trend_metrics
+from scripts.ride_database import get_all_rides, get_ride_by_id
 
 router = APIRouter()
 
 @router.get("/latest-ride-data")
 async def get_latest_ride_data():
     try:
-        summary = process_latest_fit_file()
-        full_data = summary.pop("full_data")
-        store_ride(summary, full_data)
-        return JSONResponse(content=sanitize({**summary, "full_data": full_data}))
+        save_ride_to_db()  # ✅ No argument needed
+        return JSONResponse(content={"message": "Ride saved successfully."})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
 @router.get("/trend-analysis")
 def get_trend_analysis():
     try:
-        result = compute_trend_metrics()
-        return JSONResponse(content=sanitize(result))
+        data = compute_trend_metrics()
+        return sanitize(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Trend analysis failed: {str(e)}")
 
 @router.get("/ride-history")
-def ride_history():
+def get_ride_history():
     try:
         rides = get_all_rides()
-        return {"rides": sanitize(rides)}
+        return {"rides": rides}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ride history fetch failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {str(e)}")
 
 @router.get("/ride/{ride_id}")
-def ride_by_id(ride_id: str):
+def get_specific_ride(ride_id: str):
     try:
-        ride = get_ride_by_id(ride_id)
-        if not ride:
-            raise HTTPException(status_code=404, detail="Ride not found")
-        return JSONResponse(content=sanitize(ride))
+        if ride_id == "latest":
+            rides = get_all_rides()
+            if not rides:
+                raise HTTPException(status_code=404, detail="No rides found.")
+            ride_id = rides[-1]["ride_id"]
+
+        ride_data = get_ride_by_id(ride_id)
+        if not ride_data:
+            raise HTTPException(status_code=404, detail="Ride not found.")
+        return sanitize(ride_data)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ride fetch failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch ride {ride_id}: {str(e)}")
