@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.parse_fit import parse_fit_file
 from scripts.fit_metrics import calculate_ride_metrics
+from scripts.ride_database import store_ride  # ✅ new import
 from scripts.sanitize import sanitize
 
 load_dotenv()
@@ -27,7 +28,9 @@ def process_latest_fit_file():
     fit_bytes = fit_stream.read()
     df = parse_fit_file(fit_bytes)
     summary = calculate_ride_metrics(df)
+    summary["full_data"] = df.to_dict(orient="records")
 
-    summary["full_data"] = df.to_dict(orient="records")  # ✅ attach full second-by-second data
+    # ✅ Store ride in database
+    store_ride(summary["ride_id"], summary)
 
     return sanitize(summary), sanitize(summary["full_data"])
