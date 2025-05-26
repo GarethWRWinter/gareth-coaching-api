@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from scripts.fetch_and_parse import process_latest_fit_file
@@ -11,15 +11,19 @@ router = APIRouter()
 @router.get("/latest-ride-data")
 def get_latest_ride_data():
     try:
-        summary, _ = process_latest_fit_file()  # ✅ fix tuple unpacking
-        return JSONResponse(content=summary)    # ✅ already sanitized
+        summary, _ = process_latest_fit_file()
+        return JSONResponse(content=summary)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
 @router.get("/ride-history")
-def ride_history():
+def ride_history(summary_only: bool = Query(False, description="Only return summary metrics (no full_data)")):
     try:
-        return JSONResponse(content=sanitize({"rides": get_all_rides()}))
+        rides = get_all_rides()
+        if summary_only:
+            for ride in rides:
+                ride.pop("full_data", None)  # ✅ Remove full_data from each ride
+        return JSONResponse(content=sanitize({"rides": rides}))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {str(e)}")
 
