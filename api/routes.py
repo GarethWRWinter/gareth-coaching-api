@@ -22,7 +22,7 @@ def ride_history(summary_only: bool = Query(False, description="Only return summ
         rides = get_all_rides()
         if summary_only:
             for ride in rides:
-                ride.pop("full_data", None)  # ✅ Remove full_data from each ride
+                ride.pop("full_data", None)
         return JSONResponse(content=sanitize({"rides": rides}))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {str(e)}")
@@ -44,3 +44,12 @@ def trend_analysis():
         return JSONResponse(content=sanitize(data))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Trend analysis failed: {str(e)}")
+
+@router.get("/backfill")
+def backfill():
+    try:
+        from scripts.backfill_from_dropbox import run_backfill
+        report = run_backfill()
+        return JSONResponse(content=report)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Backfill failed: {str(e)}")
