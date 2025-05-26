@@ -20,13 +20,14 @@ def get_latest_fit_file_from_dropbox():
     latest_file = max(files, key=lambda x: x.client_modified)
     metadata, res = dbx.files_download(latest_file.path_lower)
 
-    return BytesIO(res.content)  # streamed, to be read below
+    return BytesIO(res.content)
 
 def process_latest_fit_file():
     fit_stream = get_latest_fit_file_from_dropbox()
-    fit_bytes = fit_stream.read()  # ✅ convert to bytes for parse_fit_file
+    fit_bytes = fit_stream.read()
     df = parse_fit_file(fit_bytes)
-    summary, full_data = calculate_ride_metrics(df)
+    summary = calculate_ride_metrics(df)
 
-    summary["full_data"] = full_data
-    return sanitize(summary), sanitize(full_data)
+    summary["full_data"] = df.to_dict(orient="records")  # ✅ attach full second-by-second data
+
+    return sanitize(summary), sanitize(summary["full_data"])
