@@ -20,10 +20,12 @@ def calculate_ride_metrics(df: pd.DataFrame, ftp: int = DEFAULT_FTP) -> dict:
     max_hr = int(df["heart_rate"].max()) if "heart_rate" in df else None
     duration_sec = len(df)
 
-    # TSS calc fallback
+    # ✅ Fix TSS unpacking
     try:
-        tss = round(calculate_tss(df, ftp), 2)
-    except Exception:
+        tss_val, np_val, if_val = calculate_tss(df["power"], ftp)
+        tss = round(tss_val, 2)
+    except Exception as e:
+        print(f"TSS calculation failed: {e}")
         tss = None
 
     # Zones
@@ -33,7 +35,8 @@ def calculate_ride_metrics(df: pd.DataFrame, ftp: int = DEFAULT_FTP) -> dict:
         time_in_zone_minutes = {
             zone: round(seconds / 60, 1) for zone, seconds in time_in_zones.items()
         }
-    except Exception:
+    except Exception as e:
+        print(f"Zone analysis failed: {e}")
         time_in_zone_minutes = {}
 
     return {
