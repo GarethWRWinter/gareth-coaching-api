@@ -4,8 +4,10 @@ from pathlib import Path
 import pandas as pd
 from scripts.sanitize import sanitize
 
+# ✅ Path to persistent SQLite database file
 DB_PATH = Path("ride_data.db")
 
+# ✅ Create the table if it doesn't exist
 def initialize_database():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -19,9 +21,10 @@ def initialize_database():
     conn.commit()
     conn.close()
 
+# ✅ Save ride data to the database
 def store_ride(ride_id, summary):
     summary = sanitize(summary)
-    seconds = sanitize(summary.get("second_by_second", []))
+    seconds = sanitize(summary.get("full_data", []))  # ✅ FIXED KEY
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -32,6 +35,7 @@ def store_ride(ride_id, summary):
     conn.commit()
     conn.close()
 
+# ✅ Retrieve all stored ride summaries
 def get_all_rides():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -46,6 +50,7 @@ def get_all_rides():
         rides.append(sanitize(summary))
     return rides
 
+# ✅ Retrieve full summary + second-by-second data for a specific ride
 def get_ride_by_id(ride_id: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
