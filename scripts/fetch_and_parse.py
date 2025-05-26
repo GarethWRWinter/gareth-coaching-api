@@ -20,7 +20,10 @@ def get_latest_fit_file_from_dropbox():
     metadata, res = dbx.files_download(latest_file.path_lower)
 
     with open("latest_download.fit", "wb") as f:
-        f.write(res.content)
+        content = res.content
+        if isinstance(content, str):
+            content = content.encode("utf-8")  # ✅ ensure bytes
+        f.write(content)
 
     return "latest_download.fit"
 
