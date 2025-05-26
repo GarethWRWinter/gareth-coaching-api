@@ -35,7 +35,7 @@ def store_ride(ride_id, summary):
     conn.commit()
     conn.close()
 
-# ✅ Retrieve all stored ride summaries
+# ✅ Retrieve all stored ride summaries (with full metadata)
 def get_all_rides():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -63,3 +63,20 @@ def get_ride_by_id(ride_id: str):
         seconds = sanitize(json.loads(row[1]))
         return summary, seconds
     return None, None
+
+# ✅ NEW: Get lightweight ride summaries for trend analysis (no second-by-second data)
+def get_all_ride_summaries():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT ride_id, summary FROM rides ORDER BY ride_id DESC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    summaries = []
+    for ride_id, summary_json in rows:
+        summary = json.loads(summary_json)
+        summary["ride_id"] = ride_id
+        for key in ["full_data"]:  # remove heavy keys
+            summary.pop(key, None)
+        summaries.append(sanitize(summary))
+    return summaries
