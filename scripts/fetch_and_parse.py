@@ -1,5 +1,6 @@
 import os
 import dropbox
+from io import BytesIO
 from dotenv import load_dotenv
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.parse_fit import parse_fit_file
@@ -19,24 +20,12 @@ def get_latest_fit_file_from_dropbox():
     latest_file = max(files, key=lambda x: x.client_modified)
     metadata, res = dbx.files_download(latest_file.path_lower)
 
-    with open("latest_download.fit", "wb") as f:
-        content = res.content
-        if isinstance(content, str):
-            content = content.encode("utf-8")  # ✅ Fix: enforce bytes
-        f.write(content)
-
-    return "latest_download.fit"
+    return BytesIO(res.content)  # ✅ Parse from memory
 
 def process_latest_fit_file():
-    fit_path = get_latest_fit_file_from_dropbox()
-    df = parse_fit_file(fit_path)
+    fit_data = get_latest_fit_file_from_dropbox()  # now a BytesIO stream
+    df = parse_fit_file(fit_data)
     summary, full_data = calculate_ride_metrics(df)
 
-    # Attach full_data to summary for storage
     summary["full_data"] = full_data
-
-    # Sanitize both
-    sanitized_summary = sanitize(summary)
-    sanitized_data = sanitize(full_data)
-
-    return sanitized_summary, sanitized_data
+    return sanitize(summary), sanitize(full_data)
