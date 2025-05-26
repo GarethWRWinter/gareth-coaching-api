@@ -11,8 +11,8 @@ router = APIRouter()
 @router.get("/latest-ride-data")
 def get_latest_ride_data():
     try:
-        ride_summary = process_latest_fit_file()  # Already handles Dropbox fetch, parsing, DB save
-        return JSONResponse(content=sanitize(ride_summary))
+        summary, _ = process_latest_fit_file()  # ✅ Unpack correctly
+        return JSONResponse(content=sanitize(summary))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
