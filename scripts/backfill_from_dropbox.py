@@ -1,9 +1,12 @@
 import os
 import dropbox
+from io import BytesIO
 from dotenv import load_dotenv
+
 from scripts.dropbox_auth import refresh_dropbox_token
-from scripts.ride_database import get_all_rides
-from scripts.ride_processor import process_fit_file
+from scripts.ride_database import get_all_rides, store_ride
+from scripts.parse_fit import parse_fit_file
+from scripts.fit_metrics import calculate_ride_metrics
 
 load_dotenv()
 
@@ -35,11 +38,14 @@ def run_backfill():
 
         metadata, res = dropbox.Dropbox(refresh_dropbox_token()).files_download(file.path_lower)
         fit_bytes = res.content
-        process_fit_file(fit_bytes)
+        df = parse_fit_file(fit_bytes)
+        summary = calculate_ride_metrics(df)
+        summary["full_data"] = df.to_dict(orient="records")
+        store_ride(summary["ride_id"], summary)
+
         added += 1
 
     return {"backfilled": added, "skipped": skipped, "total": added + skipped}
 
 if __name__ == "__main__":
-    result = run_backfill()
-    print(result)
+    print(run_backfill())
