@@ -22,7 +22,7 @@ def get_latest_fit_file_from_dropbox():
     with open("latest_download.fit", "wb") as f:
         content = res.content
         if isinstance(content, str):
-            content = content.encode("utf-8")  # ✅ ensure bytes
+            content = content.encode("utf-8")  # ✅ Fix: enforce bytes
         f.write(content)
 
     return "latest_download.fit"
