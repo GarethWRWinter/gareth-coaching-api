@@ -11,8 +11,8 @@ router = APIRouter()
 @router.get("/latest-ride-data")
 def get_latest_ride_data():
     try:
-        summary, _ = process_latest_fit_file()  # ✅ Unpack correctly
-        return JSONResponse(content=sanitize(summary))
+        summary, _ = process_latest_fit_file()  # ✅ fix tuple unpacking
+        return JSONResponse(content=summary)    # ✅ already sanitized
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
