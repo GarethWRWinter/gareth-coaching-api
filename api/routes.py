@@ -2,9 +2,10 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from scripts.fetch_and_parse import process_latest_fit_file
-from scripts.ride_database import get_all_rides, get_ride_by_id
+from scripts.ride_database import get_all_rides, get_ride_by_id, get_all_ride_summaries
 from scripts.trend_analysis import compute_trend_metrics
 from scripts.sanitize import sanitize
+from scripts.fetch_fit_from_dropbox import backfill_ride_history
 
 router = APIRouter()
 
@@ -53,3 +54,22 @@ def backfill():
         return JSONResponse(content=report)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Backfill failed: {str(e)}")
+
+@router.get("/trend-analysis-safe")
+def trend_analysis_safe():
+    try:
+        # Step 1: Trigger backfill
+        backfill_result = backfill_ride_history()
+        if backfill_result.get("total", 0) == 0:
+            return {"message": "Backfill completed, but no rides found in Dropbox."}
+
+        # Step 2: Pull rides from database
+        ride_summaries = get_all_ride_summaries()
+        if not ride_summaries:
+            return {"message": "No ride data available for trend analysis."}
+
+        # Step 3: Run analysis
+        return JSONResponse(content=sanitize(compute_trend_metrics(ride_summaries)))
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Trend analysis safe failed: {str(e)}")
