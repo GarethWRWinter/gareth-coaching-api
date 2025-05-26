@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 def process_and_store_latest_fit_file():
     try:
-        summary = process_latest_fit_file()
-        store_ride(summary)
+        ride_id, summary, seconds = process_latest_fit_file()
+        store_ride(ride_id, summary, seconds)
         return summary
     except Exception as e:
         logger.exception("Failed to process latest ride")
