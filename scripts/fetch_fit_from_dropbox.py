@@ -1,7 +1,8 @@
 import os
 from scripts.dropbox_auth import refresh_dropbox_token
-from scripts.dropbox_utils import list_fit_files_in_dropbox, download_fit_file_from_dropbox
-from scripts.process_single_fit import process_fit_file
+from scripts.fetch_and_parse import list_fit_files_in_dropbox, download_fit_file_from_dropbox
+from scripts.ride_processor import process_fit_file
+
 
 def backfill_ride_history():
     access_token = refresh_dropbox_token()
@@ -19,6 +20,7 @@ def backfill_ride_history():
             skipped += 1
 
     return {"backfilled": backfilled, "skipped": skipped, "total": len(filenames)}
+
 
 def get_latest_fit_file_from_dropbox():
     access_token = refresh_dropbox_token()
