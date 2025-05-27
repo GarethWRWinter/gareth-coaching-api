@@ -1,36 +1,30 @@
 import os
 import dropbox
-from io import BytesIO
 from dotenv import load_dotenv
-from scripts.dropbox_auth import refresh_dropbox_token
-from scripts.parse_fit import parse_fit_file
-from scripts.fit_metrics import calculate_ride_metrics
-from scripts.ride_database import store_ride  # ✅ new import
-from scripts.sanitize import sanitize
+from scripts.fit_parser import parse_fit_file
 
 load_dotenv()
-
+DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")
 DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
 
-def get_latest_fit_file_from_dropbox():
-    access_token = refresh_dropbox_token()
-    dbx = dropbox.Dropbox(access_token)
-
+def list_fit_files_in_dropbox():
+    dbx = dropbox.Dropbox(DROPBOX_TOKEN)
     response = dbx.files_list_folder(DROPBOX_FOLDER)
-    files = [entry for entry in response.entries if isinstance(entry, dropbox.files.FileMetadata)]
-    latest_file = max(files, key=lambda x: x.client_modified)
-    metadata, res = dbx.files_download(latest_file.path_lower)
+    return [entry.name for entry in response.entries if entry.name.endswith(".fit")]
 
-    return BytesIO(res.content)
+def download_fit_file_from_dropbox(filename: str) -> str:
+    dbx = dropbox.Dropbox(DROPBOX_TOKEN)
+    dropbox_path = f"{DROPBOX_FOLDER}/{filename}"
+    local_path = f"fit_files/{filename}"
+    os.makedirs("fit_files", exist_ok=True)
 
-def process_latest_fit_file():
-    fit_stream = get_latest_fit_file_from_dropbox()
-    fit_bytes = fit_stream.read()
-    df = parse_fit_file(fit_bytes)
-    summary = calculate_ride_metrics(df)
-    summary["full_data"] = df.to_dict(orient="records")
+    with open(local_path, "wb") as f:
+        metadata, res = dbx.files_download(path=dropbox_path)
+        f.write(res.content)
 
-    # ✅ Store ride in database
-    store_ride(summary["ride_id"], summary)
+    return local_path
 
-    return sanitize(summary), sanitize(summary["full_data"])
+def fetch_and_parse_fit_file(filename: str):
+    local_path = download_fit_file_from_dropbox(filename)
+    parsed = parse_fit_file(local_path)
+    return parsed
