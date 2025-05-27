@@ -1,31 +1,23 @@
-# Web framework
+# --- Web server and API ---
 fastapi==0.115.2
-
-# ASGI server for FastAPI
 uvicorn==0.23.2
 
-# Data processing
-pandas==2.2.2
-numpy==2.2.5  # Required by pandas
-
-# Dropbox API
+# --- Dropbox and environment ---
 dropbox==11.36.2
-
-# Environment variable support
 python-dotenv==1.0.1
 
-# Date and time utilities
+# --- Data and time handling ---
+pandas==2.2.2
+numpy==2.2.5
+fitparse==1.2.0
 python-dateutil==2.9.0.post0
 pytz==2025.2
 
-# SQLite and database interaction
+# --- Database ---
 sqlalchemy==2.0.30
 
-# FIT file parsing
-fitparse==1.2.0
-
-# HTTP requests
+# --- Networking ---
 requests==2.32.3
 
-# OpenAI API for GPT integration
+# --- OpenAI API integration ---
 openai==1.25.2

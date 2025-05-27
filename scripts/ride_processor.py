@@ -1,45 +1,25 @@
-import os
-from scripts.dropbox_utils import (
-    get_latest_fit_file_from_dropbox,
-    list_fit_files_in_dropbox,
-    download_fit_file_from_dropbox
-)
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
 from scripts.fit_parser import parse_fit_file
 from scripts.fit_metrics import calculate_ride_metrics
 from scripts.ride_database import store_ride, get_all_ride_summaries, get_ride_by_id
-from scripts.sanitize import sanitize
-from datetime import datetime
+from scripts.process_single_fit import process_fit_file
 
-def process_latest_fit_file():
-    fit_file_bytes, filename = get_latest_fit_file_from_dropbox()
-    df = parse_fit_file(fit_file_bytes)
-    summary = calculate_ride_metrics(df)
-    store_ride(summary["ride_id"], df, summary)
-    return sanitize(df.to_dict(orient="records")), sanitize(summary)
+def process_latest_fit_file(access_token: str) -> dict:
+    fit_file_path = get_latest_fit_file_from_dropbox(access_token)
+    return process_fit_file(fit_file_path)
 
-def backfill_all_rides():
-    filenames = list_fit_files_in_dropbox()
+def backfill_all_rides(access_token: str) -> dict:
+    from scripts.fetch_fit_from_dropbox import get_all_fit_files_from_dropbox  # 👈 delayed import to avoid circular ref
+
+    fit_files = get_all_fit_files_from_dropbox(access_token)
     backfilled = 0
     skipped = 0
 
-    for filename in filenames:
-        ride_id = os.path.splitext(filename)[0]
-        existing = get_ride_by_id(ride_id)
-        if existing:
-            skipped += 1
-            continue
-
+    for fit_path in fit_files:
         try:
-            fit_file_bytes = download_fit_file_from_dropbox(filename)
-            df = parse_fit_file(fit_file_bytes)
-            summary = calculate_ride_metrics(df)
-            store_ride(summary["ride_id"], df, summary)
+            process_fit_file(fit_path)
             backfilled += 1
-        except Exception as e:
-            print(f"Failed to process {filename}: {e}")
-            continue
+        except Exception:
+            skipped += 1
 
-    return backfilled, skipped, backfilled + skipped
-
-def get_all_ride_summaries(include_full_data=False):
-    return get_all_ride_summaries(include_full_data=include_full_data)
+    return {"backfilled": backfilled, "skipped": skipped, "total": len(fit_files)}
