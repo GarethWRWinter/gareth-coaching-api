@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import pandas as pd
 
-# ✅ Inlined sanitize logic — no more import from scripts.sanitize
+# ✅ Inlined sanitize logic
 def sanitize(obj):
     if isinstance(obj, dict):
         return {k: sanitize(v) for k, v in obj.items()}
@@ -37,7 +37,7 @@ def initialize_database():
 # ✅ Save ride data to the database
 def store_ride(ride_id, summary):
     summary = sanitize(summary)
-    seconds = sanitize(summary.get("full_data", []))  # ✅ FIXED KEY
+    seconds = sanitize(summary.get("full_data", []))  # ✅ Save full second-by-second data separately
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
