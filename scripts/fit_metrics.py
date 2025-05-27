@@ -1,52 +1,45 @@
 import numpy as np
-import pandas as pd
-from scripts.calculate_tss import calculate_tss
-from scripts.calculate_power_zones import get_power_zones
-from scripts.time_in_zones import calculate_time_in_zones
-from scripts.constants import DEFAULT_FTP
-from datetime import datetime
+from collections import defaultdict
 
-def calculate_ride_metrics(df: pd.DataFrame, ftp: int = DEFAULT_FTP) -> dict:
-    df = df.copy()
+def calculate_ride_metrics(fit_df):
+    """
+    Compute key ride metrics from the parsed FIT dataframe.
+    Includes basic metrics and left/right pedal balance.
+    """
+    summary = {}
 
-    # Fallbacks
-    start_time = df['timestamp'].min() if 'timestamp' in df else pd.Timestamp.now()
-    ride_id = start_time.strftime("%Y%m%d_%H%M%S") if not pd.isna(start_time) else "unknown"
+    if fit_df.empty:
+        return summary
 
-    # Compute metrics only if columns exist
-    avg_power = round(df["power"].mean(), 2) if "power" in df else None
-    max_power = int(df["power"].max()) if "power" in df else None
-    avg_hr = round(df["heart_rate"].mean(), 1) if "heart_rate" in df else None
-    max_hr = int(df["heart_rate"].max()) if "heart_rate" in df else None
-    duration_sec = len(df)
+    # Start & duration
+    summary["start_time"] = fit_df["timestamp"].iloc[0].isoformat()
+    summary["duration_s"] = len(fit_df)
 
-    # ✅ Fix TSS unpacking
-    try:
-        tss_val, np_val, if_val = calculate_tss(df["power"], ftp)
-        tss = round(tss_val, 2)
-    except Exception as e:
-        print(f"TSS calculation failed: {e}")
-        tss = None
+    # Power & heart rate
+    summary["avg_power"] = int(np.nanmean(fit_df.get("power", np.nan)))
+    summary["max_power"] = int(np.nanmax(fit_df.get("power", np.nan)))
+    summary["avg_hr"] = int(np.nanmean(fit_df.get("heart_rate", np.nan)))
+    summary["max_hr"] = int(np.nanmax(fit_df.get("heart_rate", np.nan)))
+    summary["avg_cadence"] = int(np.nanmean(fit_df.get("cadence", np.nan)))
 
-    # Zones
-    try:
-        zones = get_power_zones(ftp)
-        time_in_zones = calculate_time_in_zones(df["power"], zones) if "power" in df else {}
-        time_in_zone_minutes = {
-            zone: round(seconds / 60, 1) for zone, seconds in time_in_zones.items()
-        }
-    except Exception as e:
-        print(f"Zone analysis failed: {e}")
-        time_in_zone_minutes = {}
+    # TSS (Training Stress Score) – simple estimation
+    ftp = 308  # You can make this dynamic later
+    norm_power = (np.mean(np.power(fit_df.get("power", np.nan), 4)))**0.25
+    intensity = norm_power / ftp if ftp > 0 else 0
+    duration_hr = len(fit_df) / 3600
+    tss = duration_hr * intensity**2 * 100
+    summary["tss"] = round(tss, 1)
 
-    return {
-        "ride_id": ride_id,
-        "start_time": str(start_time),
-        "duration_sec": duration_sec,
-        "avg_power": avg_power,
-        "max_power": max_power,
-        "avg_hr": avg_hr,
-        "max_hr": max_hr,
-        "tss": tss,
-        "time_in_zones_min": time_in_zone_minutes,
-    }
+    # Pedal balance
+    left = fit_df.get("left_right_balance", np.nan)
+    if not np.isnan(left).all():
+        left_clean = left[left > 0]
+        if len(left_clean) > 0:
+            left_percent = int(np.nanmean(left_clean) * 100 / 255)
+            right_percent = 100 - left_percent
+            summary["pedal_balance"] = {
+                "left": left_percent,
+                "right": right_percent
+            }
+
+    return summary
