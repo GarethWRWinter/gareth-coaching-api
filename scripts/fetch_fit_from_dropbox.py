@@ -1,10 +1,11 @@
 import os
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.fetch_and_parse import list_fit_files_in_dropbox, download_fit_file_from_dropbox
-from scripts.ride_processor import process_fit_file
 
 
 def backfill_ride_history():
+    from scripts.ride_processor import process_fit_file  # Moved here to avoid circular import
+
     access_token = refresh_dropbox_token()
     dropbox_folder = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
     filenames = list_fit_files_in_dropbox(access_token, dropbox_folder)
