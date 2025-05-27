@@ -1,30 +1,27 @@
-import os
 import logging
-from scripts.parse_fit import parse_fit_file
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
+from scripts.fit_parser import parse_fit_file
 from scripts.fit_metrics import calculate_ride_metrics
 from scripts.ride_database import store_ride
 
-def process_fit_file(file_path: str) -> bool:
+logger = logging.getLogger(__name__)
+
+def process_latest_fit_file():
     """
-    Parses a .fit file, calculates ride metrics, and stores the result.
-    Returns True if successful, False otherwise.
+    Fetch, parse, calculate, and store the latest ride from Dropbox.
+    Returns:
+        tuple: (ride_summary: dict, full_fit_data: list of dicts)
     """
-    try:
-        data = parse_fit_file(file_path)
-        if not data or data.empty:
-            logging.warning(f"Empty or invalid data from {file_path}")
-            return False
+    # Step 1: Get latest .fit file from Dropbox
+    file_bytes, filename, timestamp_str = get_latest_fit_file_from_dropbox()
 
-        summary = calculate_ride_metrics(data)
-        if not summary:
-            logging.warning(f"Metrics not computed for {file_path}")
-            return False
+    # Step 2: Parse the FIT file into a clean list of data points
+    fit_data = parse_fit_file(file_bytes)
 
-        ride_id = summary.get("ride_id") or os.path.basename(file_path).replace(".fit", "")
-        store_ride(ride_id, summary)
-        logging.info(f"Ride {ride_id} processed and stored successfully.")
-        return True
+    # Step 3: Calculate ride summary metrics
+    ride_summary = calculate_ride_metrics(fit_data, timestamp_str)
 
-    except Exception as e:
-        logging.error(f"Error processing {file_path}: {e}")
-        return False
+    # Step 4: Store summary + full FIT in SQLite
+    store_ride(ride_summary, fit_data)
+
+    return ride_summary, fit_data
