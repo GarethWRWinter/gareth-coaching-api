@@ -2,7 +2,20 @@ import sqlite3
 import json
 from pathlib import Path
 import pandas as pd
-from scripts.sanitize import sanitize
+
+# ✅ Inlined sanitize logic — no more import from scripts.sanitize
+def sanitize(obj):
+    if isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    elif isinstance(obj, (int, float, str)) or obj is None:
+        return obj
+    elif isinstance(obj, (pd.Timestamp, pd.Timedelta)):
+        return str(obj)
+    elif hasattr(obj, "item"):
+        return obj.item()
+    return str(obj)
 
 # ✅ Path to persistent SQLite database file
 DB_PATH = Path("ride_data.db")
@@ -64,7 +77,7 @@ def get_ride_by_id(ride_id: str):
         return summary, seconds
     return None, None
 
-# ✅ NEW: Get lightweight ride summaries for trend analysis (no second-by-second data)
+# ✅ Get lightweight ride summaries for trend analysis (no second-by-second data)
 def get_all_ride_summaries():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
