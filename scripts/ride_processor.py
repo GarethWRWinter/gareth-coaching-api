@@ -1,14 +1,36 @@
+import os
 import logging
-from scripts.fetch_and_parse import process_latest_fit_file
+from datetime import datetime
+from scripts.parse_fit import parse_fit_file
+from scripts.fit_metrics import calculate_ride_metrics
 from scripts.ride_database import store_ride
 
-logger = logging.getLogger(__name__)
-
-def process_and_store_latest_fit_file():
+def process_fit_file(file_path: str) -> bool:
+    """
+    Parse a .fit file, compute metrics, and store it in the database.
+    Returns True if stored successfully.
+    """
     try:
-        ride_id, summary, seconds = process_latest_fit_file()
-        store_ride(ride_id, summary, seconds)
-        return summary
+        # Parse the file
+        data = parse_fit_file(file_path)
+        if not data:
+            logging.warning(f"No data parsed from: {file_path}")
+            return False
+
+        # Compute metrics
+        summary = calculate_ride_metrics(data)
+        if not summary:
+            logging.warning(f"Metrics could not be calculated for: {file_path}")
+            return False
+
+        # Build ride ID from filename
+        ride_id = os.path.basename(file_path).replace(".fit", "").replace("/", "_")
+
+        # Store ride
+        store_ride(ride_id, summary)
+        logging.info(f"Stored ride {ride_id} successfully.")
+        return True
+
     except Exception as e:
-        logger.exception("Failed to process latest ride")
-        raise
+        logging.error(f"Failed to process file {file_path}: {str(e)}")
+        return False
