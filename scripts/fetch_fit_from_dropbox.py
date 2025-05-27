@@ -1,53 +1,29 @@
 import os
-import dropbox
-import logging
-
-from scripts.ride_processor import process_fit_file
+from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.dropbox_utils import list_fit_files_in_dropbox, download_fit_file_from_dropbox
-
-DROPBOX_FOLDER = os.environ.get("DROPBOX_FOLDER", "/WahooFitness")
-
-
-def get_latest_fit_file_from_dropbox(access_token):
-    dbx = dropbox.Dropbox(access_token)
-    logging.info("Fetching list of files from Dropbox...")
-
-    res = dbx.files_list_folder(DROPBOX_FOLDER)
-    fit_files = [entry for entry in res.entries if entry.name.endswith(".fit")]
-
-    if not fit_files:
-        raise FileNotFoundError("No .fit files found in Dropbox folder.")
-
-    latest_file = max(fit_files, key=lambda entry: entry.client_modified)
-    metadata, response = dbx.files_download(latest_file.path_display)
-    file_bytes = response.content
-    filename = latest_file.name
-
-    return file_bytes, filename, metadata  # ✅ 3-tuple required
-
+from scripts.process_single_fit import process_fit_file
 
 def backfill_ride_history():
-    fit_files = list_fit_files_in_dropbox()
-    processed = 0
-    skipped = 0
+    access_token = refresh_dropbox_token()
+    dropbox_folder = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
+    filenames = list_fit_files_in_dropbox(access_token, dropbox_folder)
 
-    for fit_file in fit_files:
-        ride_id = fit_file.replace(".fit", "").replace("/", "_")
-        local_path = download_fit_file_from_dropbox(fit_file)
+    backfilled, skipped = 0, 0
+    for fname in sorted(filenames):
+        local_path = os.path.join("/tmp", os.path.basename(fname))
+        download_fit_file_from_dropbox(access_token, fname, local_path)
+        summary, fit_data = process_fit_file(local_path)
+        if summary:
+            backfilled += 1
+        else:
+            skipped += 1
 
-        if local_path:
-            try:
-                result = process_fit_file(local_path)
-                if result:
-                    processed += 1
-                else:
-                    skipped += 1
-            except Exception as e:
-                print(f"Failed to process {fit_file}: {e}")
-                skipped += 1
+    return {"backfilled": backfilled, "skipped": skipped, "total": len(filenames)}
 
-    return {
-        "backfilled": processed,
-        "skipped": skipped,
-        "total": len(fit_files)
-    }
+def get_latest_fit_file_from_dropbox():
+    access_token = refresh_dropbox_token()
+    dropbox_folder = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
+    filenames = list_fit_files_in_dropbox(access_token, dropbox_folder)
+    if not filenames:
+        return None
+    return access_token, filenames[-1]
