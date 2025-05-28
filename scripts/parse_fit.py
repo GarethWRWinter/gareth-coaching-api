@@ -1,22 +1,29 @@
-import io
 import pandas as pd
 from fitparse import FitFile
 
 
-def parse_fit_file(fit_bytes: bytes) -> pd.DataFrame:
-    fitfile = FitFile(io.BytesIO(fit_bytes))
+def parse_fit_file_to_dataframe(file_path: str) -> pd.DataFrame:
+    """
+    Parses a .FIT file and returns a clean DataFrame with key metrics.
+    """
+    fitfile = FitFile(file_path)
     records = []
 
     for record in fitfile.get_messages("record"):
-        row = {}
+        data = {}
         for field in record:
-            row[field.name] = field.value
-        if row:
-            records.append(row)
+            if field.name and field.value is not None:
+                data[field.name] = field.value
+        records.append(data)
 
     if not records:
-        raise ValueError("No records found in FIT file.")
+        raise ValueError("No record messages found in FIT file.")
 
     df = pd.DataFrame(records)
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
+
+    # Ensure timestamps are present and sorted
+    if "timestamp" not in df.columns:
+        raise ValueError("Missing timestamp field in FIT file.")
+    df = df[df["timestamp"].notna()].sort_values("timestamp").reset_index(drop=True)
+
     return df

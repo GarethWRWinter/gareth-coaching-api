@@ -1,25 +1,45 @@
-from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
+import os
+from datetime import datetime
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox, download_fit_file_from_dropbox
 from scripts.fit_parser import parse_fit_file
-from scripts.fit_metrics import calculate_ride_metrics
 from scripts.ride_database import store_ride, get_all_ride_summaries, get_ride_by_id
-from scripts.process_single_fit import process_fit_file
+from scripts.fit_metrics import calculate_ride_metrics
 
-def process_latest_fit_file(access_token: str) -> dict:
-    fit_file_path = get_latest_fit_file_from_dropbox(access_token)
-    return process_fit_file(fit_file_path)
 
-def backfill_all_rides(access_token: str) -> dict:
-    from scripts.fetch_fit_from_dropbox import get_all_fit_files_from_dropbox  # 👈 delayed import to avoid circular ref
+def process_latest_fit_file():
+    """
+    Downloads, parses, calculates, and stores the latest ride from Dropbox.
+    Returns: summary (dict), data (list of dicts)
+    """
+    latest_file_path = get_latest_fit_file_from_dropbox()
+    local_path = download_fit_file_from_dropbox(latest_file_path)
 
-    fit_files = get_all_fit_files_from_dropbox(access_token)
-    backfilled = 0
-    skipped = 0
+    df = parse_fit_file(local_path)
+    summary, data = calculate_ride_metrics(df)
 
-    for fit_path in fit_files:
-        try:
-            process_fit_file(fit_path)
-            backfilled += 1
-        except Exception:
-            skipped += 1
+    store_ride(summary, data)
+    return summary, data
 
-    return {"backfilled": backfilled, "skipped": skipped, "total": len(fit_files)}
+
+def backfill_all_rides():
+    """
+    Backfills all available FIT files from Dropbox, skipping already-logged rides.
+    """
+    from scripts.fetch_and_parse import list_fit_files_in_dropbox
+    existing_ids = {r['ride_id'] for r in get_all_ride_summaries()}
+
+    all_files = list_fit_files_in_dropbox()
+    processed = []
+
+    for fit_path in all_files:
+        ride_id = os.path.basename(fit_path).split(".")[0]
+        if ride_id in existing_ids:
+            continue
+
+        local_path = download_fit_file_from_dropbox(fit_path)
+        df = parse_fit_file(local_path)
+        summary, data = calculate_ride_metrics(df)
+        store_ride(summary, data)
+        processed.append(summary["ride_id"])
+
+    return {"backfilled_rides": processed}
