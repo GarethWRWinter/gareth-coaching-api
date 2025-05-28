@@ -1,45 +1,35 @@
 import os
-from datetime import datetime
-from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox, download_fit_file_from_dropbox
-from scripts.fit_parser import parse_fit_file
+from scripts.fetch_fit_from_dropbox import (
+    get_latest_fit_file_from_dropbox,
+    download_fit_file_from_dropbox
+)
+from scripts.parse_fit import parse_fit_file
+from scripts.fit_parser import calculate_ride_metrics
 from scripts.ride_database import store_ride, get_all_ride_summaries, get_ride_by_id
-from scripts.fit_metrics import calculate_ride_metrics
+from dotenv import load_dotenv
 
+load_dotenv()
+
+DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
 
 def process_latest_fit_file():
-    """
-    Downloads, parses, calculates, and stores the latest ride from Dropbox.
-    Returns: summary (dict), data (list of dicts)
-    """
-    latest_file_path = get_latest_fit_file_from_dropbox()
-    local_path = download_fit_file_from_dropbox(latest_file_path)
+    # Step 1: Get latest filename
+    file_name = get_latest_fit_file_from_dropbox(DROPBOX_FOLDER)
 
+    # Step 2: Download to temp location
+    local_path = f"/tmp/{file_name}"
+    download_fit_file_from_dropbox(DROPBOX_FOLDER, file_name, local_path)
+
+    # Step 3: Parse FIT file into raw data
     df = parse_fit_file(local_path)
-    summary, data = calculate_ride_metrics(df)
 
-    store_ride(summary, data)
-    return summary, data
+    # Step 4: Generate ride summary
+    ride_summary = calculate_ride_metrics(df, file_name)
 
+    # Step 5: Store both
+    store_ride(ride_summary, df)
+
+    return ride_summary, df
 
 def backfill_all_rides():
-    """
-    Backfills all available FIT files from Dropbox, skipping already-logged rides.
-    """
-    from scripts.fetch_and_parse import list_fit_files_in_dropbox
-    existing_ids = {r['ride_id'] for r in get_all_ride_summaries()}
-
-    all_files = list_fit_files_in_dropbox()
-    processed = []
-
-    for fit_path in all_files:
-        ride_id = os.path.basename(fit_path).split(".")[0]
-        if ride_id in existing_ids:
-            continue
-
-        local_path = download_fit_file_from_dropbox(fit_path)
-        df = parse_fit_file(local_path)
-        summary, data = calculate_ride_metrics(df)
-        store_ride(summary, data)
-        processed.append(summary["ride_id"])
-
-    return {"backfilled_rides": processed}
+    raise NotImplementedError("Backfill functionality is not implemented in this version.")
