@@ -1,23 +1,34 @@
-from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
-from scripts.fit_parser import calculate_ride_metrics
+from scripts.parse_fit import parse_fit
+from scripts.fit_metrics import calculate_ride_metrics
+from scripts.ride_database import store_ride, get_all_rides, get_ride
 from scripts.sanitize import sanitize
 
 def process_latest_fit_file():
-    try:
-        access_token = refresh_dropbox_token()
-        file_path, file_name = get_latest_fit_file_from_dropbox(access_token)
-        ride_summary, ride_data = calculate_ride_metrics(file_path, file_name)
-        return sanitize(ride_summary), sanitize(ride_data)
-    except Exception as e:
-        raise RuntimeError(f"Failed to process latest ride: {e}")
+    # Download latest .fit file
+    local_path = get_latest_fit_file_from_dropbox()
 
-# These will be implemented later
+    # Parse .fit to DataFrame
+    df = parse_fit(local_path)
+    if df is None or df.empty:
+        raise ValueError("Parsed DataFrame is empty or invalid")
+
+    # Calculate summary
+    ride_summary = calculate_ride_metrics(df)
+
+    # Store in DB
+    store_ride(ride_summary, df)
+
+    # Sanitize and return
+    return sanitize(ride_summary), df.to_dict(orient="records")
+
 def get_all_ride_summaries():
-    raise NotImplementedError("This function will return a history of all rides.")
+    all_rides = get_all_rides()
+    return sanitize(all_rides)
 
 def get_ride_by_id(ride_id):
-    raise NotImplementedError("This function will return a specific ride by ID.")
+    ride = get_ride(ride_id)
+    return sanitize(ride)
 
 def backfill_all_rides():
-    raise NotImplementedError("This function will load historical rides from Dropbox.")
+    return {"detail": "Backfill logic not implemented yet."}
