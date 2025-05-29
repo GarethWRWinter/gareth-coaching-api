@@ -1,44 +1,42 @@
-from fastapi import APIRouter, HTTPException, Query
-from scripts.ride_processor import process_latest_fit_file, get_all_ride_summaries, get_ride_by_id, backfill_all_rides
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+from scripts.ride_processor import (
+    process_latest_fit_file,
+    get_all_ride_summaries,
+    get_ride_by_id,
+    backfill_all_rides
+)
 
 router = APIRouter()
 
 @router.get("/latest-ride-data")
-def get_latest_ride():
+def latest_ride_data():
     try:
-        full_data, summary = process_latest_fit_file()
+        ride_summary, ride_data = process_latest_fit_file()
         return {
-            "ride_summary": summary,
-            "ride_data": full_data
+            "summary": ride_summary,
+            "data": ride_data
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to process latest ride: {e}"})
 
 @router.get("/ride-history")
-def ride_history(summary_only: bool = Query(default=True)):
+def ride_history():
     try:
-        if summary_only:
-            return {"rides": get_all_ride_summaries()}
-        else:
-            # Returns full second-by-second data for each ride
-            return {"rides": get_all_ride_summaries(include_full_data=True)}
+        return get_all_ride_summaries()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {str(e)}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to fetch ride history: {e}"})
 
 @router.get("/ride/{ride_id}")
 def get_ride(ride_id: str):
     try:
-        data = get_ride_by_id(ride_id)
-        if not data:
-            raise HTTPException(status_code=404, detail="Ride not found")
-        return data
+        return get_ride_by_id(ride_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching ride {ride_id}: {str(e)}")
+        return JSONResponse(status_code=500, content={"detail": f"Failed to fetch ride {ride_id}: {e}"})
 
-@router.get("/backfill")
-def backfill():
+@router.post("/backfill")
+def backfill_rides():
     try:
-        backfilled, skipped, total = backfill_all_rides()
-        return {"backfilled": backfilled, "skipped": skipped, "total": total}
+        return backfill_all_rides()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Backfill failed: {str(e)}")
+        return JSONResponse(status_code=500, content={"detail": f"Backfill failed: {e}"})
