@@ -1,32 +1,16 @@
 import os
-from scripts.dropbox_auth import refresh_dropbox_token
-from scripts.fetch_and_parse import list_fit_files_in_dropbox, download_fit_file_from_dropbox
+import dropbox
 
+def get_latest_fit_file_from_dropbox(access_token):
+    dbx = dropbox.Dropbox(access_token)
+    folder_path = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+    files = dbx.files_list_folder(folder_path).entries
+    fit_files = [f for f in files if f.name.endswith(".fit")]
+    latest = max(fit_files, key=lambda f: f.client_modified)
+    return folder_path, latest.name, f"/tmp/{latest.name}"
 
-def backfill_ride_history():
-    from scripts.ride_processor import process_fit_file  # Moved here to avoid circular import
-
-    access_token = refresh_dropbox_token()
-    dropbox_folder = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
-    filenames = list_fit_files_in_dropbox(access_token, dropbox_folder)
-
-    backfilled, skipped = 0, 0
-    for fname in sorted(filenames):
-        local_path = os.path.join("/tmp", os.path.basename(fname))
-        download_fit_file_from_dropbox(access_token, fname, local_path)
-        summary, fit_data = process_fit_file(local_path)
-        if summary:
-            backfilled += 1
-        else:
-            skipped += 1
-
-    return {"backfilled": backfilled, "skipped": skipped, "total": len(filenames)}
-
-
-def get_latest_fit_file_from_dropbox():
-    access_token = refresh_dropbox_token()
-    dropbox_folder = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
-    filenames = list_fit_files_in_dropbox(access_token, dropbox_folder)
-    if not filenames:
-        return None
-    return access_token, filenames[-1]
+def download_fit_file_from_dropbox(access_token, folder_path, file_name, local_path):
+    dbx = dropbox.Dropbox(access_token)
+    metadata, res = dbx.files_download(path=f"{folder_path}/{file_name}")
+    with open(local_path, "wb") as f:
+        f.write(res.content)
