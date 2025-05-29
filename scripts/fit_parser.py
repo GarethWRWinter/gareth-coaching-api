@@ -1,38 +1,29 @@
+import os
 import pandas as pd
 from fitparse import FitFile
-from datetime import timedelta
 from scripts.time_in_zones import calculate_time_in_zones
 from scripts.calculate_tss import calculate_tss
 from scripts.sanitize import sanitize
 
-
 def parse_fit(file_path: str) -> pd.DataFrame:
-    """
-    Parse a FIT file into a clean Pandas DataFrame with key metrics.
-    """
     fitfile = FitFile(file_path)
     records = []
 
     for record in fitfile.get_messages("record"):
         record_data = {}
-        for data in record:
-            record_data[data.name] = data.value
+        for field in record:
+            record_data[field.name] = field.value
         records.append(record_data)
 
     df = pd.DataFrame(records)
 
+    # Convert timestamp to datetime if it exists
     if "timestamp" in df.columns:
-        df = df.dropna(subset=["timestamp"])
-        df = df.sort_values("timestamp")
-        df.reset_index(drop=True, inplace=True)
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
 
     return df
 
-
 def calculate_ride_metrics(df: pd.DataFrame, ftp: int = 250) -> dict:
-    """
-    Given a DataFrame of FIT data, calculate key ride summary metrics.
-    """
     if df.empty:
         return {"error": "No data in ride file"}
 
