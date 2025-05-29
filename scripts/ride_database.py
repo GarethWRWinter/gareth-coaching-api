@@ -1,95 +1,110 @@
 import sqlite3
 import json
-from pathlib import Path
-import pandas as pd
+import os
+from datetime import datetime
 
-# ✅ Inlined sanitize logic
-def sanitize(obj):
-    if isinstance(obj, dict):
-        return {k: sanitize(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [sanitize(v) for v in obj]
-    elif isinstance(obj, (int, float, str)) or obj is None:
-        return obj
-    elif isinstance(obj, (pd.Timestamp, pd.Timedelta)):
-        return str(obj)
-    elif hasattr(obj, "item"):
-        return obj.item()
-    return str(obj)
+DB_PATH = "ride_data.db"
 
-# ✅ Path to persistent SQLite database file
-DB_PATH = Path("ride_data.db")
-
-# ✅ Create the table if it doesn't exist
 def initialize_database():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('''
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS rides (
             ride_id TEXT PRIMARY KEY,
-            summary TEXT,
-            seconds TEXT
+            start_time TEXT,
+            duration_sec INTEGER,
+            distance_km REAL,
+            avg_power REAL,
+            avg_heart_rate REAL,
+            avg_cadence REAL,
+            max_power REAL,
+            max_heart_rate REAL,
+            max_cadence REAL,
+            normalized_power REAL,
+            intensity_factor REAL,
+            tss REAL,
+            zone_durations TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
-    ''')
+    """)
     conn.commit()
     conn.close()
 
-# ✅ Save ride data to the database
-def store_ride(ride_id, summary):
-    summary = sanitize(summary)
-    seconds = sanitize(summary.get("full_data", []))  # ✅ Save full second-by-second data separately
-
+def store_ride(ride_summary):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR REPLACE INTO rides (ride_id, summary, seconds)
-        VALUES (?, ?, ?)
-    ''', (ride_id, json.dumps(summary), json.dumps(seconds)))
+
+    zone_durations_json = json.dumps(ride_summary.get("zone_durations", {}))
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO rides (
+            ride_id,
+            start_time,
+            duration_sec,
+            distance_km,
+            avg_power,
+            avg_heart_rate,
+            avg_cadence,
+            max_power,
+            max_heart_rate,
+            max_cadence,
+            normalized_power,
+            intensity_factor,
+            tss,
+            zone_durations,
+            created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        ride_summary["ride_id"],
+        ride_summary["start_time"],
+        ride_summary["duration_sec"],
+        ride_summary["distance_km"],
+        ride_summary["avg_power"],
+        ride_summary["avg_heart_rate"],
+        ride_summary["avg_cadence"],
+        ride_summary["max_power"],
+        ride_summary["max_heart_rate"],
+        ride_summary["max_cadence"],
+        ride_summary["normalized_power"],
+        ride_summary["intensity_factor"],
+        ride_summary["tss"],
+        zone_durations_json,
+        datetime.utcnow().isoformat()
+    ))
+
     conn.commit()
     conn.close()
 
-# ✅ Retrieve all stored ride summaries (with full metadata)
 def get_all_rides():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT ride_id, summary FROM rides ORDER BY ride_id DESC")
+    cursor.execute("SELECT * FROM rides ORDER BY start_time DESC")
     rows = cursor.fetchall()
     conn.close()
 
-    rides = []
-    for ride_id, summary_json in rows:
-        summary = json.loads(summary_json)
-        summary["ride_id"] = ride_id
-        rides.append(sanitize(summary))
-    return rides
+    columns = [
+        "ride_id", "start_time", "duration_sec", "distance_km", "avg_power",
+        "avg_heart_rate", "avg_cadence", "max_power", "max_heart_rate",
+        "max_cadence", "normalized_power", "intensity_factor", "tss",
+        "zone_durations", "created_at"
+    ]
 
-# ✅ Retrieve full summary + second-by-second data for a specific ride
-def get_ride_by_id(ride_id: str):
+    return [dict(zip(columns, row)) for row in rows]
+
+def get_ride(ride_id: str):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT summary, seconds FROM rides WHERE ride_id = ?", (ride_id,))
+    cursor.execute("SELECT * FROM rides WHERE ride_id = ?", (ride_id,))
     row = cursor.fetchone()
     conn.close()
 
-    if row:
-        summary = sanitize(json.loads(row[0]))
-        seconds = sanitize(json.loads(row[1]))
-        return summary, seconds
-    return None, None
+    if row is None:
+        raise ValueError(f"No ride found with ride_id: {ride_id}")
 
-# ✅ Get lightweight ride summaries for trend analysis (no second-by-second data)
-def get_all_ride_summaries():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT ride_id, summary FROM rides ORDER BY ride_id DESC")
-    rows = cursor.fetchall()
-    conn.close()
-
-    summaries = []
-    for ride_id, summary_json in rows:
-        summary = json.loads(summary_json)
-        summary["ride_id"] = ride_id
-        for key in ["full_data"]:  # remove heavy keys
-            summary.pop(key, None)
-        summaries.append(sanitize(summary))
-    return summaries
+    columns = [
+        "ride_id", "start_time", "duration_sec", "distance_km", "avg_power",
+        "avg_heart_rate", "avg_cadence", "max_power", "max_heart_rate",
+        "max_cadence", "normalized_power", "intensity_factor", "tss",
+        "zone_durations", "created_at"
+    ]
+    return dict(zip(columns, row))
