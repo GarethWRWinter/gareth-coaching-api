@@ -1,9 +1,12 @@
+# scripts/fit_parser.py
+
 import os
 import pandas as pd
 from fitparse import FitFile
 from scripts.time_in_zones import calculate_time_in_zones
 from scripts.calculate_tss import calculate_tss
 from scripts.sanitize import sanitize
+
 
 def parse_fit(file_path: str) -> pd.DataFrame:
     fitfile = FitFile(file_path)
@@ -21,7 +24,12 @@ def parse_fit(file_path: str) -> pd.DataFrame:
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"])
 
+    # Ensure 'power' is numeric
+    if "power" in df.columns:
+        df["power"] = pd.to_numeric(df["power"], errors="coerce")
+
     return df
+
 
 def calculate_ride_metrics(df: pd.DataFrame, ftp: int = 250) -> dict:
     if df.empty:
