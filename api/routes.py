@@ -1,42 +1,24 @@
-from fastapi import APIRouter
-from fastapi.responses import JSONResponse
-from scripts.ride_processor import (
-    process_latest_fit_file,
-    get_all_ride_summaries,
-    get_ride_by_id,
-    backfill_all_rides
-)
+# api/routes.py
+
+from fastapi import APIRouter, HTTPException
+from scripts.ride_processor import process_latest_fit_file, get_all_rides, get_ride
+from scripts.dropbox_auth import refresh_dropbox_token
 
 router = APIRouter()
 
 @router.get("/latest-ride-data")
 def latest_ride_data():
     try:
-        ride_summary, ride_data = process_latest_fit_file()
-        return {
-            "summary": ride_summary,
-            "data": ride_data
-        }
+        access_token = refresh_dropbox_token()
+        ride_data, ride_summary = process_latest_fit_file(access_token=access_token)
+        return ride_summary
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": f"Failed to process latest ride: {e}"})
+        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
 @router.get("/ride-history")
 def ride_history():
     try:
-        return get_all_ride_summaries()
+        rides = get_all_rides()
+        return rides
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": f"Failed to fetch ride history: {e}"})
-
-@router.get("/ride/{ride_id}")
-def get_ride(ride_id: str):
-    try:
-        return get_ride_by_id(ride_id)
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": f"Failed to fetch ride {ride_id}: {e}"})
-
-@router.post("/backfill")
-def backfill_rides():
-    try:
-        return backfill_all_rides()
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": f"Backfill failed: {e}"})
+        raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {str(e)}")
