@@ -1,3 +1,5 @@
+import pandas as pd
+
 def calculate_time_in_zones(df, ftp):
     # Ensure 'power' column is numeric
     df["power"] = pd.to_numeric(df["power"], errors="coerce")
