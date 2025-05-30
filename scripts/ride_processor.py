@@ -1,34 +1,42 @@
-from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
-from scripts.parse_fit import parse_fit
-from scripts.fit_metrics import calculate_ride_metrics
-from scripts.ride_database import store_ride, get_all_rides, get_ride
-from scripts.sanitize import sanitize
+# scripts/ride_processor.py
 
-def process_latest_fit_file():
-    # Download latest .fit file
-    local_path = get_latest_fit_file_from_dropbox()
+import os
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox, list_fit_files_in_dropbox, download_fit_file_from_dropbox
+from scripts.fit_parser import parse_fit_file
+from scripts.ride_database import get_all_rides, get_ride
 
-    # Parse .fit to DataFrame
-    df = parse_fit(local_path)
-    if df is None or df.empty:
-        raise ValueError("Parsed DataFrame is empty or invalid")
 
-    # Calculate summary
-    ride_summary = calculate_ride_metrics(df)
+def process_latest_fit_file(access_token: str):
+    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
+    file_name, local_path = get_latest_fit_file_from_dropbox(access_token, folder_path)
 
-    # Store in DB
-    store_ride(ride_summary, df)
+    if file_name:
+        data_df = parse_fit_file(local_path)
+        if data_df is not None and not data_df.empty:
+            return data_df
+        else:
+            raise ValueError("Parsed FIT file is empty or invalid")
+    else:
+        raise FileNotFoundError("No FIT file found in Dropbox")
 
-    # Sanitize and return
-    return sanitize(ride_summary), df.to_dict(orient="records")
+
+def backfill_all_rides(access_token: str):
+    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
+    file_list = list_fit_files_in_dropbox(access_token, folder_path)
+
+    processed_files = []
+    for file in file_list:
+        local_path = download_fit_file_from_dropbox(access_token, folder_path, file)
+        data_df = parse_fit_file(local_path)
+        if data_df is not None and not data_df.empty:
+            processed_files.append(file)
+
+    return processed_files
+
 
 def get_all_ride_summaries():
-    all_rides = get_all_rides()
-    return sanitize(all_rides)
+    return get_all_rides()
 
-def get_ride_by_id(ride_id):
-    ride = get_ride(ride_id)
-    return sanitize(ride)
 
-def backfill_all_rides():
-    return {"detail": "Backfill logic not implemented yet."}
+def get_ride_by_id(ride_id: str):
+    return get_ride(ride_id)
