@@ -1,4 +1,7 @@
 def calculate_time_in_zones(df, ftp):
+    # Ensure 'power' column is numeric
+    df["power"] = pd.to_numeric(df["power"], errors="coerce")
+
     zones = {
         "Zone 1: Active Recovery": 0,
         "Zone 2: Endurance": 0,
