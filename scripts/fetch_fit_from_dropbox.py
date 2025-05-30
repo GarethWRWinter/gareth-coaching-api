@@ -1,33 +1,33 @@
-import os
 import dropbox
-from datetime import datetime
+from dropbox.exceptions import ApiError
 
-DROPBOX_FOLDER = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
-LOCAL_FOLDER = "fit_files_local"
+def list_fit_files_in_dropbox(access_token: str, folder_path: str = "/WahooFitness") -> list[str]:
+    """
+    List all .fit files in the specified Dropbox folder.
 
-def get_latest_fit_file_from_dropbox(access_token: str):
+    :param access_token: Dropbox access token.
+    :param folder_path: Path to the Dropbox folder containing .fit files.
+    :return: List of file names.
+    """
     dbx = dropbox.Dropbox(access_token)
-    
+    fit_files = []
+
     try:
-        res = dbx.files_list_folder(DROPBOX_FOLDER)
-        fit_files = [entry for entry in res.entries if entry.name.endswith('.fit')]
-        if not fit_files:
-            raise FileNotFoundError("No .fit files found in Dropbox folder.")
+        result = dbx.files_list_folder(folder_path)
 
-        # Sort by server_modified time to get the latest
-        fit_files.sort(key=lambda x: x.server_modified, reverse=True)
-        latest_file = fit_files[0]
-        file_name = latest_file.name
+        while True:
+            for entry in result.entries:
+                if isinstance(entry, dropbox.files.FileMetadata) and entry.name.lower().endswith(".fit"):
+                    fit_files.append(entry.name)
 
-        # Ensure local folder exists
-        os.makedirs(LOCAL_FOLDER, exist_ok=True)
-        local_path = os.path.join(LOCAL_FOLDER, file_name)
+            if not result.has_more:
+                break
 
-        with open(local_path, "wb") as f:
-            metadata, res = dbx.files_download(path=latest_file.path_display)
-            f.write(res.content)
+            result = dbx.files_list_folder_continue(result.cursor)
 
-        return local_path, file_name
-
+    except ApiError as e:
+        print(f"Dropbox API error: {e}")
     except Exception as e:
-        raise RuntimeError(f"Failed to fetch latest FIT file from Dropbox: {e}")
+        print(f"Unexpected error: {e}")
+
+    return fit_files
