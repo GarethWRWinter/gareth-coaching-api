@@ -1,8 +1,21 @@
 import dropbox
+import os
 
-def get_latest_fit_file_from_dropbox(access_token, folder_path="/WahooFitness"):
+def get_latest_fit_file_from_dropbox(access_token, folder_path=None):
+    """
+    Fetches the latest .fit file from the given Dropbox folder.
+    If folder_path is not provided, it uses the DROPBOX_FOLDER environment variable.
+    """
+    if folder_path is None:
+        folder_path = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
+    
     dbx = dropbox.Dropbox(access_token)
-    res = dbx.files_list_folder(folder_path)
+    
+    try:
+        res = dbx.files_list_folder(folder_path)
+    except dropbox.exceptions.ApiError as e:
+        raise Exception(f"Dropbox folder listing failed: {e}")
+    
     fit_files = [entry for entry in res.entries if entry.name.endswith(".fit")]
     fit_files.sort(key=lambda x: x.client_modified, reverse=True)
 
@@ -14,4 +27,4 @@ def get_latest_fit_file_from_dropbox(access_token, folder_path="/WahooFitness"):
             f.write(response.content)
         return latest_file.name, local_path
     else:
-        return None, None
+        raise Exception("No .fit files found in Dropbox folder.")
