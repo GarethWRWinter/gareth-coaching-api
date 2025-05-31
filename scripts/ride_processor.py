@@ -1,38 +1,30 @@
-import os
-from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox, list_fit_files_in_dropbox, download_fit_file_from_dropbox
-from scripts.fit_parser import parse_fit, calculate_ride_metrics
-from scripts.ride_database import get_all_rides, get_ride
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
+from scripts.fit_parser import calculate_ride_metrics
+import pandas as pd
+import fitparse
 
-def process_latest_fit_file(access_token: str):
-    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
-    file_name, local_path = get_latest_fit_file_from_dropbox(access_token, folder_path)
+def process_latest_fit_file(access_token):
+    file_name, local_path = get_latest_fit_file_from_dropbox(access_token)
+    if not file_name or not local_path:
+        return None
 
-    if file_name:
-        download_fit_file_from_dropbox(access_token, folder_path, file_name, local_path)
-        data_df = parse_fit(local_path)
-        if data_df is not None and not data_df.empty:
-            return calculate_ride_metrics(data_df)
-        else:
-            raise ValueError("Parsed FIT file is empty or invalid")
-    else:
-        raise FileNotFoundError("No FIT file found in Dropbox")
+    fitfile = fitparse.FitFile(local_path)
+    records = []
+    for record in fitfile.get_messages("record"):
+        record_data = {}
+        for field in record:
+            record_data[field.name] = field.value
+        records.append(record_data)
 
-def backfill_all_rides(access_token: str):
-    folder_path = os.getenv("DROPBOX_FOLDER", "/WahooFitness")
-    file_list = list_fit_files_in_dropbox(access_token, folder_path)
+    df = pd.DataFrame(records)
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-    processed_files = []
-    for file in file_list:
-        local_path = f"/tmp/{file}"
-        download_fit_file_from_dropbox(access_token, folder_path, file, local_path)
-        data_df = parse_fit(local_path)
-        if data_df is not None and not data_df.empty:
-            processed_files.append(file)
+    ftp = 250  # Default FTP
+    metrics = calculate_ride_metrics(df, ftp)
 
-    return processed_files
-
-def get_all_ride_summaries():
-    return get_all_rides()
-
-def get_ride_by_id(ride_id: str):
-    return get_ride(ride_id)
+    return {
+        "file_name": file_name,
+        "metrics": metrics,
+        "records_count": len(df),
+    }

@@ -1,8 +1,7 @@
 import pandas as pd
 
 def calculate_time_in_zones(df, ftp):
-    # Ensure 'power' column is numeric
-    df["power"] = pd.to_numeric(df["power"], errors="coerce")
+    df["power"] = pd.to_numeric(df["power"], errors="coerce").fillna(0)
 
     zones = {
         "Zone 1: Active Recovery": 0,
@@ -14,7 +13,7 @@ def calculate_time_in_zones(df, ftp):
         "Zone 7: Neuromuscular Power": 0,
     }
 
-    for power in df["power"].dropna():
+    for power in df["power"]:
         if power < 0.55 * ftp:
             zones["Zone 1: Active Recovery"] += 1
         elif power < 0.75 * ftp:

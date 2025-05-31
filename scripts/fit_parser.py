@@ -1,70 +1,27 @@
-# scripts/fit_parser.py
-
-import os
 import pandas as pd
-from fitparse import FitFile
+import numpy as np
 from scripts.time_in_zones import calculate_time_in_zones
-from scripts.calculate_tss import calculate_tss
-from scripts.sanitize import sanitize
 
-
-def parse_fit(file_path: str) -> pd.DataFrame:
-    fitfile = FitFile(file_path)
-    records = []
-
-    for record in fitfile.get_messages("record"):
-        record_data = {}
-        for field in record:
-            record_data[field.name] = field.value
-        records.append(record_data)
-
-    df = pd.DataFrame(records)
-
-    # Convert timestamp to datetime if it exists
-    if "timestamp" in df.columns:
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-
-    # Ensure 'power' is numeric
-    if "power" in df.columns:
-        df["power"] = pd.to_numeric(df["power"], errors="coerce")
-
-    return df
-
-
-def calculate_ride_metrics(df: pd.DataFrame, ftp: int = 250) -> dict:
-    if df.empty:
-        return {"error": "No data in ride file"}
-
-    df = df.dropna(subset=["timestamp"])
-    df = df.sort_values(by="timestamp")
-    df.reset_index(drop=True, inplace=True)
+def calculate_ride_metrics(df, ftp):
+    # Ensure power data is numeric
+    df["power"] = pd.to_numeric(df["power"], errors="coerce")
+    df = df.dropna(subset=["power"])
 
     duration_seconds = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
-    total_distance_km = df["distance"].max() / 1000 if "distance" in df.columns else None
+    average_power = df["power"].mean()
+    max_power = df["power"].max()
 
-    avg_power = df["power"].mean() if "power" in df.columns else None
-    max_power = df["power"].max() if "power" in df.columns else None
-    avg_hr = df["heart_rate"].mean() if "heart_rate" in df.columns else None
-    max_hr = df["heart_rate"].max() if "heart_rate" in df.columns else None
-    avg_cadence = df["cadence"].mean() if "cadence" in df.columns else None
-    max_cadence = df["cadence"].max() if "cadence" in df.columns else None
+    # Compute TSS
+    intensity_factor = average_power / ftp
+    tss = (duration_seconds * average_power * intensity_factor) / (ftp * 3600) * 100
 
-    tss = calculate_tss(df, ftp) if "power" in df.columns else None
-    time_in_zones = calculate_time_in_zones(df, ftp) if "power" in df.columns else {}
+    # Time in zones
+    zones_data = calculate_time_in_zones(df, ftp)
 
-    summary = {
-        "ride_id": df["timestamp"].iloc[0].isoformat(),
-        "start_time": df["timestamp"].iloc[0].isoformat(),
+    return {
         "duration_seconds": duration_seconds,
-        "total_distance_km": total_distance_km,
-        "avg_power": avg_power,
+        "average_power": average_power,
         "max_power": max_power,
-        "avg_heart_rate": avg_hr,
-        "max_heart_rate": max_hr,
-        "avg_cadence": avg_cadence,
-        "max_cadence": max_cadence,
         "tss": tss,
-        "time_in_zones": time_in_zones,
+        "zones": zones_data,
     }
-
-    return sanitize(summary)
