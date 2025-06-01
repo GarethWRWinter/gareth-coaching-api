@@ -1,6 +1,3 @@
-
--- schema.sql
-
 CREATE TABLE IF NOT EXISTS rides (
     id SERIAL PRIMARY KEY,
     ride_id TEXT UNIQUE NOT NULL,
