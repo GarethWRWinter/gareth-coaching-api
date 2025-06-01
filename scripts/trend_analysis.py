@@ -1,28 +1,53 @@
-from scripts.ride_database import get_all_rides as load_all_rides
+# scripts/trend_analysis.py
 
-def compute_trend_metrics():
-    rides = load_all_rides()
+from scripts.ride_database import get_all_rides
+import pandas as pd
+from datetime import timedelta
+
+def calculate_trend_metrics():
+    # Get all rides from Postgres
+    rides = get_all_rides()
+    
     if not rides:
-        return {"message": "No ride data available for trend analysis."}
+        return {"message": "No ride data available yet."}
 
-    valid_rides = [ride for ride in rides if isinstance(ride.get("tss"), (int, float))]
-    if not valid_rides:
-        return {"message": "No valid TSS data found for trend analysis."}
+    # Create a DataFrame from ride data
+    data = []
+    for ride in rides:
+        data.append({
+            "ride_id": ride.ride_id,
+            "start_time": ride.start_time,
+            "tss": ride.tss or 0
+        })
 
-    total_tss = sum(ride.get("tss", 0) or 0 for ride in valid_rides)
-    average_tss = total_tss / len(valid_rides)
+    df = pd.DataFrame(data)
+    df = df.sort_values("start_time")
+    df.set_index("start_time", inplace=True)
 
-    ctl = average_tss * 0.9
-    atl = average_tss * 1.1
+    # Resample daily TSS, filling gaps with 0
+    daily_tss = df["tss"].resample("D").sum().fillna(0)
+
+    # Calculate 7-day rolling average (ATL) and 42-day rolling average (CTL)
+    atl = daily_tss.rolling(window=7).mean().fillna(0)
+    ctl = daily_tss.rolling(window=42).mean().fillna(0)
+
+    # Calculate TSB (CTL - ATL)
     tsb = ctl - atl
 
-    return {
-        "total_rides": len(valid_rides),
-        "average_tss": round(average_tss, 2),
-        "weekly_load": round(total_tss, 2),
-        "ctl": round(ctl, 2),
-        "atl": round(atl, 2),
-        "tsb": round(tsb, 2),
-        "ftp_trend": "↗︎ Placeholder",  # Replace with real FTP tracking later
-        "zone_focus": "Z2-heavy",       # Placeholder for time-in-zone trend analysis
+    # Last day metrics (most recent trend state)
+    latest_date = daily_tss.index.max()
+    latest_ctl = ctl.loc[latest_date]
+    latest_atl = atl.loc[latest_date]
+    latest_tsb = tsb.loc[latest_date]
+
+    # Format output
+    trend_data = {
+        "latest_date": latest_date.strftime("%Y-%m-%d"),
+        "CTL": round(latest_ctl, 2),
+        "ATL": round(latest_atl, 2),
+        "TSB": round(latest_tsb, 2),
+        "7_day_load": round(daily_tss[-7:].sum(), 2),
+        "42_day_load": round(daily_tss[-42:].sum(), 2)
     }
+
+    return trend_data

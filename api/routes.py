@@ -1,17 +1,18 @@
+# api/routes.py
+
 from fastapi import APIRouter, HTTPException
 from scripts.ride_processor import (
     process_latest_fit_file,
     get_all_ride_summaries
 )
 from scripts.dropbox_auth import refresh_dropbox_token
+from scripts.trend_analysis import calculate_trend_metrics
 
 router = APIRouter()
-
 
 @router.get("/")
 def health_check():
     return {"status": "API is live"}
-
 
 @router.get("/latest-ride-data")
 def latest_ride_data():
@@ -24,7 +25,6 @@ def latest_ride_data():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
-
 @router.get("/ride-history")
 def ride_history():
     try:
@@ -32,3 +32,11 @@ def ride_history():
         return rides
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {str(e)}")
+
+@router.get("/trend-analysis")
+def trend_analysis():
+    try:
+        trends = calculate_trend_metrics()
+        return trends
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate trend analysis: {str(e)}")
