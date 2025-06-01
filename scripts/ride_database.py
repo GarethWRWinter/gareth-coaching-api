@@ -34,13 +34,22 @@ class Ride(Base):
 def initialize_database():
     Base.metadata.create_all(bind=engine)
 
-# Store a new ride
+# Store a new ride, avoiding duplicate inserts
 def store_ride(ride_data: dict):
     db = SessionLocal()
-    ride = Ride(**ride_data)
-    db.add(ride)
-    db.commit()
-    db.close()
+    try:
+        # Check if the ride already exists
+        existing_ride = db.query(Ride).filter(Ride.ride_id == ride_data["ride_id"]).first()
+        if existing_ride:
+            print(f"Ride {ride_data['ride_id']} already exists in the database. Skipping insert.")
+            return  # Skip insertion
+
+        # Insert the new ride
+        ride = Ride(**ride_data)
+        db.add(ride)
+        db.commit()
+    finally:
+        db.close()
 
 # Get all rides
 def get_all_rides():
