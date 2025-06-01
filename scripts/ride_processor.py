@@ -7,6 +7,7 @@ import pandas as pd
 import fitparse
 import os
 from datetime import datetime
+import numpy as np  # Added to check for np.float64
 
 def process_latest_fit_file(access_token):
     file_name, local_path = get_latest_fit_file_from_dropbox(access_token)
@@ -45,6 +46,11 @@ def process_latest_fit_file(access_token):
         "left_right_balance": metrics.get("left_right_balance", None),
         "power_zone_times": metrics["zones"]
     }
+
+    # Convert all np.float64 to native Python floats for Postgres compatibility
+    for k, v in ride_data.items():
+        if isinstance(v, np.generic):
+            ride_data[k] = float(v)
 
     # Store the ride in Postgres
     store_ride(ride_data)
