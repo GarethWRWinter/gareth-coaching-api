@@ -1,74 +1,57 @@
 # scripts/ride_database.py
 
-import sqlite3
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON
+from sqlalchemy.orm import declarative_base, sessionmaker
+import os
 
-DB_FILE = "ride_data.db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# Define the Ride model
+class Ride(Base):
+    __tablename__ = "rides"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ride_id = Column(String, unique=True, index=True)
+    start_time = Column(DateTime)
+    duration_sec = Column(Integer)
+    distance_km = Column(Float)
+    avg_power = Column(Float)
+    avg_hr = Column(Float)
+    avg_cadence = Column(Float)
+    max_power = Column(Float)
+    max_hr = Column(Float)
+    max_cadence = Column(Float)
+    total_work_kj = Column(Float)
+    tss = Column(Float)
+    left_right_balance = Column(String)
+    power_zone_times = Column(JSON)
+
+# Initialize the database (create tables if not exist)
 def initialize_database():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS rides (
-            ride_id TEXT PRIMARY KEY,
-            start_time TEXT,
-            duration REAL,
-            distance REAL,
-            tss REAL,
-            normalized_power REAL,
-            avg_power REAL,
-            max_power REAL,
-            avg_heart_rate REAL,
-            max_heart_rate REAL,
-            avg_cadence REAL,
-            max_cadence REAL,
-            time_in_zones TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
+    Base.metadata.create_all(bind=engine)
 
-
+# Store a new ride
 def store_ride(ride_data: dict):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT OR REPLACE INTO rides (
-            ride_id, start_time, duration, distance, tss,
-            normalized_power, avg_power, max_power, avg_heart_rate,
-            max_heart_rate, avg_cadence, max_cadence, time_in_zones
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        ride_data["ride_id"],
-        ride_data["start_time"],
-        ride_data["duration"],
-        ride_data["distance"],
-        ride_data["tss"],
-        ride_data["normalized_power"],
-        ride_data["avg_power"],
-        ride_data["max_power"],
-        ride_data["avg_heart_rate"],
-        ride_data["max_heart_rate"],
-        ride_data["avg_cadence"],
-        ride_data["max_cadence"],
-        ride_data["time_in_zones"]
-    ))
-    conn.commit()
-    conn.close()
+    db = SessionLocal()
+    ride = Ride(**ride_data)
+    db.add(ride)
+    db.commit()
+    db.close()
 
-
+# Get all rides
 def get_all_rides():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM rides")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
+    db = SessionLocal()
+    rides = db.query(Ride).order_by(Ride.start_time.desc()).all()
+    db.close()
+    return rides
 
-
+# Get a single ride by ID
 def get_ride(ride_id: str):
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM rides WHERE ride_id=?", (ride_id,))
-    row = cursor.fetchone()
-    conn.close()
-    return row
+    db = SessionLocal()
+    ride = db.query(Ride).filter(Ride.ride_id == ride_id).first()
+    db.close()
+    return ride
