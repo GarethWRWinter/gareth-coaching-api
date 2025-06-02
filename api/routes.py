@@ -8,6 +8,7 @@ from scripts.ride_processor import (
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.trend_analysis import calculate_trend_metrics
 from scripts.rolling_power import calculate_rolling_power_trends
+from scripts.ftp_detection import detect_and_update_ftp
 
 router = APIRouter()
 
@@ -49,3 +50,11 @@ def power_trends():
         return trends
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to calculate power trends: {str(e)}")
+
+@router.get("/ftp-update")
+def ftp_update():
+    try:
+        result = detect_and_update_ftp()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update FTP: {str(e)}")
