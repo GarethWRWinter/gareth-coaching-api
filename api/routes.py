@@ -7,6 +7,7 @@ from scripts.ride_processor import (
 )
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.trend_analysis import calculate_trend_metrics
+from scripts.rolling_power import calculate_rolling_power_trends
 
 router = APIRouter()
 
@@ -40,3 +41,11 @@ def trend_analysis():
         return trends
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate trend analysis: {str(e)}")
+
+@router.get("/power-trends")
+def power_trends():
+    try:
+        trends = calculate_rolling_power_trends()
+        return trends
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to calculate power trends: {str(e)}")
