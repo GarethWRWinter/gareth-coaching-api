@@ -1,17 +1,8 @@
-import os
 import numpy as np
 import pandas as pd
-from dotenv import load_dotenv
-
-load_dotenv()
-FTP = int(os.getenv("FTP", 250))
-
+from scripts.constants import FTP
 
 def calculate_ride_metrics(df: pd.DataFrame):
-    """
-    Calculates ride summary metrics and prepares second-by-second data for storage.
-    Returns: (summary_dict, list_of_data_dicts)
-    """
     df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     df.sort_values("timestamp", inplace=True)
@@ -23,7 +14,6 @@ def calculate_ride_metrics(df: pd.DataFrame):
     df["cadence"] = pd.to_numeric(df.get("cadence", 0), errors="coerce").fillna(0)
     df["left_right_balance"] = pd.to_numeric(df.get("left_right_balance", np.nan), errors="coerce")
 
-    # Core metrics
     duration_sec = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds()
     avg_power = df["power"].mean()
     max_power = df["power"].max()
@@ -58,11 +48,7 @@ def calculate_ride_metrics(df: pd.DataFrame):
             "minutes": round(seconds / 60, 1)
         }
 
-    # Pedal balance
-    if "left_right_balance" in df.columns and df["left_right_balance"].notna().any():
-        avg_lr_balance = df["left_right_balance"].mean()
-    else:
-        avg_lr_balance = None
+    avg_lr_balance = df["left_right_balance"].mean() if df["left_right_balance"].notna().any() else None
 
     summary = {
         "ride_id": df["timestamp"].iloc[0].strftime("%Y%m%d_%H%M%S"),
@@ -80,7 +66,5 @@ def calculate_ride_metrics(df: pd.DataFrame):
         "pedal_balance": round(avg_lr_balance, 1) if avg_lr_balance else None,
     }
 
-    # Full second-by-second data
     data_records = df.to_dict(orient="records")
-
     return summary, data_records
