@@ -1,6 +1,8 @@
 import pandas as pd
 from scripts.constants import FTP
 
+print(f"✅ Using FTP for TSS calculation: {FTP}")
+
 def calculate_tss(df: pd.DataFrame) -> float:
     if "power" not in df.columns:
         return 0.0
