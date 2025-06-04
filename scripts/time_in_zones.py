@@ -1,7 +1,8 @@
 import pandas as pd
 
 def calculate_time_in_zones(df, ftp):
-    df["power"] = pd.to_numeric(df["power"], errors="coerce").fillna(0)
+    # 🟩 Apply pandas best practice: ensure .loc for safe assignment
+    df.loc[:, "power"] = pd.to_numeric(df["power"], errors="coerce").fillna(0)
 
     zones = {
         "Zone 1: Active Recovery": 0,
