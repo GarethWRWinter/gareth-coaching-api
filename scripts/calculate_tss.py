@@ -1,7 +1,7 @@
 import pandas as pd
 from scripts.constants import FTP
 
-print(f"✅ Using FTP for TSS calculation: {FTP}")
+print(f"✅ Using FTP for TSS calculation: {FTP} watts")
 
 def calculate_tss(df: pd.DataFrame) -> float:
     if "power" not in df.columns:
@@ -14,8 +14,8 @@ def calculate_tss(df: pd.DataFrame) -> float:
     rolling_power = df["power"].rolling(window=30, min_periods=1).mean()
     normalized_power = (rolling_power ** 4).mean() ** 0.25
 
-    intensity_factor = normalized_power / FTP
+    intensity_factor = normalized_power / FTP if FTP > 0 else 0
     duration_hours = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds() / 3600.0
 
-    tss = (duration_hours * normalized_power * intensity_factor) / (FTP * 3600.0) * 100.0
+    tss = (duration_hours * normalized_power * intensity_factor) / (FTP * 3600.0) * 100.0 if FTP > 0 else 0.0
     return round(tss, 2)

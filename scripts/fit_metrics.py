@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scripts.constants import FTP
 
-print(f"✅ Using FTP for fit metrics: {FTP}")
+print(f"✅ Using FTP for fit metrics: {FTP} watts")
 
 def calculate_ride_metrics(df: pd.DataFrame):
     df = df.copy()
