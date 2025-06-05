@@ -1,4 +1,5 @@
+# scripts/constants.py
 import os
 
-# Single source of truth for FTP
-FTP = int(os.environ.get("FTP", 308))
+# Load FTP from environment variable (set in Render)
+FTP = float(os.getenv("FTP", 308))  # Use default 308 if not set
