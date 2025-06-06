@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from scripts.constants import FTP
 
+# Logging to confirm FTP usage
 print(f"✅ Using FTP for fit metrics: {FTP} watts")
 
 def calculate_ride_metrics(df: pd.DataFrame):
@@ -26,12 +27,14 @@ def calculate_ride_metrics(df: pd.DataFrame):
     # Normalized Power (NP)
     rolling_30 = df["power"].rolling(window=30, min_periods=1).mean()
     np_power = (rolling_30 ** 4).mean() ** 0.25
+    print(f"ℹ️ Normalized Power: {np_power}")
 
     # Intensity Factor (IF) and TSS
     intensity_factor = np_power / FTP if FTP > 0 else 0
     tss = (duration_sec * np_power * intensity_factor) / (FTP * 3600) * 100 if FTP > 0 else 0
+    print(f"ℹ️ Intensity Factor: {intensity_factor}, Calculated TSS: {tss}")
 
-    # Time in zones
+    # Power zones
     power_zones = {
         "Z1 (<55%)": (0, 0.55 * FTP),
         "Z2 (55–75%)": (0.55 * FTP, 0.75 * FTP),
