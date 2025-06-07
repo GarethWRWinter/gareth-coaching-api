@@ -1,6 +1,13 @@
+# scripts/time_in_zones.py
 import pandas as pd
+import logging
+from scripts.constants import FTP
 
-def calculate_time_in_zones(df, ftp):
+def calculate_time_in_zones(df, ftp=FTP):
+    # 🟩 Log the FTP value being used
+    logging.basicConfig(level=logging.INFO)
+    logging.info(f"🟩 Using FTP: {ftp} watts for time-in-zones calculation.")
+
     # 🟩 Apply pandas best practice: ensure .loc for safe assignment
     df.loc[:, "power"] = pd.to_numeric(df["power"], errors="coerce").fillna(0)
 
@@ -32,6 +39,10 @@ def calculate_time_in_zones(df, ftp):
 
     total_seconds = sum(zones.values())
     zone_minutes = {zone: round(seconds / 60, 2) for zone, seconds in zones.items()}
+
+    # 🟩 Log calculated times in zones for deeper debugging
+    logging.info(f"🟩 Calculated time in zones (seconds): {zones}")
+    logging.info(f"🟩 Calculated time in zones (minutes): {zone_minutes}")
 
     return {
         "seconds": zones,
