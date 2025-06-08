@@ -1,37 +1,36 @@
 # scripts/fit_metrics.py
 import numpy as np
-from scripts.constants import FTP
 
-def classify_power_zones(power_series):
+def classify_power_zones(power_series, ftp):
     """
-    Classify time spent in each power zone based on FTP.
+    Classify power data into power zones based on provided FTP.
     """
     zones = {
-        "Zone 1: Recovery": (0, 0.55 * FTP),
-        "Zone 2: Endurance": (0.55 * FTP, 0.75 * FTP),
-        "Zone 3: Tempo": (0.75 * FTP, 0.9 * FTP),
-        "Zone 4: Threshold": (0.9 * FTP, 1.05 * FTP),
-        "Zone 5: VO2max": (1.05 * FTP, 1.2 * FTP),
-        "Zone 6: Anaerobic Capacity": (1.2 * FTP, 1.5 * FTP),
-        "Zone 7: Neuromuscular Power": (1.5 * FTP, np.inf)
+        "Zone 1: Recovery": (0, 0.55),
+        "Zone 2: Endurance": (0.56, 0.75),
+        "Zone 3: Tempo": (0.76, 0.90),
+        "Zone 4: Threshold": (0.91, 1.05),
+        "Zone 5: VO2max": (1.06, 1.20),
+        "Zone 6: Anaerobic Capacity": (1.21, 1.50),
+        "Zone 7: Neuromuscular Power": (1.51, np.inf)
     }
 
-    zone_times = {zone: 0 for zone in zones}
+    time_in_zones = {zone: 0 for zone in zones}
 
     for power in power_series:
+        if ftp == 0:
+            continue  # Avoid division by zero
+        ratio = power / ftp
         for zone, (low, high) in zones.items():
-            if low <= power < high:
-                zone_times[zone] += 1
+            if low <= ratio <= high:
+                time_in_zones[zone] += 1
+                break
 
-    # Logging for diagnosis
-    print(f"[INFO] FTP: {FTP} watts")
-    for zone, (low, high) in zones.items():
-        print(f"[INFO] {zone}: {low:.1f}–{high:.1f} watts | seconds: {zone_times[zone]}")
-
-    return zone_times
+    return time_in_zones
 
 def convert_zone_times_to_minutes(zone_times):
     """
-    Convert zone times from seconds to minutes.
+    Convert time in zones from seconds to minutes (1 second per data point).
     """
-    return {zone: round(seconds / 60, 1) for zone, seconds in zone_times.items()}
+    zone_times_min = {zone: round(sec / 60, 2) for zone, sec in zone_times.items()}
+    return zone_times_min
