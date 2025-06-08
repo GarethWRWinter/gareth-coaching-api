@@ -3,11 +3,11 @@
 from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
 from scripts.fit_parser import calculate_ride_metrics
 from scripts.ride_database import store_ride
+from scripts.constants import FTP
 import pandas as pd
 import fitparse
-import os
 from datetime import datetime
-import numpy as np  # Added to check for np.float64
+import numpy as np
 
 def process_latest_fit_file(access_token):
     file_name, local_path = get_latest_fit_file_from_dropbox(access_token)
@@ -26,10 +26,9 @@ def process_latest_fit_file(access_token):
     if "timestamp" in df.columns:
         df["timestamp"] = pd.to_datetime(df["timestamp"])
 
-    ftp = 250  # Default FTP
-    metrics = calculate_ride_metrics(df, ftp)
+    print(f"[INFO] Using FTP (Functional Threshold Power): {FTP} watts")
+    metrics = calculate_ride_metrics(df, FTP)
 
-    # Prepare data for Postgres
     ride_data = {
         "ride_id": file_name,
         "start_time": df["timestamp"].min().to_pydatetime() if "timestamp" in df.columns else datetime.utcnow(),
@@ -43,16 +42,16 @@ def process_latest_fit_file(access_token):
         "max_cadence": metrics.get("max_cadence", 0),
         "total_work_kj": metrics.get("total_work_kj", 0),
         "tss": metrics["tss"],
+        "normalized_power": metrics["normalized_power"],
         "left_right_balance": metrics.get("left_right_balance", None),
         "power_zone_times": metrics["zones"]
     }
 
-    # Convert all np.float64 to native Python floats for Postgres compatibility
+    # Convert np.float64 to native float
     for k, v in ride_data.items():
         if isinstance(v, np.generic):
             ride_data[k] = float(v)
 
-    # Store the ride in Postgres
     store_ride(ride_data)
 
     return {
@@ -76,6 +75,7 @@ def get_all_ride_summaries():
             "avg_power": ride.avg_power,
             "max_power": ride.max_power,
             "tss": ride.tss,
+            "normalized_power": ride.normalized_power,
             "total_work_kj": ride.total_work_kj,
             "power_zone_times": ride.power_zone_times,
         }
