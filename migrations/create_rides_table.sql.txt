@@ -1,0 +1,12 @@
+-- File: migrations/create_rides_table.sql
+
+CREATE TABLE IF NOT EXISTS rides (
+    id SERIAL PRIMARY KEY,
+    file_name TEXT NOT NULL,
+    duration_seconds REAL,
+    average_power REAL,
+    max_power REAL,
+    tss REAL,
+    total_seconds_in_zones REAL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
