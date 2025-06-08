@@ -1,9 +1,10 @@
 # scripts/time_in_zones.py
+
 import pandas as pd
 from scripts.constants import FTP
 from scripts.fit_metrics import classify_power_zones, convert_zone_times_to_minutes
 
-def compute_time_in_zones(df):
+def calculate_time_in_zones(df):
     """
     Compute time spent in each power zone from ride data.
     """
