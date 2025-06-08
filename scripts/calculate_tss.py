@@ -1,29 +1,31 @@
-import pandas as pd
+# scripts/calculate_tss.py
+import numpy as np
 from scripts.constants import FTP
 
-# Logging to confirm FTP usage
-print(f"✅ Using FTP for TSS calculation: {FTP} watts")
+def calculate_normalized_power(power_series):
+    """
+    Calculate Normalized Power (NP) as a 30-second rolling average to the 4th power.
+    """
+    if len(power_series) < 30:
+        return np.mean(power_series)
 
-def calculate_tss(df: pd.DataFrame) -> float:
-    if "power" not in df.columns:
-        print("⚠️ No power data found in DataFrame.")
-        return 0.0
+    rolling_30s = np.convolve(power_series, np.ones(30) / 30, mode='valid')
+    rolling_30s_4th = rolling_30s ** 4
+    avg_4th_root = np.mean(rolling_30s_4th) ** (1 / 4)
+    return avg_4th_root
 
-    # Drop missing power values
-    df = df.dropna(subset=["power"])
+def calculate_tss(duration_sec, power_series):
+    """
+    Calculate Training Stress Score (TSS) for a ride.
+    """
+    np_power = calculate_normalized_power(power_series)
+    intensity_factor = np_power / FTP
+    tss = (duration_sec * np_power * intensity_factor) / (FTP * 3600) * 100
 
-    # Compute 30s rolling average for normalized power
-    rolling_power = df["power"].rolling(window=30, min_periods=1).mean()
-    normalized_power = (rolling_power ** 4).mean() ** 0.25
+    # Logging for debugging
+    print(f"🚴‍♂️ FTP: {FTP} watts")
+    print(f"🚴‍♂️ Normalized Power: {np_power:.2f} watts")
+    print(f"🚴‍♂️ Intensity Factor (IF): {intensity_factor:.3f}")
+    print(f"🚴‍♂️ TSS: {tss:.2f}")
 
-    # Logging normalized power
-    print(f"ℹ️ Normalized Power: {normalized_power}")
-
-    intensity_factor = normalized_power / FTP if FTP > 0 else 0
-    duration_hours = (df["timestamp"].iloc[-1] - df["timestamp"].iloc[0]).total_seconds() / 3600.0
-
-    tss = (duration_hours * normalized_power * intensity_factor) / (FTP * 3600.0) * 100.0 if FTP > 0 else 0.0
-
-    # Logging final TSS calculation
-    print(f"ℹ️ Calculated TSS: {tss}")
-    return round(tss, 2)
+    return tss
