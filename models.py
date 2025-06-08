@@ -1,3 +1,4 @@
+# scripts/models.py
 from sqlalchemy import Column, Integer, String, Float, DateTime, JSON
 from sqlalchemy.orm import declarative_base
 
@@ -19,5 +20,6 @@ class Ride(Base):
     max_cadence = Column(Float)
     total_work_kj = Column(Float)
     tss = Column(Float)
+    normalized_power = Column(Float)  # ➜ New field to store NP
     left_right_balance = Column(String)
     power_zone_times = Column(JSON)  # Native JSONB in Postgres
