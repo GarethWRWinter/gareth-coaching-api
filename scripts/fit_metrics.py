@@ -5,7 +5,6 @@ from scripts.constants import FTP
 def classify_power_zones(power_series):
     """
     Classify time spent in each power zone based on FTP.
-    Returns a dict with time in seconds for each zone.
     """
     zones = {
         "Zone 1: Recovery": (0, 0.55 * FTP),
@@ -22,12 +21,12 @@ def classify_power_zones(power_series):
     for power in power_series:
         for zone, (low, high) in zones.items():
             if low <= power < high:
-                zone_times[zone] += 1  # 1 second per entry
+                zone_times[zone] += 1
 
-    # Logging for debugging
-    print(f"⚡️ FTP: {FTP} watts")
+    # Logging for diagnosis
+    print(f"[INFO] FTP: {FTP} watts")
     for zone, (low, high) in zones.items():
-        print(f"⚡️ {zone}: {low:.1f}–{high:.1f} watts (seconds: {zone_times[zone]})")
+        print(f"[INFO] {zone}: {low:.1f}–{high:.1f} watts | seconds: {zone_times[zone]}")
 
     return zone_times
 

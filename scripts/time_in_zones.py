@@ -7,21 +7,16 @@ def compute_time_in_zones(df):
     """
     Compute time spent in each power zone from ride data.
     """
-    # Clean power data
     df = df.copy()
     df["power"] = pd.to_numeric(df["power"], errors="coerce").fillna(0)
 
-    # Logging FTP and data state
-    print(f"⚡️ Using FTP: {FTP}")
-    print(f"⚡️ Data points: {len(df)}")
+    # Logging
+    print(f"[INFO] Using FTP: {FTP}")
+    print(f"[INFO] Data points: {len(df)}")
 
-    # Classify zones
     zone_times_sec = classify_power_zones(df["power"])
-
-    # Convert to minutes
     zone_times_min = convert_zone_times_to_minutes(zone_times_sec)
 
-    # Structure
     zone_data = {
         "seconds": zone_times_sec,
         "minutes": zone_times_min,

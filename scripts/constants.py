@@ -1,8 +1,8 @@
 # scripts/constants.py
 import os
 
-# Load FTP from environment variable (set in Render dashboard)
-FTP = float(os.getenv("FTP", 308))  # Default to 308 if not set
+# Load FTP from environment variable set in Render
+FTP = float(os.getenv("FTP", 308))  # default to 308 if not set
 
-# Log for verification
-print(f"🚴‍♂️ Loaded FTP: {FTP} watts (from environment or default)")
+# Logging for diagnosis
+print(f"[INFO] Using FTP (Functional Threshold Power): {FTP} watts")
