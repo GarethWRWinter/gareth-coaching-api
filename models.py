@@ -19,6 +19,6 @@ class Ride(Base):
     max_cadence = Column(Float)
     total_work_kj = Column(Float)
     tss = Column(Float)
-    normalized_power = Column(Float)  # <--- MISSING THIS FIELD in your current model
+    normalized_power = Column(Float)  # Make sure this is present and matches DB schema
     left_right_balance = Column(String)
     power_zone_times = Column(JSON)
