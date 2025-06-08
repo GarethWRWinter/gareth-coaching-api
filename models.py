@@ -5,7 +5,7 @@ Base = declarative_base()
 
 class Ride(Base):
     __tablename__ = "rides"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     ride_id = Column(String, unique=True, index=True)
     start_time = Column(DateTime)
@@ -19,7 +19,6 @@ class Ride(Base):
     max_cadence = Column(Float)
     total_work_kj = Column(Float)
     tss = Column(Float)
-    normalized_power = Column(Float)  # ✅ Must be explicitly declared here!
+    normalized_power = Column(Float)  # ✅ Ensure this is present!
     left_right_balance = Column(String)
     power_zone_times = Column(JSON)
-
