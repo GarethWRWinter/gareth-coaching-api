@@ -1,12 +1,12 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, JSON
+from sqlalchemy import Column, Integer, Float, String, DateTime, JSON
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
 class Ride(Base):
-    __tablename__ = "rides"
+    __tablename__ = 'rides'
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     ride_id = Column(String, unique=True, index=True)
     start_time = Column(DateTime)
     duration_sec = Column(Integer)
@@ -19,6 +19,6 @@ class Ride(Base):
     max_cadence = Column(Float)
     total_work_kj = Column(Float)
     tss = Column(Float)
-    normalized_power = Column(Float)  # ✅ Ensure this is present!
+    normalized_power = Column(Float)  # <--- MISSING THIS FIELD in your current model
     left_right_balance = Column(String)
     power_zone_times = Column(JSON)
