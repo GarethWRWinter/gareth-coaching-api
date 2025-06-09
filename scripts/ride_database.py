@@ -1,21 +1,14 @@
 from sqlalchemy.orm import Session
-from scripts.models import Ride  # ✅ Correct import now
 from scripts.database import SessionLocal
-
+from scripts.models import Ride
 
 def get_latest_ride():
-    session = SessionLocal()
-    try:
-        ride = session.query(Ride).order_by(Ride.start_time.desc()).first()
-        return ride
-    finally:
-        session.close()
+    with SessionLocal() as session:
+        return session.query(Ride).order_by(Ride.start_time.desc()).first()
 
+def get_ride_history():
+    with SessionLocal() as session:
+        return session.query(Ride).order_by(Ride.start_time.desc()).all()
 
-def get_ride_history(limit: int = 10):
-    session = SessionLocal()
-    try:
-        rides = session.query(Ride).order_by(Ride.start_time.desc()).limit(limit).all()
-        return rides
-    finally:
-        session.close()
+# 🟩 Alias for compatibility
+get_all_rides = get_ride_history
