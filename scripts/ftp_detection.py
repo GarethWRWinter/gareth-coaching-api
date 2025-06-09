@@ -1,7 +1,6 @@
 from scripts.ride_database import get_ride_history
 
-
-def detect_ftp_change():
+def detect_and_update_ftp():
     rides = get_ride_history()
     ftp_candidates = []
 
@@ -17,7 +16,7 @@ def detect_ftp_change():
     if not ftp_candidates:
         return {"message": "No FTP updates detected."}
 
-    # For demonstration, let's assume the new FTP is the highest normalized power
+    # For demonstration, let’s assume the new FTP is the highest normalized power
     new_ftp = max(ftp_candidates, key=lambda r: r["normalized_power"])
     return {
         "message": "New FTP detected.",
