@@ -1,6 +1,7 @@
 # scripts/ride_processor.py
 
 import pandas as pd
+from typing import Dict
 from scripts.fit_metrics import calculate_ride_metrics
 
 def process_ride_data(df: pd.DataFrame, ftp: float) -> Dict:
