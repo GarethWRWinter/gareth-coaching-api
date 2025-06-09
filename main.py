@@ -1,45 +1,39 @@
-# main.py
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from scripts.ride_database import get_latest_ride, get_ride_history
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
+from scripts.ride_database import get_all_rides, get_ride
+from scripts.ftp_detection import detect_and_update_ftp
 from scripts.trend_analysis import calculate_trend_metrics
 from scripts.rolling_power import calculate_rolling_power_trends
-from scripts.ftp_detection import detect_ftp_change  # Assuming main function
-
-from scripts.sanitize import sanitize
 
 app = FastAPI()
 
-# Allow CORS for frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.get("/")
+def root():
+    return {"message": "API is running!"}
 
 @app.get("/latest-ride-data")
 def latest_ride_data():
-    ride = get_latest_ride()
-    return sanitize(ride)
+    rides = get_all_rides()
+    if not rides:
+        raise HTTPException(status_code=404, detail="No rides found.")
+    latest_ride = rides[0]
+    return JSONResponse(content=latest_ride.__dict__)
 
 @app.get("/ride-history")
 def ride_history():
-    rides = get_ride_history()
-    return sanitize(rides)
-
-@app.get("/trend-analysis")
-def trend_analysis():
-    data = calculate_trend_metrics()
-    return sanitize(data)
-
-@app.get("/power-trends")
-def power_trends():
-    data = calculate_rolling_power_trends()
-    return sanitize(data)
+    rides = get_all_rides()
+    if not rides:
+        raise HTTPException(status_code=404, detail="No rides found.")
+    return JSONResponse(content=[ride.__dict__ for ride in rides])
 
 @app.get("/ftp-update")
 def ftp_update():
-    data = detect_ftp_change()
-    return sanitize(data)
+    return detect_and_update_ftp()
+
+@app.get("/trend-analysis")
+def trend_analysis():
+    return calculate_trend_metrics()
+
+@app.get("/power-trends")
+def power_trends():
+    return calculate_rolling_power_trends()

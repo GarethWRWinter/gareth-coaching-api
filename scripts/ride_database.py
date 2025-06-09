@@ -1,14 +1,64 @@
-from sqlalchemy.orm import Session
-from scripts.database import SessionLocal
-from scripts.models import Ride
+# scripts/ride_database.py
 
-def get_latest_ride():
-    with SessionLocal() as session:
-        return session.query(Ride).order_by(Ride.start_time.desc()).first()
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON
+from sqlalchemy.orm import declarative_base, sessionmaker
+import os
 
-def get_ride_history():
-    with SessionLocal() as session:
-        return session.query(Ride).order_by(Ride.start_time.desc()).all()
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# 🟩 Alias for compatibility
-get_all_rides = get_ride_history
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# Define the Ride model
+class Ride(Base):
+    __tablename__ = "rides"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ride_id = Column(String, unique=True, index=True)
+    start_time = Column(DateTime)
+    duration_sec = Column(Integer)
+    distance_km = Column(Float)
+    avg_power = Column(Float)
+    avg_hr = Column(Float)
+    avg_cadence = Column(Float)
+    max_power = Column(Float)
+    max_hr = Column(Float)
+    max_cadence = Column(Float)
+    total_work_kj = Column(Float)
+    tss = Column(Float)
+    normalized_power = Column(Float)
+    left_right_balance = Column(String)
+    power_zone_times = Column(JSON)
+
+# Initialize the database (create tables if not exist)
+def initialize_database():
+    Base.metadata.create_all(bind=engine)
+
+# Store a new ride, avoiding duplicate inserts
+def store_ride(ride_data: dict):
+    db = SessionLocal()
+    try:
+        existing_ride = db.query(Ride).filter(Ride.ride_id == ride_data["ride_id"]).first()
+        if existing_ride:
+            print(f"Ride {ride_data['ride_id']} already exists in the database. Skipping insert.")
+            return
+        ride = Ride(**ride_data)
+        db.add(ride)
+        db.commit()
+    finally:
+        db.close()
+
+# Get all rides
+def get_all_rides():
+    db = SessionLocal()
+    rides = db.query(Ride).order_by(Ride.start_time.desc()).all()
+    db.close()
+    return rides
+
+# Get a single ride by ID
+def get_ride(ride_id: str):
+    db = SessionLocal()
+    ride = db.query(Ride).filter(Ride.ride_id == ride_id).first()
+    db.close()
+    return ride
