@@ -1,17 +1,25 @@
-from scripts.ride_database import get_all_rides
+from scripts.ride_database import get_ride_history
+
 
 def detect_ftp_change():
-    """
-    Placeholder logic to detect FTP changes based on past rides.
-    Replace with real logic later.
-    """
-    rides = get_all_rides()
-    if not rides:
-        return {"ftp_updated": False, "new_ftp": None}
+    rides = get_ride_history()
+    ftp_candidates = []
 
-    # Simple example: detect if any ride has NP > 250 as a placeholder threshold
     for ride in rides:
-        if ride.normalized_power and ride.normalized_power > 250:
-            return {"ftp_updated": True, "new_ftp": ride.normalized_power}
+        # Use dictionary access instead of attribute access
+        if ride["normalized_power"] and ride["normalized_power"] > 250:
+            ftp_candidates.append({
+                "ride_id": ride["ride_id"],
+                "normalized_power": ride["normalized_power"],
+                "date": ride["start_time"],
+            })
 
-    return {"ftp_updated": False, "new_ftp": None}
+    if not ftp_candidates:
+        return {"message": "No FTP updates detected."}
+
+    # For demonstration, let's assume the new FTP is the highest normalized power
+    new_ftp = max(ftp_candidates, key=lambda r: r["normalized_power"])
+    return {
+        "message": "New FTP detected.",
+        "new_ftp": new_ftp
+    }
