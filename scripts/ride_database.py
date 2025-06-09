@@ -1,3 +1,4 @@
+import json
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from .database import SessionLocal
@@ -36,7 +37,7 @@ def store_ride(ride_data: dict):
     """
     Stores a new ride record in the database, ignoring if the ride_id already exists.
     Uses Postgres ON CONFLICT DO NOTHING to avoid duplicate key errors.
-    Ensures all bind parameters have a value (None if missing).
+    Ensures all bind parameters have a value (None if missing) and serializes JSON fields.
     """
     db: Session = SessionLocal()
 
@@ -49,6 +50,10 @@ def store_ride(ride_data: dict):
     for key in required_keys:
         if key not in ride_data:
             ride_data[key] = None
+
+    # Convert power_zone_times dict to JSON string if not None
+    if ride_data["power_zone_times"] is not None:
+        ride_data["power_zone_times"] = json.dumps(ride_data["power_zone_times"])
 
     insert_query = text("""
         INSERT INTO rides (
