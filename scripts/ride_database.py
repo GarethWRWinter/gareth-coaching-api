@@ -33,8 +33,7 @@ def get_all_rides():
 
 def store_ride(ride_data: dict):
     """
-    Stores a new ride record in the database.
-    Expects ride_data as a dictionary.
+    Stores a new ride record in the database, replacing if the ride_id already exists.
     """
     db: Session = SessionLocal()
     ride = Ride(
@@ -48,6 +47,7 @@ def store_ride(ride_data: dict):
         total_work_kj=ride_data.get("total_work_kj"),
         power_zone_times=ride_data.get("power_zone_times"),
     )
-    db.add(ride)
+    # Use merge() for upsert behavior
+    db.merge(ride)
     db.commit()
     db.close()
