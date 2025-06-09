@@ -1,3 +1,13 @@
+from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
+from scripts.fit_parser import calculate_ride_metrics
+from scripts.ride_database import store_ride
+from scripts.constants import FTP
+import pandas as pd
+import fitparse
+from datetime import datetime
+import numpy as np
+
+
 def process_latest_fit_file(access_token):
     file_name, local_path = get_latest_fit_file_from_dropbox(access_token)
     if not file_name or not local_path:
@@ -37,5 +47,11 @@ def process_latest_fit_file(access_token):
 
     store_ride(ride_data)
 
-    # Return ride_data as the summary for API response
     return ride_data
+
+
+def get_all_rides():  # ✅ Renamed from get_all_ride_summaries to get_all_rides
+    from scripts.ride_database import get_all_rides as db_get_all_rides
+
+    rides = db_get_all_rides()
+    return rides
