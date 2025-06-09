@@ -14,7 +14,13 @@ def get_latest_ride():
     if latest_ride is None:
         return {"error": "No rides found"}
 
-    return sanitize(latest_ride.__dict__)
+    ride_data = sanitize(latest_ride.__dict__)
+    
+    # Parse power_zone_times back to dict if it's a JSON string
+    if ride_data.get("power_zone_times") and isinstance(ride_data["power_zone_times"], str):
+        ride_data["power_zone_times"] = json.loads(ride_data["power_zone_times"])
+
+    return ride_data
 
 
 def get_ride_history():
@@ -22,7 +28,14 @@ def get_ride_history():
     rides = db.query(Ride).order_by(Ride.start_time.desc()).all()
     db.close()
 
-    return [sanitize(ride.__dict__) for ride in rides]
+    ride_list = []
+    for ride in rides:
+        ride_data = sanitize(ride.__dict__)
+        if ride_data.get("power_zone_times") and isinstance(ride_data["power_zone_times"], str):
+            ride_data["power_zone_times"] = json.loads(ride_data["power_zone_times"])
+        ride_list.append(ride_data)
+
+    return ride_list
 
 
 def get_all_rides():
@@ -30,7 +43,14 @@ def get_all_rides():
     rides = db.query(Ride).all()
     db.close()
 
-    return [sanitize(ride.__dict__) for ride in rides]
+    ride_list = []
+    for ride in rides:
+        ride_data = sanitize(ride.__dict__)
+        if ride_data.get("power_zone_times") and isinstance(ride_data["power_zone_times"], str):
+            ride_data["power_zone_times"] = json.loads(ride_data["power_zone_times"])
+        ride_list.append(ride_data)
+
+    return ride_list
 
 
 def store_ride(ride_data: dict):
@@ -41,7 +61,6 @@ def store_ride(ride_data: dict):
     """
     db: Session = SessionLocal()
 
-    # Ensure all expected keys are present
     required_keys = [
         "ride_id", "start_time", "duration_sec", "distance_km",
         "avg_power", "avg_hr", "avg_cadence", "max_power", "max_hr", "max_cadence",
