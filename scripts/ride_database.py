@@ -34,6 +34,7 @@ def get_all_rides():
 def store_ride(ride_data: dict):
     """
     Stores a new ride record in the database, replacing if the ride_id already exists.
+    Uses merge() to avoid duplicate key errors.
     """
     db: Session = SessionLocal()
     ride = Ride(
@@ -45,9 +46,11 @@ def store_ride(ride_data: dict):
         max_power=ride_data.get("max_power"),
         tss=ride_data.get("tss"),
         total_work_kj=ride_data.get("total_work_kj"),
+        normalized_power=ride_data.get("normalized_power"),
+        left_right_balance=ride_data.get("left_right_balance"),
         power_zone_times=ride_data.get("power_zone_times"),
     )
-    # Use merge() for upsert behavior
+    # Use merge() for upsert behavior (no duplicate key error)
     db.merge(ride)
     db.commit()
     db.close()
