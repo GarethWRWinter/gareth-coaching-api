@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 from scripts.ride_processor import process_ride_data
-from scripts.ride_database import get_all_rides, get_latest_ride, fetch_latest_ride_data_from_csv
+from scripts.ride_database import get_all_rides, get_latest_ride
 from scripts.trend_analysis import calculate_trend_metrics
 from scripts.rolling_power import calculate_rolling_power_trends
 from scripts.ftp_detection import detect_and_update_ftp
@@ -20,18 +20,14 @@ def latest_ride_data():
     """
     Get the most recent ride data.
     If the ride is already processed and in the database, return that.
-    Otherwise, parse it dynamically from the latest .fit file.
+    Otherwise, return a 404 to indicate no data is available.
     """
     try:
         # Fetch the most recent ride data
         latest_ride = get_latest_ride()
 
-        # If no existing ride in DB, fallback to parsing the latest FIT data
         if not latest_ride or latest_ride.get("id") is None:
-            # Parse from latest FIT file dynamically
-            ride_data_df = fetch_latest_ride_data_from_csv()
-            ftp = 308.0  # Use your current FTP dynamically here
-            latest_ride = process_ride_data(ride_data_df, ftp)
+            raise HTTPException(status_code=404, detail="No ride data found in the database.")
 
         return latest_ride
     except Exception as e:
