@@ -4,6 +4,7 @@ import numpy as np
 def classify_power_zones(power_series, ftp):
     """
     Classify power data into power zones based on provided FTP.
+    Ensures every second is assigned to a zone.
     """
     zones = {
         "Zone 1: Recovery": (0, 0.55),
@@ -19,12 +20,18 @@ def classify_power_zones(power_series, ftp):
 
     for power in power_series:
         if ftp == 0:
-            continue  # Avoid division by zero
-        ratio = power / ftp
-        for zone, (low, high) in zones.items():
-            if low <= ratio <= high:
-                time_in_zones[zone] += 1
-                break
+            zone = "Zone 1: Recovery"  # fallback for FTP=0
+        else:
+            ratio = power / ftp
+            zone_found = False
+            for zone, (low, high) in zones.items():
+                if low <= ratio <= high:
+                    time_in_zones[zone] += 1
+                    zone_found = True
+                    break
+            if not zone_found:
+                # If somehow not found, assign to Zone 1 as safe fallback
+                time_in_zones["Zone 1: Recovery"] += 1
 
     return time_in_zones
 
