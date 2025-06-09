@@ -1,15 +1,13 @@
-# api/routes.py
-
 from fastapi import APIRouter, HTTPException
 from scripts.ride_processor import (
     process_latest_fit_file,
-    get_all_rides  # <- use get_all_rides, not get_all_ride_summaries
+    get_all_rides
 )
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.trend_analysis import calculate_trend_metrics
 from scripts.rolling_power import calculate_rolling_power_trends
 from scripts.ftp_detection import detect_and_update_ftp
-from scripts.ride_database import get_latest_ride  # <-- NEW: added for latest-ride-data
+from scripts.ride_database import get_latest_ride
 
 router = APIRouter()
 
@@ -22,7 +20,6 @@ def health_check():
 @router.get("/latest-ride-data")
 def latest_ride_data():
     try:
-        # Use get_latest_ride to ensure power_zone_times is parsed back to dict
         latest_ride = get_latest_ride()
         if "error" in latest_ride:
             raise HTTPException(status_code=404, detail="No rides found.")
