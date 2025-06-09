@@ -1,55 +1,46 @@
+from datetime import datetime
+from typing import Dict, Optional
 import pandas as pd
-from scripts.parse_fit import parse_fit_file
-from scripts.time_in_zones import calculate_time_in_zones
-from scripts.fit_metrics import calculate_np_if_vi
-from scripts.ride_database import store_ride, get_all_rides_from_db, get_trend_data, get_power_trend_data, update_ftp_in_db
-from scripts.constants import FTP
 
-def process_latest_fit_file():
-    fit_data = parse_fit_file()  # Fetch latest .fit file data as DataFrame
-    power_data = fit_data["power"]
+from scripts.parse_fit import parse_fit
+from scripts.fit_metrics import calculate_ride_metrics
+from scripts.ride_database import store_ride
 
-    # Calculate NP, IF, VI using Training Peaks method
-    np, if_, vi = calculate_np_if_vi(power_data, FTP)
 
-    # Calculate time in power zones
-    power_zone_times = calculate_time_in_zones(power_data, FTP)
+def process_latest_fit_file(filepath: str, ftp: float) -> Dict:
+    """
+    Process a .FIT file and compute ride metrics.
+    Returns a dictionary with ride summary data.
+    """
+    df = parse_fit(filepath)
+    if df.empty:
+        raise ValueError("No data found in FIT file.")
 
-    # Build ride summary
-    ride_summary = {
-        "ride_id": fit_data["ride_id"],
-        "start_time": fit_data["start_time"],
-        "duration_sec": fit_data["duration_sec"],
-        "distance_km": fit_data["distance_km"],
-        "avg_power": fit_data["avg_power"],
-        "max_power": fit_data["max_power"],
-        "tss": fit_data["tss"],
-        "total_work_kj": fit_data["total_work_kj"],
-        "normalized_power": np,
-        "intensity_factor": if_,
-        "variability_index": vi,
-        "power_zone_times": power_zone_times,
-        "avg_hr": fit_data.get("avg_hr"),
-        "max_hr": fit_data.get("max_hr"),
-        "avg_cadence": fit_data.get("avg_cadence"),
-        "max_cadence": fit_data.get("max_cadence"),
-        "left_right_balance": fit_data.get("left_right_balance"),
-    }
+    ride_metrics = calculate_ride_metrics(df, ftp)
+    ride_id = f"{datetime.now().strftime('%Y-%m-%d-%H%M%S')}-{filepath.split('/')[-1]}"
+    ride_metrics['ride_id'] = ride_id
 
-    # Save to DB
-    store_ride(ride_summary)
+    # Store ride in the database
+    store_ride(ride_metrics)
 
-    return ride_summary
+    return ride_metrics
+
 
 def get_all_rides():
-    return get_all_rides_from_db()
+    from scripts.ride_database import get_ride_history
+    return get_ride_history()
+
 
 def get_trend_analysis():
-    return get_trend_data()
+    from scripts.trend_analysis import calculate_trend_metrics
+    return calculate_trend_metrics()
+
 
 def get_power_trends():
-    return get_power_trend_data()
+    from scripts.rolling_power import calculate_rolling_power_trends
+    return calculate_rolling_power_trends()
+
 
 def detect_and_update_ftp():
-    # Placeholder: Implement FTP auto-detection if needed
-    return {"message": "No FTP updates detected."}
+    from scripts.ftp_detection import detect_and_update_ftp
+    return detect_and_update_ftp()
