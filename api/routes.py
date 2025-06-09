@@ -1,12 +1,11 @@
 # api/routes.py
 
 from fastapi import APIRouter, HTTPException
-from scripts.ride_processor import process_ride_data, get_all_rides
-from scripts.dropbox_auth import refresh_dropbox_token
+from scripts.ride_processor import process_ride_data
+from scripts.ride_database import get_all_rides, get_latest_ride, fetch_latest_ride_data_from_csv
 from scripts.trend_analysis import calculate_trend_metrics
 from scripts.rolling_power import calculate_rolling_power_trends
 from scripts.ftp_detection import detect_and_update_ftp
-from scripts.ride_database import get_latest_ride, fetch_latest_ride_data_from_csv
 
 router = APIRouter()
 
