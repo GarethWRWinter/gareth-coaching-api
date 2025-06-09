@@ -1,6 +1,6 @@
 # scripts/rolling_power.py
 
-def get_power_trends():
+def calculate_rolling_power_trends():
     """
     Dummy placeholder for power trends data.
     Replace with actual power trend calculation using your DB or data source.
