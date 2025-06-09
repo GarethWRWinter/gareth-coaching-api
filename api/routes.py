@@ -1,13 +1,12 @@
+# api/routes.py
+
 from fastapi import APIRouter, HTTPException
-from scripts.ride_processor import (
-    process_latest_fit_file,
-    get_all_rides
-)
+from scripts.ride_processor import process_ride_data, get_all_rides
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.trend_analysis import calculate_trend_metrics
 from scripts.rolling_power import calculate_rolling_power_trends
 from scripts.ftp_detection import detect_and_update_ftp
-from scripts.ride_database import get_latest_ride
+from scripts.ride_database import get_latest_ride, fetch_latest_ride_data_from_csv
 
 router = APIRouter()
 
@@ -19,13 +18,25 @@ def health_check():
 
 @router.get("/latest-ride-data")
 def latest_ride_data():
+    """
+    Get the most recent ride data.
+    If the ride is already processed and in the database, return that.
+    Otherwise, parse it dynamically from the latest .fit file.
+    """
     try:
+        # Fetch the most recent ride data
         latest_ride = get_latest_ride()
-        if "error" in latest_ride:
-            raise HTTPException(status_code=404, detail="No rides found.")
+
+        # If no existing ride in DB, fallback to parsing the latest FIT data
+        if not latest_ride or latest_ride.get("id") is None:
+            # Parse from latest FIT file dynamically
+            ride_data_df = fetch_latest_ride_data_from_csv()
+            ftp = 308.0  # Use your current FTP dynamically here
+            latest_ride = process_ride_data(ride_data_df, ftp)
+
         return latest_ride
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch latest ride: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
 
 @router.get("/ride-history")
