@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from scripts.ride_processor import (
     process_latest_fit_file,
-    get_all_ride_summaries
+    get_all_rides  # <- FIXED: use get_all_rides, not get_all_ride_summaries
 )
 from scripts.dropbox_auth import refresh_dropbox_token
 from scripts.trend_analysis import calculate_trend_metrics
@@ -30,7 +30,7 @@ def latest_ride_data():
 @router.get("/ride-history")
 def ride_history():
     try:
-        rides = get_all_ride_summaries()
+        rides = get_all_rides()
         return rides
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {str(e)}")
