@@ -1,18 +1,11 @@
-# api/routes.py
-
-from fastapi import APIRouter, HTTPException
-from scripts.ride_processor import process_latest_fit_file, get_all_rides
+from fastapi import APIRouter
+from scripts.ride_processor import process_latest_fit_file
+from scripts.fetch_and_parse import fetch_latest_fit_file
 
 router = APIRouter()
 
 @router.get("/latest-ride-data")
 def latest_ride_data():
-    try:
-        filepath = "path/to/latest_data.csv"  # update per your ingestion method
-        return process_latest_fit_file(filepath)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/ride-history")
-def ride_history():
-    return get_all_rides()
+    fit_file = fetch_latest_fit_file()
+    summary = process_latest_fit_file(fit_file)
+    return summary

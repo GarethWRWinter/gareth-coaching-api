@@ -1,47 +1,52 @@
-# scripts/time_in_zones.py
+def calculate_power_zones(power_series, ftp):
+    zones = {
+        "Zone 1: Recovery": (0, 0.55 * ftp),
+        "Zone 2: Endurance": (0.55 * ftp, 0.75 * ftp),
+        "Zone 3: Tempo": (0.75 * ftp, 0.9 * ftp),
+        "Zone 4: Threshold": (0.9 * ftp, 1.05 * ftp),
+        "Zone 5: VO2max": (1.05 * ftp, 1.2 * ftp),
+        "Zone 6: Anaerobic Capacity": (1.2 * ftp, 1.5 * ftp),
+        "Zone 7: Neuromuscular Power": (1.5 * ftp, float('inf'))
+    }
 
-import pandas as pd
-from scripts.ride_database import get_ftp
-from scripts.fit_metrics import classify_power_zones, convert_zone_times_to_minutes
+    zone_times = {zone: 0 for zone in zones}
+    for power in power_series:
+        for zone, (lower, upper) in zones.items():
+            if lower <= power < upper:
+                zone_times[zone] += 1
+                break
 
-# Define HR zones (percent of max HR — customize as needed)
-HR_ZONES = {
-    "Zone 1: Recovery": (0.50, 0.60),
-    "Zone 2: Endurance": (0.61, 0.70),
-    "Zone 3: Tempo": (0.71, 0.80),
-    "Zone 4: Threshold": (0.81, 0.90),
-    "Zone 5: VO2max": (0.91, 1.00)
-}
-
-def calculate_time_in_zones(df: pd.DataFrame) -> dict:
-    """
-    Returns power and HR zone time breakdowns (in seconds + minutes).
-    """
-    # sanitize data
-    df = df.copy()
-    df["power"] = pd.to_numeric(df.get("power", 0), errors="coerce").fillna(0)
-    df["heart_rate"] = pd.to_numeric(df.get("heart_rate", 0), errors="coerce").fillna(0)
-
-    # get dynamic FTP
-    ftp = get_ftp()
-
-    # power zones
-    power_seconds = classify_power_zones(df["power"], ftp)
-    power_minutes = convert_zone_times_to_minutes(power_seconds)
-
-    # heart rate zones
-    hr_seconds = {}
-    total_samples = len(df)
-    max_hr = df["heart_rate"].max() or 0
-
-    for name, (low_p, high_p) in HR_ZONES.items():
-        count = ((df["heart_rate"] / max_hr).between(low_p, high_p)).sum()
-        hr_seconds[name] = int(count)
-
-    hr_minutes = convert_zone_times_to_minutes(hr_seconds)
+    total_seconds = sum(zone_times.values())
+    zone_times_minutes = {zone: round(seconds / 60, 2) for zone, seconds in zone_times.items()}
 
     return {
-        "power": {"seconds": power_seconds, "minutes": power_minutes},
-        "heart_rate": {"seconds": hr_seconds, "minutes": hr_minutes},
-        "total_samples": total_samples
+        "seconds": zone_times,
+        "minutes": zone_times_minutes,
+        "total_seconds": total_seconds
+    }
+
+def calculate_hr_zones(hr_series):
+    zones = {
+        "Zone 1": (0, 110),
+        "Zone 2": (110, 130),
+        "Zone 3": (130, 150),
+        "Zone 4": (150, 170),
+        "Zone 5": (170, 190),
+        "Zone 6": (190, 210)
+    }
+
+    zone_times = {zone: 0 for zone in zones}
+    for hr in hr_series:
+        for zone, (lower, upper) in zones.items():
+            if lower <= hr < upper:
+                zone_times[zone] += 1
+                break
+
+    total_seconds = sum(zone_times.values())
+    zone_times_minutes = {zone: round(seconds / 60, 2) for zone, seconds in zone_times.items()}
+
+    return {
+        "seconds": zone_times,
+        "minutes": zone_times_minutes,
+        "total_seconds": total_seconds
     }

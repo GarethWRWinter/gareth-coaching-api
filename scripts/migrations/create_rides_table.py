@@ -1,11 +1,7 @@
-# scripts/migrations/create_rides_table.py
-
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = "sqlite:///ride_data.db"
-
 def create_rides_table():
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine("sqlite:///ride_data.db")
     with engine.connect() as conn:
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS rides (
@@ -24,10 +20,11 @@ def create_rides_table():
                 tss FLOAT,
                 normalized_power FLOAT,
                 left_right_balance TEXT,
-                power_zone_times JSON
+                power_zone_times JSON,
+                hr_zone_times JSON
             );
         """))
-        print("✅ rides table created successfully.")
+    print("✅ rides table created successfully.")
 
 if __name__ == "__main__":
     create_rides_table()
