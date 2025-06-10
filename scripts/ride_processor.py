@@ -1,46 +1,26 @@
-from datetime import datetime
-from typing import Dict, Optional
 import pandas as pd
+from typing import Dict
+from scripts.ride_database import get_dynamic_ftp
+from scripts.time_in_zones import calculate_power_zones
 
-from scripts.parse_fit import parse_fit
-from scripts.fit_metrics import calculate_ride_metrics
-from scripts.ride_database import store_ride
-
-
-def process_latest_fit_file(filepath: str, ftp: float) -> Dict:
+def process_ride_data(df: pd.DataFrame) -> Dict:
     """
-    Process a .FIT file and compute ride metrics.
-    Returns a dictionary with ride summary data.
+    Process the parsed ride data, calculate zones, and prepare summary dict.
     """
-    df = parse_fit(filepath)
-    if df.empty:
-        raise ValueError("No data found in FIT file.")
+    # Dynamically pull FTP
+    ftp = get_dynamic_ftp()
 
-    ride_metrics = calculate_ride_metrics(df, ftp)
-    ride_id = f"{datetime.now().strftime('%Y-%m-%d-%H%M%S')}-{filepath.split('/')[-1]}"
-    ride_metrics['ride_id'] = ride_id
+    duration_sec = (df['timestamp'].iloc[-1] - df['timestamp'].iloc[0]).total_seconds()
+    avg_power = df['power'].mean()
+    max_power = df['power'].max()
+    total_work_kj = (df['power'].sum() * 1.0) / 1000.0
 
-    # Store ride in the database
-    store_ride(ride_metrics)
+    power_zone_times = calculate_power_zones(df['power'], ftp)
 
-    return ride_metrics
-
-
-def get_all_rides():
-    from scripts.ride_database import get_ride_history
-    return get_ride_history()
-
-
-def get_trend_analysis():
-    from scripts.trend_analysis import calculate_trend_metrics
-    return calculate_trend_metrics()
-
-
-def get_power_trends():
-    from scripts.rolling_power import calculate_rolling_power_trends
-    return calculate_rolling_power_trends()
-
-
-def detect_and_update_ftp():
-    from scripts.ftp_detection import detect_and_update_ftp
-    return detect_and_update_ftp()
+    return {
+        'duration_sec': duration_sec,
+        'avg_power': avg_power,
+        'max_power': max_power,
+        'total_work_kj': total_work_kj,
+        'power_zone_times': power_zone_times
+    }
