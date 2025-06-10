@@ -1,34 +1,40 @@
+# scripts/fit_metrics.py
+
 import pandas as pd
-from scripts.ride_database import get_ftp
+from typing import Dict
+from scripts.zone_classification import classify_power_zones_absolute
 
-def calculate_tss(ride_df: pd.DataFrame) -> float:
+def calculate_power_zones(power_data: pd.Series, ftp: float) -> Dict[str, Dict[str, float]]:
     """
-    Calculate Training Stress Score (TSS) for a ride.
-    Uses normalized power (NP), duration, FTP from DB.
-    """
-    np = ride_df["power"].mean()  # Simplified; replace with true NP calculation
-    duration_hours = len(ride_df) / 3600
-    ftp = get_ftp()
+    Classify time in zones dynamically based on FTP.
 
-    intensity_factor = np / ftp if ftp else 0
-    tss = (duration_hours * np * intensity_factor) / (ftp or 1) * 100
-    return tss
+    Args:
+        power_data: Pandas Series of power data (1 per second).
+        ftp: Current FTP in watts.
 
-def calculate_power_zones(ride_df: pd.DataFrame) -> dict:
+    Returns:
+        Dictionary with seconds, minutes, and total_seconds spent in each zone.
     """
-    Calculate time spent in each power zone dynamically based on FTP.
-    """
-    ftp = get_ftp()
-    power_values = ride_df["power"]
+    power_list = power_data.fillna(0).astype(int).tolist()
+    zone_data = classify_power_zones_absolute(power_list, ftp)
+    return zone_data
 
-    zones = {
-        "Zone 1: Recovery": power_values[(power_values < 0.55 * ftp)].count(),
-        "Zone 2: Endurance": power_values[(0.55 * ftp <= power_values) & (power_values < 0.75 * ftp)].count(),
-        "Zone 3: Tempo": power_values[(0.75 * ftp <= power_values) & (power_values < 0.9 * ftp)].count(),
-        "Zone 4: Threshold": power_values[(0.9 * ftp <= power_values) & (power_values < 1.05 * ftp)].count(),
-        "Zone 5: VO2max": power_values[(1.05 * ftp <= power_values) & (power_values < 1.2 * ftp)].count(),
-        "Zone 6: Anaerobic Capacity": power_values[(1.2 * ftp <= power_values) & (power_values < 1.5 * ftp)].count(),
-        "Zone 7: Neuromuscular Power": power_values[(1.5 * ftp <= power_values)].count(),
+def calculate_ride_metrics(df: pd.DataFrame, ftp: float) -> Dict:
+    """
+    Calculate summary metrics for the ride.
+    """
+    ride_metrics = {
+        "duration_sec": df.shape[0],
+        "avg_power": df["power"].mean(),
+        "max_power": df["power"].max(),
+        "avg_hr": df["heart_rate"].mean() if "heart_rate" in df.columns else None,
+        "max_hr": df["heart_rate"].max() if "heart_rate" in df.columns else None,
+        "avg_cadence": df["cadence"].mean() if "cadence" in df.columns else None,
+        "max_cadence": df["cadence"].max() if "cadence" in df.columns else None,
+        "total_work_kj": (df["power"].sum() / 1000) if "power" in df.columns else 0
     }
-
-    return zones
+    
+    # Dynamically calculate power zones based on current FTP
+    ride_metrics["power_zone_times"] = calculate_power_zones(df["power"], ftp)
+    
+    return ride_metrics

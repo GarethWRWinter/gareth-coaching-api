@@ -1,2 +1,2 @@
-# Constants are dynamically calculated in zone scripts
-# Minimal configuration file for project-wide constants
+# Set Gareth's current FTP here for dynamic zone calculations
+FTP = 308.0  # watts

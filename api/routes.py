@@ -1,11 +1,40 @@
-from fastapi import APIRouter
-from scripts.ride_processor import process_latest_fit_file
-from scripts.fetch_and_parse import fetch_latest_fit_file
+from fastapi import APIRouter, HTTPException
+from scripts.ride_processor import (
+    process_latest_fit_file,
+    get_all_rides,
+    get_trend_analysis,
+    get_power_trends,
+    detect_and_update_ftp
+)
 
 router = APIRouter()
 
+
 @router.get("/latest-ride-data")
 def latest_ride_data():
-    fit_file = fetch_latest_fit_file()
-    summary = process_latest_fit_file(fit_file)
-    return summary
+    try:
+        ftp = 308.0  # dynamically pulled from environment or config in real-world production
+        filepath = "path/to/latest.fit"  # replace with real logic to pull latest FIT file path
+        return process_latest_fit_file(filepath, ftp)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
+
+
+@router.get("/ride-history")
+def ride_history():
+    return get_all_rides()
+
+
+@router.get("/trend-analysis")
+def trend_analysis():
+    return get_trend_analysis()
+
+
+@router.get("/power-trends")
+def power_trends():
+    return get_power_trends()
+
+
+@router.get("/ftp-update")
+def ftp_update():
+    return detect_and_update_ftp()
