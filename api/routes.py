@@ -13,9 +13,8 @@ router = APIRouter()
 @router.get("/latest-ride-data")
 def latest_ride_data():
     try:
-        ftp = 308.0  # dynamically pulled from environment or config in real-world production
-        filepath = "path/to/latest.fit"  # replace with real logic to pull latest FIT file path
-        return process_latest_fit_file(filepath, ftp)
+        filepath = "path/to/latest.fit"  # Replace with your actual logic to get the latest FIT file
+        return process_latest_fit_file(filepath)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
 
