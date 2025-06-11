@@ -1,37 +1,28 @@
 # api/routes.py
 
-from fastapi import FastAPI, APIRouter, HTTPException
-from sqlalchemy import inspect
-from scripts.database import SessionLocal, engine
-from scripts.ride_processor import process_latest_ride, get_ride_history
+from fastapi import APIRouter, HTTPException
+from scripts.ride_processor import (
+    process_latest_ride,
+    get_ride_history
+)
 
-app = FastAPI()
 router = APIRouter()
 
 @router.get("/latest-ride-data")
-def latest_ride_data():
-    session = SessionLocal()
+async def latest_ride_data():
     try:
-        return process_latest_ride(session)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {e}")
-    finally:
-        session.close()
+        # Replace with the actual path to your FIT file and correct FTP value
+        path_to_fit = "/mnt/data/latest.fit"
+        ftp = 250  # <-- Set the rider's actual FTP here
+        result = process_latest_ride(path_to_fit, ftp)
+        return result
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {err}")
 
 @router.get("/ride-history")
-def ride_history():
-    session = SessionLocal()
+async def ride_history():
     try:
-        return get_ride_history(session)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {e}")
-    finally:
-        session.close()
-
-@router.get("/debug-schema/rides")
-def debug_schema_rides():
-    insp = inspect(engine)
-    cols = insp.get_columns("rides")
-    return [{"name": c["name"], "type": str(c["type"])} for c in cols]
-
-app.include_router(router)
+        rides = get_ride_history()  # no arguments expected
+        return rides
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {err}")
