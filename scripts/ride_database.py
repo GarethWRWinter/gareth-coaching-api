@@ -1,91 +1,67 @@
-import json
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from .database import SessionLocal
-from .models import Ride
-from scripts.sanitize import sanitize
+# scripts/ride_database.py
 
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import Column, Integer, String, Float, JSON, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+import os
 
-def get_latest_ride():
-    db: Session = SessionLocal()
-    latest_ride = db.query(Ride).order_by(Ride.start_time.desc()).first()
-    db.close()
+# --- Setup SQLAlchemy engine and session ---
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/dbname")
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
-    if latest_ride is None:
-        return {"error": "No rides found"}
+Base = declarative_base()
 
-    ride_data = sanitize(latest_ride.__dict__)
-    
-    # Parse power_zone_times back to dict if it's a JSON string
-    if ride_data.get("power_zone_times") and isinstance(ride_data["power_zone_times"], str):
-        ride_data["power_zone_times"] = json.loads(ride_data["power_zone_times"])
+class Ride(Base):
+    __tablename__ = "rides"
+    id = Column(Integer, primary_key=True, index=True)
+    ride_id = Column(String, unique=True, index=True, nullable=False)
+    start_time = Column(DateTime)
+    duration_sec = Column(Integer, nullable=False)
+    distance_km = Column(Float)
+    avg_power = Column(Float)
+    max_power = Column(Float)
+    avg_hr = Column(Float)
+    max_hr = Column(Float)
+    avg_cadence = Column(Float)
+    max_cadence = Column(Float)
+    total_work_kj = Column(Float, nullable=False)
+    normalized_power = Column(Float)
+    tss = Column(Float)
+    left_right_balance = Column(Float)
+    power_zone_times = Column(JSON)
 
-    return ride_data
-
+def init_db():
+    """Create tables if they don't exist."""
+    Base.metadata.create_all(bind=engine)
 
 def get_ride_history():
-    db: Session = SessionLocal()
-    rides = db.query(Ride).order_by(Ride.start_time.desc()).all()
-    db.close()
+    """Fetch all rides ordered by start_time descending."""
+    session = SessionLocal()
+    try:
+        rides = session.query(Ride).order_by(Ride.start_time.desc().nullslast()).all()
+        return [r.__dict__ for r in rides]
+    finally:
+        session.close()
 
-    ride_list = []
-    for ride in rides:
-        ride_data = sanitize(ride.__dict__)
-        if ride_data.get("power_zone_times") and isinstance(ride_data["power_zone_times"], str):
-            ride_data["power_zone_times"] = json.loads(ride_data["power_zone_times"])
-        ride_list.append(ride_data)
-
-    return ride_list
-
-
-def get_all_rides():
-    db: Session = SessionLocal()
-    rides = db.query(Ride).all()
-    db.close()
-
-    ride_list = []
-    for ride in rides:
-        ride_data = sanitize(ride.__dict__)
-        if ride_data.get("power_zone_times") and isinstance(ride_data["power_zone_times"], str):
-            ride_data["power_zone_times"] = json.loads(ride_data["power_zone_times"])
-        ride_list.append(ride_data)
-
-    return ride_list
-
-
-def store_ride(ride_data: dict):
+def store_ride(metrics: dict):
     """
-    Stores a new ride record in the database, ignoring if the ride_id already exists.
-    Uses Postgres ON CONFLICT DO NOTHING to avoid duplicate key errors.
-    Ensures all bind parameters have a value (None if missing) and serializes JSON fields.
+    Insert or update a ride.
+    Uses PostgreSQL ON CONFLICT to upsert by ride_id.
     """
-    db: Session = SessionLocal()
-
-    required_keys = [
-        "ride_id", "start_time", "duration_sec", "distance_km",
-        "avg_power", "avg_hr", "avg_cadence", "max_power", "max_hr", "max_cadence",
-        "total_work_kj", "tss", "normalized_power", "left_right_balance", "power_zone_times"
-    ]
-    for key in required_keys:
-        if key not in ride_data:
-            ride_data[key] = None
-
-    # Convert power_zone_times dict to JSON string if not None
-    if ride_data["power_zone_times"] is not None:
-        ride_data["power_zone_times"] = json.dumps(ride_data["power_zone_times"])
-
-    insert_query = text("""
-        INSERT INTO rides (
-            ride_id, start_time, duration_sec, distance_km,
-            avg_power, avg_hr, avg_cadence, max_power, max_hr, max_cadence,
-            total_work_kj, tss, normalized_power, left_right_balance, power_zone_times
-        ) VALUES (
-            :ride_id, :start_time, :duration_sec, :distance_km,
-            :avg_power, :avg_hr, :avg_cadence, :max_power, :max_hr, :max_cadence,
-            :total_work_kj, :tss, :normalized_power, :left_right_balance, :power_zone_times
-        )
-        ON CONFLICT (ride_id) DO NOTHING;
-    """)
-    db.execute(insert_query, ride_data)
-    db.commit()
-    db.close()
+    session = SessionLocal()
+    stmt = insert(Ride).values(**metrics)
+    do_update_cols = {
+        col.name: getattr(stmt.excluded, col.name)
+        for col in Ride.__table__.columns
+        if col.name != "id"  # Skip the auto-generated primary key
+    }
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["ride_id"],
+        set_=do_update_cols
+    )
+    session.execute(stmt)
+    session.commit()
+    session.close()
