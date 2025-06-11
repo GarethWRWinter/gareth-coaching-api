@@ -7,6 +7,7 @@ from scripts.ride_processor import (
     detect_and_update_ftp
 )
 from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
+from scripts.dropbox_auth import refresh_dropbox_token
 import os
 
 router = APIRouter()
@@ -16,12 +17,14 @@ def latest_ride_data():
     try:
         ftp = 308.0  # Replace with dynamic FTP logic later if needed
 
-        # Get Dropbox access token and folder path
-        access_token = os.environ.get("DROPBOX_TOKEN")
+        # Refresh the Dropbox access token
+        new_access_token = refresh_dropbox_token()
+
+        # Get Dropbox folder path
         folder_path = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
 
-        # Download the latest .fit file from Dropbox
-        local_path = get_latest_fit_file_from_dropbox(access_token, folder_path)
+        # Download the latest .fit file using the refreshed token
+        local_path = get_latest_fit_file_from_dropbox(new_access_token, folder_path)
 
         # Process the latest .fit file
         return process_latest_fit_file(local_path, ftp)
