@@ -1,35 +1,23 @@
 # scripts/ride_database.py
 
+from typing import Dict, Any, List
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+from .models import Ride  # Adjust import if your model path changes
 
-Base = declarative_base()
-DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(bind=engine)
+DATABASE_URL = os.getenv("DATABASE_URL")  # expecting full Postgres URL
 
-class Ride(Base):
-    __tablename__ = "rides"
-    id = Column(Integer, primary_key=True, index=True)
-    ride_id = Column(String, unique=True, index=True)
-    start_time = Column(DateTime)
-    duration_sec = Column(Integer)
-    distance_km = Column(Float)
-    avg_power = Column(Float)
-    avg_hr = Column(Float)
-    avg_cadence = Column(Float)
-    max_power = Column(Float)
-    max_hr = Column(Float)
-    max_cadence = Column(Float)
-    total_work_kj = Column(Float)
-    tss = Column(Float)
-    left_right_balance = Column(String)
-    power_zone_times = Column(JSON)
-    normalized_power = Column(Float)
+# Create engine
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
-def store_ride(data: Dict):
+class RideStorageError(Exception):
+    """Custom exception for ride storage failures."""
+    pass
+
+def store_ride(data: Dict[str, Any]) -> None:
     session = SessionLocal()
     try:
         ride = Ride(**data)
@@ -37,13 +25,16 @@ def store_ride(data: Dict):
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
-        raise
+        raise RideStorageError(f"Error storing ride: {e}")
     finally:
         session.close()
 
-def get_ride_history():
+def get_ride_history() -> List[Dict[str, Any]]:
     session = SessionLocal()
     try:
-        return session.query(Ride).order_by(Ride.start_time.desc()).all()
+        rides = session.query(Ride).all()
+        return [r.to_dict() for r in rides]
+    except SQLAlchemyError as e:
+        raise RideStorageError(f"Failed to fetch ride history: {e}")
     finally:
         session.close()
