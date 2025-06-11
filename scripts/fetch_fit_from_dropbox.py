@@ -25,6 +25,6 @@ def get_latest_fit_file_from_dropbox(access_token, folder_path=None):
         metadata, response = dbx.files_download(path=latest_file.path_display)
         with open(local_path, "wb") as f:
             f.write(response.content)
-        return latest_file.name, local_path
+        return local_path  # ✅ Only returning the local path
     else:
         raise Exception("No .fit files found in Dropbox folder.")
