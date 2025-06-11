@@ -1,21 +1,25 @@
 # scripts/ride_database.py
 
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from scripts.models import Ride  # adjust import path as needed
+from scripts.models import Ride  # adjust import path if needed
 
-# Define this exception for error handling
 class RideStorageError(Exception):
-    """Raised when storing a ride to the database fails."""
+    """Raised when storing or retrieving rides fails."""
     pass
 
-# Set up database
-DATABASE_URL = "..."  # your Render DB URL or env var
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(bind=engine)
+# ✅ Use environment variable for DB URL
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RideStorageError("DATABASE_URL environment variable is not set")
+
+# Create engine and session factory
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def store_ride(metrics: dict) -> None:
-    """Store a processed ride metrics dict into the database."""
+    """Insert a ride record into rides table."""
     session = SessionLocal()
     try:
         ride = Ride(**metrics)
@@ -23,14 +27,12 @@ def store_ride(metrics: dict) -> None:
         session.commit()
     except Exception as exc:
         session.rollback()
-        raise RideStorageError(
-            f"Could not store ride {metrics.get('ride_id')}: {exc}"
-        ) from exc
+        raise RideStorageError(f"Could not store ride {metrics.get('ride_id')}: {exc}") from exc
     finally:
         session.close()
 
 def get_ride_history() -> list[dict]:
-    """Retrieve all stored rides, ordered newest first."""
+    """Fetch all ride records, newest first."""
     session = SessionLocal()
     try:
         rides = (
@@ -38,8 +40,8 @@ def get_ride_history() -> list[dict]:
             .order_by(Ride.start_time.desc().nullslast())
             .all()
         )
-        return [r.to_dict() for r in rides]  # ensure Ride model has .to_dict()
+        return [r.to_dict() for r in rides]
     except Exception as exc:
-        raise RideStorageError(f"Failed fetching ride history: {exc}") from exc
+        raise RideStorageError(f"Failed to fetch ride history: {exc}") from exc
     finally:
         session.close()
