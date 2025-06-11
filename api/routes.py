@@ -1,48 +1,38 @@
-from fastapi import APIRouter, HTTPException
-from scripts.ride_processor import (
-    process_latest_fit_file,
-    get_all_rides,
-    get_trend_analysis,
-    get_power_trends,
-    detect_and_update_ftp
+from fastapi import FastAPI, APIRouter, HTTPException
+from .database import SessionLocal, engine  # adjust import path
+from .ride_processor import (
+    process_latest_ride,
+    get_ride_history,
 )
-from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
-from scripts.dropbox_auth import refresh_dropbox_token
-import os
+from sqlalchemy import inspect
 
+app = FastAPI()
 router = APIRouter()
 
 @router.get("/latest-ride-data")
-def latest_ride_data():
+def latest_ride():
     try:
-        ftp = 308.0  # Replace with dynamic FTP logic later if needed
-
-        # Refresh the Dropbox access token
-        new_access_token = refresh_dropbox_token()
-
-        # Get Dropbox folder path
-        folder_path = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
-
-        # Download the latest .fit file using the refreshed token
-        local_path = get_latest_fit_file_from_dropbox(new_access_token, folder_path)
-
-        # Process the latest .fit file
-        return process_latest_fit_file(local_path, ftp)
+        data = process_latest_ride()
+        return data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {e!s}")
 
 @router.get("/ride-history")
 def ride_history():
-    return get_all_rides()
+    try:
+        rides = get_ride_history()
+        return rides
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load ride history: {e!s}")
 
-@router.get("/trend-analysis")
-def trend_analysis():
-    return get_trend_analysis()
+# 🎯 Debug endpoint: inspect your DB schema for the "rides" table
+debug_router = APIRouter()
 
-@router.get("/power-trends")
-def power_trends():
-    return get_power_trends()
+@debug_router.get("/debug-schema/rides")
+def debug_schema_rides():
+    insp = inspect(engine)
+    cols = insp.get_columns("rides")
+    return [{"name": c["name"], "type": str(c["type"])} for c in cols]
 
-@router.get("/ftp-update")
-def ftp_update():
-    return detect_and_update_ftp()
+app.include_router(router)
+app.include_router(debug_router)
