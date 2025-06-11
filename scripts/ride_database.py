@@ -1,67 +1,45 @@
 # scripts/ride_database.py
 
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import Column, Integer, String, Float, JSON, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-import os
+from sqlalchemy.orm import sessionmaker
+from scripts.models import Ride  # adjust import path as needed
 
-# --- Setup SQLAlchemy engine and session ---
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/dbname")
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+# Define this exception for error handling
+class RideStorageError(Exception):
+    """Raised when storing a ride to the database fails."""
+    pass
 
-Base = declarative_base()
+# Set up database
+DATABASE_URL = "..."  # your Render DB URL or env var
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(bind=engine)
 
-class Ride(Base):
-    __tablename__ = "rides"
-    id = Column(Integer, primary_key=True, index=True)
-    ride_id = Column(String, unique=True, index=True, nullable=False)
-    start_time = Column(DateTime)
-    duration_sec = Column(Integer, nullable=False)
-    distance_km = Column(Float)
-    avg_power = Column(Float)
-    max_power = Column(Float)
-    avg_hr = Column(Float)
-    max_hr = Column(Float)
-    avg_cadence = Column(Float)
-    max_cadence = Column(Float)
-    total_work_kj = Column(Float, nullable=False)
-    normalized_power = Column(Float)
-    tss = Column(Float)
-    left_right_balance = Column(Float)
-    power_zone_times = Column(JSON)
-
-def init_db():
-    """Create tables if they don't exist."""
-    Base.metadata.create_all(bind=engine)
-
-def get_ride_history():
-    """Fetch all rides ordered by start_time descending."""
+def store_ride(metrics: dict) -> None:
+    """Store a processed ride metrics dict into the database."""
     session = SessionLocal()
     try:
-        rides = session.query(Ride).order_by(Ride.start_time.desc().nullslast()).all()
-        return [r.__dict__ for r in rides]
+        ride = Ride(**metrics)
+        session.add(ride)
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        raise RideStorageError(
+            f"Could not store ride {metrics.get('ride_id')}: {exc}"
+        ) from exc
     finally:
         session.close()
 
-def store_ride(metrics: dict):
-    """
-    Insert or update a ride.
-    Uses PostgreSQL ON CONFLICT to upsert by ride_id.
-    """
+def get_ride_history() -> list[dict]:
+    """Retrieve all stored rides, ordered newest first."""
     session = SessionLocal()
-    stmt = insert(Ride).values(**metrics)
-    do_update_cols = {
-        col.name: getattr(stmt.excluded, col.name)
-        for col in Ride.__table__.columns
-        if col.name != "id"  # Skip the auto-generated primary key
-    }
-    stmt = stmt.on_conflict_do_update(
-        index_elements=["ride_id"],
-        set_=do_update_cols
-    )
-    session.execute(stmt)
-    session.commit()
-    session.close()
+    try:
+        rides = (
+            session.query(Ride)
+            .order_by(Ride.start_time.desc().nullslast())
+            .all()
+        )
+        return [r.to_dict() for r in rides]  # ensure Ride model has .to_dict()
+    except Exception as exc:
+        raise RideStorageError(f"Failed fetching ride history: {exc}") from exc
+    finally:
+        session.close()
