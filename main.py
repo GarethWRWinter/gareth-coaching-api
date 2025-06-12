@@ -1,11 +1,8 @@
-# main.py
-
+import os
 from fastapi import FastAPI
-from scripts import ride_database as db
 from api.routes import router
-
-# Create tables on startup
-db.Base.metadata.create_all(bind=db.engine)
+from scripts.ride_database import init_db
 
 app = FastAPI()
 app.include_router(router)
+init_db()

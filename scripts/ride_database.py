@@ -1,10 +1,9 @@
-# scripts/ride_database.py
 import os
 from typing import Dict, Any, List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from .models import Base, Ride  # models.py now has Base and Ride
+from .models import Base, Ride
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -13,6 +12,9 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 class RideStorageError(Exception):
     pass
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
 
 def store_ride(data: Dict[str, Any]) -> None:
     session = SessionLocal()
