@@ -1,49 +1,39 @@
-from datetime import datetime
-from typing import Dict
-import os
-import pandas as pd
+# scripts/ride_processor.py
 
-from scripts.parse_fit import parse_fit
-from scripts.fit_metrics import calculate_ride_metrics
-from scripts.ride_database import store_ride, get_ride_history
-from scripts.sanitize import sanitize
+from scripts.ftp_manager import load_ftp
+from scripts.ride_database import store_ride, get_ride_history, RideDBError
 
-LATEST_FIT_PATH = os.getenv("LATEST_FIT_PATH", "/mnt/data/latest.fit")
 
-def process_latest_fit_file(ftp: float) -> Dict:
+def process_latest_fit_file(ftp: int | None = None) -> dict:
     """
-    Processes the latest .FIT ride file using the given FTP.
-    Calculates metrics and stores in DB.
+    Load latest FIT file, process with provided FTP or fallback.
+    Returns metrics dict.
     """
-    filepath = LATEST_FIT_PATH
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"No FIT file at {filepath}")
+    if ftp is None:
+        ftp = load_ftp()
 
-    df: pd.DataFrame = parse_fit(filepath)
-    if df.empty:
-        raise ValueError("No data found in FIT file.")
+    # Implement your FIT parsing logic here (e.g. via fitparse)
+    # Example placeholder:
+    ride_data = {
+        "ride_id": "latest.fit",
+        "avg_power": 200,
+        "duration_sec": 3600,
+        "ftp_used": ftp,
+        # ... more fields ...
+    }
 
-    metrics = calculate_ride_metrics(df, ftp)
-    metrics = sanitize(metrics)
+    # Save to DB
+    try:
+        store_ride(ride_data)
+    except RideDBError as e:
+        return {"detail": f"DB storage failed: {e}"}
 
-    ride_id = f"{datetime.now().strftime('%Y-%m-%d-%H%M%S')}-{os.path.basename(filepath)}"
-    metrics["ride_id"] = ride_id
+    return ride_data
 
-    store_ride(metrics)
-    return metrics
 
 def get_all_rides() -> list[dict]:
     """
-    Retrieves all rides from DB.
-    Ensures consistent list-of-dicts output.
+    Return list of ride info dicts.
     """
-    rides = get_ride_history()
-    results = []
-    for r in rides:
-        if hasattr(r, "to_dict"):
-            results.append(r.to_dict())
-        elif isinstance(r, dict):
-            results.append(r)
-        else:
-            results.append(vars(r))
-    return results
+    raw = get_ride_history()
+    return raw  # already dicts

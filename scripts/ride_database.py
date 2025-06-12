@@ -1,39 +1,62 @@
+# scripts/ride_database.py
+
 import os
-from typing import Dict, Any, List
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
-from .models import Base, Ride
+from typing import Any
+from sqlalchemy import create_engine, Column, Integer, Float, String, JSON, select
+from sqlalchemy.orm import declarative_base, Session
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
 
+Base = declarative_base()
 engine = create_engine(DATABASE_URL, echo=False, future=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
-class RideStorageError(Exception):
+
+class Ride(Base):
+    __tablename__ = "rides"
+
+    id = Column(Integer, primary_key=True)
+    ride_id = Column(String, unique=True, nullable=False)
+    avg_power = Column(Float, nullable=False)
+    duration_sec = Column(Integer, nullable=False)
+    ftp_used = Column(Integer, nullable=False)
+    extra = Column(JSON, nullable=True)
+
+
+class RideDBError(Exception):
     pass
+
 
 def init_db():
     Base.metadata.create_all(bind=engine)
 
-def store_ride(data: Dict[str, Any]) -> None:
-    session = SessionLocal()
-    try:
-        ride = Ride(**data)
-        session.add(ride)
-        session.commit()
-    except SQLAlchemyError as e:
-        session.rollback()
-        raise RideStorageError(f"Error storing ride: {e}")
-    finally:
-        session.close()
 
-def get_ride_history() -> List[Dict[str, Any]]:
-    session = SessionLocal()
+def store_ride(data: dict[str, Any]):
+    ride = Ride(
+        ride_id=data["ride_id"],
+        avg_power=data["avg_power"],
+        duration_sec=data["duration_sec"],
+        ftp_used=data["ftp_used"],
+        extra={k: data[k] for k in data if k not in ("ride_id", "avg_power", "duration_sec", "ftp_used")},
+    )
     try:
-        rides = session.query(Ride).all()
-        return [r.to_dict() for r in rides]
-    except SQLAlchemyError as e:
-        raise RideStorageError(f"Failed to fetch ride history: {e}")
-    finally:
-        session.close()
+        with Session(engine) as session:
+            session.add(ride)
+            session.commit()
+    except Exception as e:
+        raise RideDBError(e)
+
+
+def get_ride_history() -> list[dict]:
+    with Session(engine) as session:
+        stmt = select(Ride)
+        rides = session.scalars(stmt).all()
+        return [
+            {
+                "ride_id": r.ride_id,
+                "avg_power": r.avg_power,
+                "duration_sec": r.duration_sec,
+                "ftp_used": r.ftp_used,
+                **(r.extra or {}),
+            }
+            for r in rides
+        ]

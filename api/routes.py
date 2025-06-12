@@ -1,37 +1,45 @@
+# api/routes.py
+
 from fastapi import APIRouter, HTTPException, Query
-from scripts.ride_processor import process_latest_fit_file, get_all_rides
 from pydantic import BaseModel
+from scripts.ride_processor import process_latest_fit_file, get_all_rides
+from scripts.ftp_manager import load_ftp, set_ftp, FTPManagerError
+from scripts.ride_database import init_db
 
 router = APIRouter()
 
-# GET /latest-ride-data?ftp=308
-@router.get("/latest-ride-data")
-async def latest_ride_data(ftp: float = Query(..., gt=0, description="Functional Threshold Power")):
+# Initialize DB (ensure run at startup in main.py)
+init_db()
+
+class FTPUpdate(BaseModel):
+    new_ftp: int
+
+
+@router.get("/ftp")
+def get_ftp():
     try:
-        data = process_latest_fit_file(ftp)
-        return data
-    except FileNotFoundError as e:
+        current = load_ftp()
+    except FTPManagerError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process latest ride: {e}")
+    return {"ftp": current}
 
-# GET /ride-history
+
+@router.post("/ftp")
+def update_ftp(payload: FTPUpdate):
+    old, new = set_ftp(payload.new_ftp)
+    return {"old_ftp": old, "new_ftp": new}
+
+
+@router.get("/latest-ride-data")
+def latest_ride_data(ftp: int = Query(None, description="Optional FTP override")):
+    result = process_latest_fit_file(ftp)
+    return result
+
+
 @router.get("/ride-history")
-async def ride_history():
+def ride_history():
     try:
-        return {"rides": get_all_rides()}
+        rides = get_all_rides()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch ride history: {e}")
-
-# PUT /ftp
-class UpdateFTPRequest(BaseModel):
-    new_ftp: float
-
-_current_ftp = 308.0
-
-@router.put("/ftp")
-async def update_ftp(req: UpdateFTPRequest):
-    global _current_ftp
-    prev = _current_ftp
-    _current_ftp = req.new_ftp
-    return {"previous_ftp": prev, "new_ftp": _current_ftp}
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"rides": rides}
