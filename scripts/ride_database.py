@@ -3,18 +3,21 @@
 from typing import Dict, Any, List
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
-from .models import Ride  # Adjust import if your model path changes
+from .models import Ride  # contains Ride model with Base metadata
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # expecting full Postgres URL
+DATABASE_URL = os.getenv("DATABASE_URL")  # should be full Postgres URL
+
+# SQLAlchemy Base
+Base = declarative_base()
 
 # Create engine
 engine = create_engine(DATABASE_URL, echo=False, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 class RideStorageError(Exception):
-    """Custom exception for ride storage failures."""
+    """Raised when storing or fetching rides fails."""
     pass
 
 def store_ride(data: Dict[str, Any]) -> None:
