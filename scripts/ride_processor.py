@@ -1,39 +1,21 @@
-# scripts/ride_processor.py
+import os
+from datetime import datetime
+from typing import Dict
+from scripts.parse_fit import parse_fit
+from scripts.fit_metrics import calculate_ride_metrics
+from scripts.ride_database import store_ride, get_ride_history
+from scripts.sanitize import sanitize
 
-from scripts.ftp_manager import load_ftp
-from scripts.ride_database import store_ride, get_ride_history, RideDBError
+def process_latest_fit_file(filepath: str) -> Dict:
+    df = parse_fit(filepath)
+    if df.empty:
+        raise ValueError("No data found in FIT file.")
 
+    ftp = int(os.getenv("FTP", "250"))
+    ride_metrics = calculate_ride_metrics(df, ftp)
+    ride_metrics["ftp_used"] = ftp
+    ride_metrics["ride_id"] = f"{datetime.now().strftime('%Y-%m-%d-%H%M%S')}-{filepath.split('/')[-1]}"
+    ride_metrics = sanitize(ride_metrics)
 
-def process_latest_fit_file(ftp: int | None = None) -> dict:
-    """
-    Load latest FIT file, process with provided FTP or fallback.
-    Returns metrics dict.
-    """
-    if ftp is None:
-        ftp = load_ftp()
-
-    # Implement your FIT parsing logic here (e.g. via fitparse)
-    # Example placeholder:
-    ride_data = {
-        "ride_id": "latest.fit",
-        "avg_power": 200,
-        "duration_sec": 3600,
-        "ftp_used": ftp,
-        # ... more fields ...
-    }
-
-    # Save to DB
-    try:
-        store_ride(ride_data)
-    except RideDBError as e:
-        return {"detail": f"DB storage failed: {e}"}
-
-    return ride_data
-
-
-def get_all_rides() -> list[dict]:
-    """
-    Return list of ride info dicts.
-    """
-    raw = get_ride_history()
-    return raw  # already dicts
+    store_ride(ride_metrics)
+    return ride_metrics
