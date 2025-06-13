@@ -114,3 +114,7 @@ def fetch_ride_by_id(ride_id: str):
         return dict(zip(columns, row))
     else:
         return None
+
+
+def get_ride_history():
+    return fetch_all_rides()
