@@ -13,3 +13,6 @@ def parse_fit(filepath: str) -> pd.DataFrame:
 
     df = pd.DataFrame(records)
     return df
+
+# ✅ Alias for API stability
+parse_fit_file = parse_fit
