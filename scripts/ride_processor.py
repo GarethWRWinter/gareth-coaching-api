@@ -1,41 +1,25 @@
-# scripts/ride_processor.py
-
 import os
-from scripts.fetch_fit_from_dropbox import get_latest_fit_file_from_dropbox
+from scripts.dropbox_utils import list_fit_files, download_fit_file
 from scripts.parse_fit import parse_fit_file
-from scripts.sanitize import sanitize
 from scripts.fit_metrics import calculate_ride_metrics
 from scripts.ride_database import store_ride, get_ride_history, get_ride_by_id
-from scripts.constants import FTP_DEFAULT
+from scripts.sanitize import sanitize
 
-def process_latest_fit_file(access_token: str, ftp: float = FTP_DEFAULT):
-    folder_path = os.getenv("DROPBOX_FOLDER")
-    if not folder_path:
-        raise EnvironmentError("DROPBOX_FOLDER not set in environment variables.")
 
-    # Step 1: Download latest .fit file
-    folder_path, file_name, local_path = get_latest_fit_file_from_dropbox(access_token, folder_path)
+def process_latest_fit_file():
+    """Fetch, parse, analyze and store the latest .fit file."""
+    try:
+        fit_files = list_fit_files()
+        if not fit_files:
+            return {"error": "No .fit files found in Dropbox"}
 
-    # Step 2: Parse FIT data
-    raw_data = parse_fit_file(local_path)
+        latest_file = sorted(fit_files)[-1]
+        local_path = download_fit_file(latest_file)
 
-    # Step 3: Calculate ride metrics using provided FTP
-    ride_metrics = calculate_ride_metrics(raw_data, ftp)
+        fit_df = parse_fit_file(local_path)
+        ride_summary = calculate_ride_metrics(fit_df, latest_file)
+        store_ride(ride_summary, fit_df)
 
-    # Step 4: Store in database
-    store_ride(ride_metrics)
-
-    # Step 5: Sanitize for API response
-    return sanitize(ride_metrics), raw_data
-
-def process_specific_ride(file_path: str, ftp: float = FTP_DEFAULT):
-    raw_data = parse_fit_file(file_path)
-    ride_metrics = calculate_ride_metrics(raw_data, ftp)
-    store_ride(ride_metrics)
-    return sanitize(ride_metrics), raw_data
-
-def get_all_rides():
-    return get_ride_history()
-
-def get_ride_details(ride_id: str):
-    return get_ride_by_id(ride_id)
+        return sanitize({"summary": ride_summary, "data": fit_df.to_dict(orient="records")})
+    except Exception as e:
+        return {"error": f"Failed to process latest ride: {str(e)}"}
