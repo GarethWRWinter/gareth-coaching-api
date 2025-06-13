@@ -80,3 +80,17 @@ def get_all_rides_with_data() -> List[Dict[str, Any]]:
             }
             for row in rows
         ]
+
+
+def update_ftp_value(ride_id: str, new_ftp: int) -> bool:
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT summary FROM rides WHERE ride_id = ?", (ride_id,))
+        row = cursor.fetchone()
+        if row:
+            summary = json.loads(row[0])
+            summary["ftp"] = new_ftp
+            cursor.execute("UPDATE rides SET summary = ? WHERE ride_id = ?", (json.dumps(summary), ride_id))
+            conn.commit()
+            return True
+        return False
