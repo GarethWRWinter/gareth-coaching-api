@@ -1,136 +1,96 @@
-# scripts/ride_database.py
-
-import os
+import sqlite3
 import json
-from sqlalchemy import create_engine, Column, Integer, Float, String, JSON, DateTime
-from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
-from scripts.constants import FTP_DEFAULT
+from typing import List, Dict, Optional
+import os
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DB_FILE = os.getenv("DB_FILE", "ride_data.db")
 
-if not DATABASE_URL:
-    raise EnvironmentError("DATABASE_URL environment variable not set.")
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
-
-class Ride(Base):
-    __tablename__ = 'rides'
-
-    id = Column(Integer, primary_key=True, index=True)
-    ride_id = Column(String, unique=True, index=True)
-    start_time = Column(DateTime, nullable=True)
-    duration_sec = Column(Integer)
-    distance_km = Column(Float)
-    avg_power = Column(Float)
-    max_power = Column(Float)
-    avg_hr = Column(Float)
-    max_hr = Column(Float)
-    avg_cadence = Column(Float)
-    max_cadence = Column(Float)
-    total_work_kj = Column(Float)
-    tss = Column(Float)
-    left_right_balance = Column(String)
-    normalized_power = Column(Float)
-    power_zone_times = Column(JSON)
-    ftp_used = Column(Float, default=FTP_DEFAULT)
-    extra = Column(JSON, nullable=True)
+def get_db_connection():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def initialize_database():
-    Base.metadata.create_all(bind=engine)
-
-def store_ride(ride_metrics: dict):
-    session = SessionLocal()
-    try:
-        ride = Ride(
-            ride_id=ride_metrics.get("ride_id"),
-            start_time=ride_metrics.get("start_time", datetime.utcnow()),
-            duration_sec=ride_metrics.get("duration_sec"),
-            distance_km=ride_metrics.get("distance_km"),
-            avg_power=ride_metrics.get("avg_power"),
-            max_power=ride_metrics.get("max_power"),
-            avg_hr=ride_metrics.get("avg_hr"),
-            max_hr=ride_metrics.get("max_hr"),
-            avg_cadence=ride_metrics.get("avg_cadence"),
-            max_cadence=ride_metrics.get("max_cadence"),
-            total_work_kj=ride_metrics.get("total_work_kj"),
-            tss=ride_metrics.get("tss"),
-            left_right_balance=ride_metrics.get("left_right_balance"),
-            normalized_power=ride_metrics.get("normalized_power"),
-            power_zone_times=ride_metrics.get("power_zone_times"),
-            ftp_used=ride_metrics.get("ftp", FTP_DEFAULT),
-            extra=ride_metrics.get("extra", None)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS rides (
+            ride_id TEXT PRIMARY KEY,
+            start_time TEXT,
+            summary_json TEXT,
+            seconds_json TEXT
         )
-        session.add(ride)
-        session.commit()
-    except SQLAlchemyError as e:
-        session.rollback()
-        raise RuntimeError(f"Failed to store ride: {e}")
-    finally:
-        session.close()
+    """)
+    conn.commit()
+    conn.close()
 
-def get_ride_history():
-    session = SessionLocal()
-    try:
-        rides = session.query(Ride).order_by(Ride.start_time.desc()).all()
-        ride_list = []
-        for ride in rides:
-            ride_list.append({
-                "id": ride.id,
-                "ride_id": ride.ride_id,
-                "start_time": ride.start_time.isoformat() if ride.start_time else None,
-                "duration_sec": ride.duration_sec,
-                "distance_km": ride.distance_km,
-                "avg_power": ride.avg_power,
-                "max_power": ride.max_power,
-                "avg_hr": ride.avg_hr,
-                "max_hr": ride.max_hr,
-                "avg_cadence": ride.avg_cadence,
-                "max_cadence": ride.max_cadence,
-                "total_work_kj": ride.total_work_kj,
-                "tss": ride.tss,
-                "left_right_balance": ride.left_right_balance,
-                "normalized_power": ride.normalized_power,
-                "power_zone_times": ride.power_zone_times,
-                "ftp_used": ride.ftp_used,
-                "extra": ride.extra
-            })
-        return ride_list
-    except SQLAlchemyError as e:
-        raise RuntimeError(f"Failed to fetch ride history: {e}")
-    finally:
-        session.close()
+def store_ride(ride_id: str, start_time: str, summary: dict, seconds: List[dict]):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "REPLACE INTO rides (ride_id, start_time, summary_json, seconds_json) VALUES (?, ?, ?, ?)",
+        (ride_id, start_time, json.dumps(summary), json.dumps(seconds))
+    )
+    conn.commit()
+    conn.close()
 
-def get_ride_by_id(ride_id: str):
-    session = SessionLocal()
-    try:
-        ride = session.query(Ride).filter(Ride.ride_id == ride_id).first()
-        if not ride:
-            return None
+def get_ride_summary(ride_id: str) -> Optional[Dict]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT summary_json FROM rides WHERE ride_id = ?", (ride_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return json.loads(row["summary_json"]) if row else None
+
+def get_all_ride_summaries() -> List[Dict]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ride_id, summary_json FROM rides ORDER BY start_time DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"ride_id": row["ride_id"], **json.loads(row["summary_json"])} for row in rows]
+
+def get_latest_ride_summary() -> Optional[Dict]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT summary_json FROM rides ORDER BY start_time DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    return json.loads(row["summary_json"]) if row else None
+
+def get_latest_ride_id() -> Optional[str]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ride_id FROM rides ORDER BY start_time DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    return row["ride_id"] if row else None
+
+def get_full_ride_data(ride_id: str) -> Optional[Dict]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT summary_json, seconds_json FROM rides WHERE ride_id = ?", (ride_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
         return {
-            "id": ride.id,
-            "ride_id": ride.ride_id,
-            "start_time": ride.start_time.isoformat() if ride.start_time else None,
-            "duration_sec": ride.duration_sec,
-            "distance_km": ride.distance_km,
-            "avg_power": ride.avg_power,
-            "max_power": ride.max_power,
-            "avg_hr": ride.avg_hr,
-            "max_hr": ride.max_hr,
-            "avg_cadence": ride.avg_cadence,
-            "max_cadence": ride.max_cadence,
-            "total_work_kj": ride.total_work_kj,
-            "tss": ride.tss,
-            "left_right_balance": ride.left_right_balance,
-            "normalized_power": ride.normalized_power,
-            "power_zone_times": ride.power_zone_times,
-            "ftp_used": ride.ftp_used,
-            "extra": ride.extra
+            "summary": json.loads(row["summary_json"]),
+            "data": json.loads(row["seconds_json"])
         }
-    except SQLAlchemyError as e:
-        raise RuntimeError(f"Failed to fetch ride by ID: {e}")
-    finally:
-        session.close()
+    return None
+
+def get_all_rides_with_data() -> List[Dict]:
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT ride_id, start_time, summary_json, seconds_json FROM rides ORDER BY start_time DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [
+        {
+            "ride_id": row["ride_id"],
+            "start_time": row["start_time"],
+            "summary": json.loads(row["summary_json"]),
+            "data": json.loads(row["seconds_json"])
+        }
+        for row in rows
+    ]
