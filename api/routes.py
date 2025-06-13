@@ -2,10 +2,10 @@ from fastapi import APIRouter, HTTPException, Query
 from scripts.ride_processor import (
     process_latest_fit_file,
     get_ride_by_id,
-    get_power_trends,
 )
 from scripts.ride_database import get_ride_history
 from scripts.trend_analysis import get_trend_analysis
+from scripts.power_trends import get_power_trends
 from scripts.ftp_tracking import detect_and_optionally_update_ftp
 
 router = APIRouter()
