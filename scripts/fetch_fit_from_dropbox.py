@@ -1,30 +1,29 @@
-import dropbox
 import os
+import dropbox
 
-def get_latest_fit_file_from_dropbox(access_token, folder_path=None):
-    """
-    Fetches the latest .fit file from the given Dropbox folder.
-    If folder_path is not provided, it uses the DROPBOX_FOLDER environment variable.
-    """
-    if folder_path is None:
-        folder_path = os.environ.get("DROPBOX_FOLDER", "/Apps/WahooFitness")
-    
+def get_latest_fit_file_from_dropbox(access_token, folder_path):
     dbx = dropbox.Dropbox(access_token)
-    
     try:
-        res = dbx.files_list_folder(folder_path)
-    except dropbox.exceptions.ApiError as e:
-        raise Exception(f"Dropbox folder listing failed: {e}")
-    
-    fit_files = [entry for entry in res.entries if entry.name.endswith(".fit")]
-    fit_files.sort(key=lambda x: x.client_modified, reverse=True)
+        result = dbx.files_list_folder(folder_path)
+        fit_files = [entry for entry in result.entries if entry.name.endswith(".fit")]
+        if not fit_files:
+            raise Exception("No .fit files found in Dropbox folder.")
 
-    if fit_files:
-        latest_file = fit_files[0]
-        local_path = f"/tmp/{latest_file.name}"
-        metadata, response = dbx.files_download(path=latest_file.path_display)
+        latest_file = max(fit_files, key=lambda x: x.client_modified)
+        return latest_file.name
+    except Exception as e:
+        raise Exception(f"Failed to get latest FIT file: {e}")
+
+def download_fit_file_from_dropbox(access_token, folder_path, file_name):
+    dbx = dropbox.Dropbox(access_token)
+    dropbox_path = f"{folder_path}/{file_name}"
+    local_path = f"/tmp/{file_name}"
+
+    try:
         with open(local_path, "wb") as f:
-            f.write(response.content)
-        return local_path  # ✅ Only returning the local path
-    else:
-        raise Exception("No .fit files found in Dropbox folder.")
+            metadata, res = dbx.files_download(dropbox_path)
+            f.write(res.content)
+    except Exception as e:
+        raise Exception(f"Failed to download FIT file: {e}")
+
+    return local_path
