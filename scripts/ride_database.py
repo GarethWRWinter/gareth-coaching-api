@@ -1,96 +1,98 @@
-# scripts/ride_database.py
-
 import sqlite3
 import json
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 DB_PATH = "ride_data.db"
 
-
 def initialize_database():
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS rides (
-                ride_id TEXT PRIMARY KEY,
-                date TEXT,
-                summary TEXT,
-                data TEXT
-            )
-        """)
-        conn.commit()
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS rides (
+            ride_id TEXT PRIMARY KEY,
+            date TEXT,
+            duration REAL,
+            tss REAL,
+            normalized_power REAL,
+            average_power REAL,
+            average_heart_rate REAL,
+            time_in_zones TEXT,
+            second_by_second_data TEXT,
+            tags TEXT,
+            quality_score REAL,
+            ftp INTEGER
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-
-def store_ride(ride_id: str, date: str, summary: Dict[str, Any], data: List[Dict[str, Any]]):
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT OR REPLACE INTO rides (ride_id, date, summary, data)
-            VALUES (?, ?, ?, ?)
-        """, (
+def store_ride(ride: Dict):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT OR REPLACE INTO rides (
             ride_id,
             date,
-            json.dumps(summary),
-            json.dumps(data)
-        ))
-        conn.commit()
+            duration,
+            tss,
+            normalized_power,
+            average_power,
+            average_heart_rate,
+            time_in_zones,
+            second_by_second_data,
+            tags,
+            quality_score,
+            ftp
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        ride["ride_id"],
+        ride["date"],
+        ride["duration"],
+        ride["tss"],
+        ride["normalized_power"],
+        ride["average_power"],
+        ride["average_heart_rate"],
+        json.dumps(ride["time_in_zones"]),
+        json.dumps(ride["second_by_second_data"]),
+        json.dumps(ride.get("tags", [])),
+        ride.get("quality_score"),
+        ride.get("ftp")
+    ))
+    conn.commit()
+    conn.close()
 
+def get_ride_history() -> List[Dict]:
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM rides ORDER BY date DESC")
+    rows = cursor.fetchall()
+    conn.close()
 
-def get_ride_history() -> List[Dict[str, Any]]:
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT ride_id, date, summary FROM rides ORDER BY date DESC")
-        rows = cursor.fetchall()
-        return [
-            {
-                "ride_id": row[0],
-                "date": row[1],
-                "summary": json.loads(row[2])
-            }
-            for row in rows
-        ]
+    columns = [description[0] for description in cursor.description]
+    return [dict(zip(columns, row)) for row in rows]
 
+def get_ride_by_id(ride_id: str) -> Optional[Dict]:
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM rides WHERE ride_id = ?", (ride_id,))
+    row = cursor.fetchone()
+    conn.close()
 
-def get_ride_by_id(ride_id: str) -> Optional[Dict[str, Any]]:
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT ride_id, date, summary, data FROM rides WHERE ride_id = ?", (ride_id,))
-        row = cursor.fetchone()
-        if row:
-            return {
-                "ride_id": row[0],
-                "date": row[1],
-                "summary": json.loads(row[2]),
-                "data": json.loads(row[3])
-            }
-        return None
+    if row:
+        columns = [description[0] for description in cursor.description]
+        return dict(zip(columns, row))
+    return None
 
+def get_all_rides_with_data() -> List[Dict]:
+    return get_ride_history()
 
-def get_all_rides_with_data() -> List[Dict[str, Any]]:
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT ride_id, date, summary, data FROM rides")
-        rows = cursor.fetchall()
-        return [
-            {
-                "ride_id": row[0],
-                "date": row[1],
-                "summary": json.loads(row[2]),
-                "data": json.loads(row[3])
-            }
-            for row in rows
-        ]
-
-
-def update_ftp_value(ride_id: str, new_ftp: int) -> bool:
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT summary FROM rides WHERE ride_id = ?", (ride_id,))
-        row = cursor.fetchone()
-        if row:
-            summary = json.loads(row[0])
-            summary["ftp"] = new_ftp
-            cursor.execute("UPDATE rides SET summary = ? WHERE ride_id = ?", (json.dumps(summary), ride_id))
-            conn.commit()
-            return True
-        return False
+def update_ftp_value(ride_id: str, ftp: int):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE rides
+        SET ftp = ?
+        WHERE ride_id = ?
+    """, (ftp, ride_id))
+    conn.commit()
+    conn.close()
