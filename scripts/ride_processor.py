@@ -8,13 +8,14 @@ from scripts.ride_database import store_ride, get_latest_ride, get_ride_by_id
 from scripts.sanitize import sanitize
 
 
-def process_latest_fit_file(ftp: int):
+def process_latest_fit_file():
     try:
-        print(f"🚴 Processing latest ride with FTP: {ftp}")
+        print("🚴 Processing latest ride...")
         access_token = os.getenv("DROPBOX_TOKEN")
         dropbox_folder = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+        ftp = int(os.getenv("FTP", "308"))  # use environment or default fallback
 
-        print(f"📁 Dropbox Folder: {dropbox_folder}")
+        print(f"📁 Dropbox Folder: {dropbox_folder}, FTP: {ftp}")
         folder_path, file_name, local_path = get_latest_fit_file_from_dropbox(
             access_token=access_token,
             folder_path=dropbox_folder,
