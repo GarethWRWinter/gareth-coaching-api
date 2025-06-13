@@ -122,3 +122,15 @@ def get_ride_history():
 
 def get_all_rides_with_data():
     return fetch_all_rides()
+
+
+def update_ftp_value(ride_id: str, new_ftp: int):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE rides
+        SET ftp_used = ?
+        WHERE ride_id = ?
+    """, (new_ftp, ride_id))
+    conn.commit()
+    conn.close()
