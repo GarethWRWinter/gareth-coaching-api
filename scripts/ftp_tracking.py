@@ -1,44 +1,46 @@
 # scripts/ftp_tracking.py
 
 from scripts.ride_database import get_ride_history, update_ftp_value
-from datetime import datetime
-import pandas as pd
 
-CURRENT_FTP = 308  # Default unless updated
+def detect_and_optionally_update_ftp(update: bool = False) -> dict:
+    """
+    Detect FTP from historical ride data using best 20-minute effort.
+    Optionally update the stored FTP value in the database.
 
-def detect_and_update_ftp():
-    try:
-        rides = get_ride_history()
-        if not rides or len(rides) < 1:
-            return {"ftp": CURRENT_FTP, "message": "No rides available to analyze FTP."}
+    Args:
+        update (bool): If True, updates FTP in DB.
 
-        best_20_min_power = 0
-        best_ride_id = None
+    Returns:
+        dict: {
+            "detected_ftp": int,
+            "was_updated": bool
+        }
+    """
+    rides = get_ride_history()
+    best_20_min_power = 0
 
-        for ride in rides:
-            if not ride.get("power_zone_times"):
-                continue
-            np = ride.get("normalized_power")
-            duration = ride.get("duration_sec", 0)
-            avg_power = ride.get("avg_power", 0)
+    for ride in rides:
+        if "second_by_second" not in ride:
+            continue
+        powers = [point.get("power", 0) for point in ride["second_by_second"] if point.get("power")]
+        if len(powers) < 1200:
+            continue
+        for i in range(len(powers) - 1200):
+            avg_20_min = sum(powers[i:i+1200]) / 1200
+            if avg_20_min > best_20_min_power:
+                best_20_min_power = avg_20_min
 
-            if duration >= 1200 and avg_power > best_20_min_power:
-                best_20_min_power = avg_power
-                best_ride_id = ride.get("ride_id")
+    if best_20_min_power == 0:
+        return {"detected_ftp": None, "was_updated": False}
 
-        estimated_ftp = round(best_20_min_power * 0.95, 1)
+    estimated_ftp = int(round(best_20_min_power * 0.95))
+    was_updated = False
 
-        if estimated_ftp > CURRENT_FTP + 3:
-            update_ftp_value(estimated_ftp)
-            return {
-                "ftp": estimated_ftp,
-                "message": f"FTP updated from {CURRENT_FTP} to {estimated_ftp} based on ride {best_ride_id}."
-            }
-        else:
-            return {
-                "ftp": CURRENT_FTP,
-                "message": f"No change: best 20-min effort doesn't justify an update. Best effort: {best_20_min_power}w."
-            }
+    if update:
+        update_ftp_value(estimated_ftp)
+        was_updated = True
 
-    except Exception as e:
-        return {"ftp": CURRENT_FTP, "message": f"Error analyzing FTP: {str(e)}"}
+    return {
+        "detected_ftp": estimated_ftp,
+        "was_updated": was_updated
+    }
