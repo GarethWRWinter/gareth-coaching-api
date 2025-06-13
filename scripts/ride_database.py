@@ -118,3 +118,7 @@ def fetch_ride_by_id(ride_id: str):
 
 def get_ride_history():
     return fetch_all_rides()
+
+
+def get_all_rides_with_data():
+    return fetch_all_rides()
