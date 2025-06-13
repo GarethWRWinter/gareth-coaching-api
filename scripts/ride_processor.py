@@ -9,28 +9,29 @@ from scripts.sanitize import sanitize
 
 
 def process_latest_fit_file(ftp: int):
-    """Fetches, parses, analyzes, and stores the latest FIT file ride."""
-    access_token = os.getenv("DROPBOX_TOKEN")
-    dropbox_folder = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
+    try:
+        print(f"🚴 Processing latest ride with FTP: {ftp}")
+        access_token = os.getenv("DROPBOX_TOKEN")
+        dropbox_folder = os.getenv("DROPBOX_FOLDER", "/Apps/WahooFitness")
 
-    folder_path, file_name, local_path = get_latest_fit_file_from_dropbox(
-        access_token=access_token,
-        folder_path=dropbox_folder,
-        local_download_path="latest_ride.fit"
-    )
+        print(f"📁 Dropbox Folder: {dropbox_folder}")
+        folder_path, file_name, local_path = get_latest_fit_file_from_dropbox(
+            access_token=access_token,
+            folder_path=dropbox_folder,
+            local_download_path="latest_ride.fit"
+        )
+        print(f"📂 Downloaded FIT file: {local_path}")
 
-    fit_df = parse_fit_file(local_path)
+        fit_df = parse_fit_file(local_path)
+        print(f"📊 Parsed FIT DataFrame with {len(fit_df)} rows")
 
-    summary = calculate_ride_metrics(fit_df, ftp=ftp)
+        summary = calculate_ride_metrics(fit_df, ftp=ftp)
+        print(f"📈 Calculated ride summary: {summary}")
 
-    store_ride(summary, fit_df)
+        store_ride(summary, fit_df)
+        print(f"💾 Ride stored in database")
 
-    return sanitize(summary), sanitize(fit_df.to_dict(orient="records"))
-
-
-def get_latest_ride_summary():
-    return get_latest_ride()
-
-
-def get_ride_by_id_from_db(ride_id):
-    return get_ride_by_id(ride_id)
+        return sanitize(summary), sanitize(fit_df.to_dict(orient="records"))
+    except Exception as e:
+        print(f"❌ Failed to process latest ride: {e}")
+        raise
