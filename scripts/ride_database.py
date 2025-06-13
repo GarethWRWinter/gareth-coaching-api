@@ -1,12 +1,13 @@
-import sqlite3
-import json
-from typing import List, Dict, Optional
-import os
+# scripts/ride_database.py
 
-DB_FILE = os.getenv("DB_FILE", "ride_data.db")
+import sqlite3
+import os
+from scripts.sanitize import sanitize
+
+DB_PATH = os.getenv("DATABASE_PATH", "ride_data.db")
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -17,80 +18,77 @@ def initialize_database():
         CREATE TABLE IF NOT EXISTS rides (
             ride_id TEXT PRIMARY KEY,
             start_time TEXT,
-            summary_json TEXT,
-            seconds_json TEXT
+            duration_sec INTEGER,
+            avg_power REAL,
+            avg_hr REAL,
+            tss REAL,
+            np REAL,
+            intensity REAL,
+            time_in_zones TEXT,
+            tag TEXT,
+            full_data TEXT
         )
     """)
     conn.commit()
     conn.close()
 
-def store_ride(ride_id: str, start_time: str, summary: dict, seconds: List[dict]):
+def store_ride(ride_summary: dict, full_data: list[dict]):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "REPLACE INTO rides (ride_id, start_time, summary_json, seconds_json) VALUES (?, ?, ?, ?)",
-        (ride_id, start_time, json.dumps(summary), json.dumps(seconds))
-    )
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO rides (
+            ride_id, start_time, duration_sec, avg_power, avg_hr, tss, np, intensity,
+            time_in_zones, tag, full_data
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        ride_summary["ride_id"],
+        ride_summary.get("start_time"),
+        ride_summary.get("duration_sec"),
+        ride_summary.get("avg_power"),
+        ride_summary.get("avg_hr"),
+        ride_summary.get("tss"),
+        ride_summary.get("np"),
+        ride_summary.get("intensity"),
+        str(ride_summary.get("time_in_zones")),
+        ride_summary.get("tag", "Unclassified"),
+        str(full_data)
+    ))
+
     conn.commit()
     conn.close()
 
-def get_ride_summary(ride_id: str) -> Optional[Dict]:
+def get_ride_summary_by_id(ride_id: str):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT summary_json FROM rides WHERE ride_id = ?", (ride_id,))
+    cursor.execute("SELECT * FROM rides WHERE ride_id = ?", (ride_id,))
     row = cursor.fetchone()
     conn.close()
-    return json.loads(row["summary_json"]) if row else None
+    return dict(row) if row else None
 
-def get_all_ride_summaries() -> List[Dict]:
+def get_all_rides():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT ride_id, summary_json FROM rides ORDER BY start_time DESC")
+    cursor.execute("SELECT ride_id, start_time, avg_power, tss, duration_sec FROM rides ORDER BY start_time DESC")
     rows = cursor.fetchall()
     conn.close()
-    return [{"ride_id": row["ride_id"], **json.loads(row["summary_json"])} for row in rows]
+    return [dict(row) for row in rows]
 
-def get_latest_ride_summary() -> Optional[Dict]:
+def get_all_rides_with_data():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT summary_json FROM rides ORDER BY start_time DESC LIMIT 1")
-    row = cursor.fetchone()
-    conn.close()
-    return json.loads(row["summary_json"]) if row else None
-
-def get_latest_ride_id() -> Optional[str]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT ride_id FROM rides ORDER BY start_time DESC LIMIT 1")
-    row = cursor.fetchone()
-    conn.close()
-    return row["ride_id"] if row else None
-
-def get_full_ride_data(ride_id: str) -> Optional[Dict]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT summary_json, seconds_json FROM rides WHERE ride_id = ?", (ride_id,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return {
-            "summary": json.loads(row["summary_json"]),
-            "data": json.loads(row["seconds_json"])
-        }
-    return None
-
-def get_all_rides_with_data() -> List[Dict]:
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT ride_id, start_time, summary_json, seconds_json FROM rides ORDER BY start_time DESC")
+    cursor.execute("SELECT * FROM rides ORDER BY start_time DESC")
     rows = cursor.fetchall()
     conn.close()
-    return [
-        {
-            "ride_id": row["ride_id"],
-            "start_time": row["start_time"],
-            "summary": json.loads(row["summary_json"]),
-            "data": json.loads(row["seconds_json"])
-        }
-        for row in rows
-    ]
+
+    result = []
+    for row in rows:
+        ride = dict(row)
+        ride["tss"] = float(ride.get("tss") or 0)
+        ride["avg_power"] = float(ride.get("avg_power") or 0)
+        ride["duration_sec"] = int(ride.get("duration_sec") or 0)
+        ride["start_time"] = ride.get("start_time")
+        ride["tag"] = ride.get("tag") or "Unclassified"
+        result.append(sanitize(ride))
+
+    return result
