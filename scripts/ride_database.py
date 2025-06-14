@@ -77,3 +77,11 @@ def update_ftp_value(ride_id, new_ftp):
         )
     conn.commit()
     conn.close()
+
+def get_ride_history():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT ride_id, summary FROM rides ORDER BY date DESC")
+    results = cursor.fetchall()
+    conn.close()
+    return [(ride_id, json.loads(summary)) for ride_id, summary in results]
