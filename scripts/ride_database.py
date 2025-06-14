@@ -1,136 +1,79 @@
+# scripts/ride_database.py
+
 import sqlite3
-from datetime import datetime
-import os
+import json
 
-DB_PATH = "ride_data.db"
-
+DB_FILE = "ride_data.db"
 
 def initialize_database():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-
-    cursor.execute("""
+    cursor.execute('''
         CREATE TABLE IF NOT EXISTS rides (
             ride_id TEXT PRIMARY KEY,
+            summary TEXT,
+            data TEXT,
             date TEXT,
-            duration REAL,
-            avg_power REAL,
-            max_power REAL,
-            avg_heart_rate REAL,
-            max_heart_rate REAL,
-            tss REAL,
-            normalized_power REAL,
-            intensity_factor REAL,
-            total_distance REAL,
-            total_ascent REAL,
-            time_in_zone_1 REAL,
-            time_in_zone_2 REAL,
-            time_in_zone_3 REAL,
-            time_in_zone_4 REAL,
-            time_in_zone_5 REAL,
-            time_in_zone_6 REAL,
-            time_in_zone_7 REAL,
-            ftp_used INTEGER
+            ftp INTEGER
         )
-    """)
+    ''')
     conn.commit()
     conn.close()
 
-
-def store_ride(ride_summary: dict):
-    conn = sqlite3.connect(DB_PATH)
+def store_ride(ride_id, summary, second_by_second):
+    conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-
-    cursor.execute("""
-        INSERT OR REPLACE INTO rides (
-            ride_id,
-            date,
-            duration,
-            avg_power,
-            max_power,
-            avg_heart_rate,
-            max_heart_rate,
-            tss,
-            normalized_power,
-            intensity_factor,
-            total_distance,
-            total_ascent,
-            time_in_zone_1,
-            time_in_zone_2,
-            time_in_zone_3,
-            time_in_zone_4,
-            time_in_zone_5,
-            time_in_zone_6,
-            time_in_zone_7,
-            ftp_used
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        ride_summary.get("ride_id"),
-        ride_summary.get("date"),
-        ride_summary.get("duration"),
-        ride_summary.get("avg_power"),
-        ride_summary.get("max_power"),
-        ride_summary.get("avg_heart_rate"),
-        ride_summary.get("max_heart_rate"),
-        ride_summary.get("tss"),
-        ride_summary.get("normalized_power"),
-        ride_summary.get("intensity_factor"),
-        ride_summary.get("total_distance"),
-        ride_summary.get("total_ascent"),
-        ride_summary.get("time_in_zone_1"),
-        ride_summary.get("time_in_zone_2"),
-        ride_summary.get("time_in_zone_3"),
-        ride_summary.get("time_in_zone_4"),
-        ride_summary.get("time_in_zone_5"),
-        ride_summary.get("time_in_zone_6"),
-        ride_summary.get("time_in_zone_7"),
-        ride_summary.get("ftp_used"),
+    cursor.execute('''
+        INSERT OR REPLACE INTO rides (ride_id, summary, data, date, ftp)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (
+        ride_id,
+        json.dumps(summary),
+        json.dumps(second_by_second),
+        summary.get("start_time", ""),
+        summary.get("ftp", 0)
     ))
-
     conn.commit()
     conn.close()
 
-
-def fetch_all_rides():
-    conn = sqlite3.connect(DB_PATH)
+def get_all_rides():
+    conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM rides ORDER BY date DESC")
-    rows = cursor.fetchall()
-    columns = [column[0] for column in cursor.description]
+    cursor.execute("SELECT ride_id, summary FROM rides ORDER BY date DESC")
+    results = cursor.fetchall()
     conn.close()
-
-    return [dict(zip(columns, row)) for row in rows]
-
-
-def fetch_ride_by_id(ride_id: str):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM rides WHERE ride_id = ?", (ride_id,))
-    row = cursor.fetchone()
-    columns = [column[0] for column in cursor.description]
-    conn.close()
-
-    if row:
-        return dict(zip(columns, row))
-    else:
-        return None
-
-
-def get_ride_history():
-    return fetch_all_rides()
-
+    return [(ride_id, json.loads(summary)) for ride_id, summary in results]
 
 def get_all_rides_with_data():
-    return fetch_all_rides()
-
-
-def update_ftp_value(ride_id: str, new_ftp: int):
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE rides
-        SET ftp_used = ?
-        WHERE ride_id = ?
-    """, (new_ftp, ride_id))
+    cursor.execute("SELECT summary, data FROM rides ORDER BY date DESC")
+    results = cursor.fetchall()
+    conn.close()
+    return [(json.loads(summary), json.loads(data)) for summary, data in results]
+
+def get_ride_by_id(ride_id):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT summary, data FROM rides WHERE ride_id = ?", (ride_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        summary, data = row
+        return json.loads(summary), json.loads(data)
+    return None, None
+
+def update_ftp_value(ride_id, new_ftp):
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT summary FROM rides WHERE ride_id = ?", (ride_id,))
+    row = cursor.fetchone()
+    if row:
+        summary = json.loads(row[0])
+        summary["ftp"] = new_ftp
+        cursor.execute(
+            "UPDATE rides SET summary = ?, ftp = ? WHERE ride_id = ?",
+            (json.dumps(summary), new_ftp, ride_id)
+        )
     conn.commit()
     conn.close()
