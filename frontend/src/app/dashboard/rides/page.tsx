@@ -72,7 +72,8 @@ export default function RidesPage() {
       )}
 
       {/* Rides List */}
-      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+      <div className="-mx-4 overflow-x-auto sm:mx-0">
+        <div className="min-w-[600px] overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50 sm:min-w-0">
         <table className="w-full">
           <thead>
             <tr className="border-b border-slate-700 text-left text-xs font-medium uppercase tracking-wider text-slate-400">
@@ -144,6 +145,8 @@ export default function RidesPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
       </div>
 
       {/* Pagination */}

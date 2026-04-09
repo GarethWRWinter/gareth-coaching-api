@@ -116,8 +116,8 @@ export default function DashboardPage() {
       {/* Rider Profile with Radar Chart */}
       {fitness && fitness.rider_type !== "unknown" && fitness.profile_scores && fitness.profile_scores.length > 0 && (
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-semibold text-white">Rider Profile</h2>
               <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-400 capitalize">
                 {fitness.rider_type.replace("_", " ")}
@@ -135,8 +135,8 @@ export default function DashboardPage() {
               Full performance &rarr;
             </Link>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="w-[240px] shrink-0">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
+            <div className="w-[200px] shrink-0 sm:w-[240px]">
               <RiderProfileRadar
                 scores={fitness.profile_scores}
                 riderType={fitness.rider_type ?? "unknown"}
@@ -145,7 +145,7 @@ export default function DashboardPage() {
                 compact
               />
             </div>
-            <div className="flex flex-1 flex-wrap gap-1.5">
+            <div className="flex flex-1 flex-wrap justify-center gap-1.5 sm:justify-start">
               {fitness.strengths.map((s) => (
                 <span
                   key={s}

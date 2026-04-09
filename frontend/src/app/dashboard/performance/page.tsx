@@ -184,9 +184,9 @@ export default function PerformancePage() {
       </div>
 
       {/* Date Range Selector */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-slate-400">Range:</span>
-        <div className="flex gap-1 rounded-lg bg-slate-800 p-1">
+        <div className="flex flex-wrap gap-1 rounded-lg bg-slate-800 p-1">
           {DATE_RANGE_OPTIONS.map((option) => (
             <button
               key={option.value}

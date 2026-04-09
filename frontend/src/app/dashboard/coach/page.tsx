@@ -313,13 +313,25 @@ function CoachPageInner() {
     }
   };
 
+  const [showSessions, setShowSessions] = useState(false);
+
   return (
-    <div className="flex h-[calc(100vh-3rem)] gap-4">
-      {/* Sessions Sidebar */}
-      <div className="w-64 shrink-0 overflow-y-auto rounded-xl border border-slate-800 bg-slate-800/50">
+    <div className="flex h-[calc(100vh-5rem)] gap-0 md:h-[calc(100vh-3rem)] md:gap-4">
+      {/* Sessions Sidebar - hidden on mobile, toggle with button */}
+      <div
+        className={cn(
+          "shrink-0 overflow-y-auto rounded-xl border border-slate-800 bg-slate-800/50",
+          showSessions
+            ? "absolute inset-x-4 top-16 z-30 max-h-[60vh] md:static md:inset-auto md:z-auto md:max-h-none md:w-64"
+            : "hidden md:block md:w-64"
+        )}
+      >
         <div className="border-b border-slate-700 p-3">
           <button
-            onClick={() => createSession.mutate()}
+            onClick={() => {
+              createSession.mutate();
+              setShowSessions(false);
+            }}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
           >
             <Plus className="h-4 w-4" /> New Chat
@@ -334,7 +346,10 @@ function CoachPageInner() {
           {sessions?.map((session) => (
             <button
               key={session.id}
-              onClick={() => setActiveSessionId(session.id)}
+              onClick={() => {
+                setActiveSessionId(session.id);
+                setShowSessions(false);
+              }}
               className={cn(
                 "flex w-full items-center gap-2 px-4 py-3 text-left text-sm transition-colors",
                 session.id === activeSessionId
@@ -356,10 +371,31 @@ function CoachPageInner() {
         </div>
       </div>
 
+      {/* Mobile sessions overlay backdrop */}
+      {showSessions && (
+        <div
+          className="fixed inset-0 z-20 bg-black/40 md:hidden"
+          onClick={() => setShowSessions(false)}
+        />
+      )}
+
       {/* Chat Area */}
-      <div className="flex flex-1 flex-col rounded-xl border border-slate-800 bg-slate-800/50">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+        {/* Mobile chat header */}
+        <div className="flex items-center gap-2 border-b border-slate-700 px-3 py-2 md:hidden">
+          <button
+            onClick={() => setShowSessions(!showSessions)}
+            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+          >
+            <MessageCircle className="h-5 w-5" />
+          </button>
+          <span className="text-sm font-medium text-slate-300">
+            {sessions?.find((s) => s.id === activeSessionId)?.title || "Coach Marco"}
+          </span>
+        </div>
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5">
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
@@ -417,7 +453,7 @@ function CoachPageInner() {
                 )}
                 <div
                   className={cn(
-                    "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
+                    "max-w-[90%] rounded-2xl px-3 py-2.5 text-sm sm:max-w-[80%] sm:px-4 sm:py-3",
                     msg.role === "user"
                       ? "bg-blue-600 text-white"
                       : "bg-slate-700/50 text-slate-200"
