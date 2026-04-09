@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user
+from app.config import settings
 from app.core.exceptions import BadRequestException
 from app.database import get_db
 from app.models.integration import DropboxToken
@@ -44,7 +45,8 @@ async def dropbox_callback(
     The 'state' param contains the user_id set during auth URL generation.
     After processing, redirects user back to the frontend settings page.
     """
-    frontend_url = "http://localhost:3000/dashboard/settings"
+    frontend_url = settings.frontend_url or "http://localhost:3000"
+    frontend_url = f"{frontend_url}/dashboard/settings"
 
     if error:
         return RedirectResponse(

@@ -39,7 +39,8 @@ async def strava_callback(
     This endpoint is unauthenticated — the user ID comes from the state parameter.
     Redirects back to the frontend settings page after connecting.
     """
-    frontend_url = "http://localhost:3000/dashboard/settings"
+    frontend_url = settings.frontend_url or "http://localhost:3000"
+    frontend_url = f"{frontend_url}/dashboard/settings"
 
     if not state:
         return RedirectResponse(f"{frontend_url}?strava=error&reason=missing_state")
