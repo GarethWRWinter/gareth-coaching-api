@@ -55,10 +55,10 @@ export default function TrainingPage() {
   const [genModel, setGenModel] = useState("traditional");
   const [showSchedule, setShowSchedule] = useState(false);
   const [hardDays, setHardDays] = useState<number[]>(
-    (user as Record<string, unknown>)?.preferred_hard_days as number[] || []
+    user?.preferred_hard_days ?? []
   );
   const [restDays, setRestDays] = useState<number[]>(
-    (user as Record<string, unknown>)?.rest_days as number[] || []
+    user?.rest_days ?? []
   );
   const [scheduleSaving, setScheduleSaving] = useState(false);
 

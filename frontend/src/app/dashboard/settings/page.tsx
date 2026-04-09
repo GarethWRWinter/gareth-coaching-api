@@ -97,8 +97,8 @@ export default function SettingsPage() {
     max_hr: user?.max_hr?.toString() || "",
     resting_hr: user?.resting_hr?.toString() || "",
     weekly_hours_available: user?.weekly_hours_available?.toString() || "",
-    preferred_hard_days: (user as Record<string, unknown>)?.preferred_hard_days as number[] || [],
-    rest_days: (user as Record<string, unknown>)?.rest_days as number[] || [],
+    preferred_hard_days: user?.preferred_hard_days ?? [],
+    rest_days: user?.rest_days ?? [],
   });
   const [saved, setSaved] = useState(false);
 
