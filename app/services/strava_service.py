@@ -1,0 +1,977 @@
+"""
+Strava OAuth 2.0 integration and activity sync.
+
+Flow:
+1. User clicks "Connect Strava" -> redirected to Strava auth page
+2. User authorizes -> Strava redirects back with auth code
+3. We exchange code for access/refresh tokens
+4. We use access token to fetch activities and streams
+5. Tokens auto-refresh (6-hour expiry)
+6. Webhook receives new activity notifications for real-time sync
+7. Historical backfill imports full ride history on first connect
+"""
+
+import asyncio
+import logging
+from datetime import datetime, timezone
+
+import httpx
+from sqlalchemy.orm import Session
+
+from app.config import settings
+from app.database import SessionLocal
+from app.models.integration import StravaToken
+from app.models.ride import Ride, RideData, RideSource
+from app.models.segment import SegmentEffort, StravaSegment
+from app.models.user import User
+from app.core.formulas import (
+    intensity_factor,
+    normalized_power,
+    training_stress_score,
+    variability_index,
+)
+from app.services.dedup_service import find_dropbox_duplicate
+
+logger = logging.getLogger(__name__)
+
+STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
+STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
+STRAVA_API_BASE = "https://www.strava.com/api/v3"
+
+
+def get_auth_url(state: str = "") -> str:
+    """Generate Strava OAuth authorization URL with user ID in state."""
+    params = {
+        "client_id": settings.strava_client_id,
+        "redirect_uri": settings.strava_redirect_uri,
+        "response_type": "code",
+        "scope": "read,activity:read_all",
+        "approval_prompt": "force",
+        "state": state,
+    }
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return f"{STRAVA_AUTH_URL}?{query}"
+
+
+async def exchange_code(db: Session, user_id: str, code: str) -> StravaToken:
+    """Exchange authorization code for access/refresh tokens."""
+    async with httpx.AsyncClient() as client:
+        response = await client.post(STRAVA_TOKEN_URL, data={
+            "client_id": settings.strava_client_id,
+            "client_secret": settings.strava_client_secret,
+            "code": code,
+            "grant_type": "authorization_code",
+        })
+        response.raise_for_status()
+        data = response.json()
+
+    # Upsert token
+    existing = db.query(StravaToken).filter(StravaToken.user_id == user_id).first()
+    if existing:
+        existing.access_token = data["access_token"]
+        existing.refresh_token = data["refresh_token"]
+        existing.expires_at = datetime.fromtimestamp(data["expires_at"], tz=timezone.utc)
+        existing.athlete_id = data["athlete"]["id"]
+        existing.scope = "read,activity:read_all"
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    token = StravaToken(
+        user_id=user_id,
+        access_token=data["access_token"],
+        refresh_token=data["refresh_token"],
+        expires_at=datetime.fromtimestamp(data["expires_at"], tz=timezone.utc),
+        athlete_id=data["athlete"]["id"],
+        scope="read,activity:read_all",
+    )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
+    return token
+
+
+async def _refresh_token_if_needed(db: Session, strava_token: StravaToken) -> str:
+    """Refresh access token if expired. Returns valid access token."""
+    expires = strava_token.expires_at.replace(tzinfo=timezone.utc) if strava_token.expires_at and strava_token.expires_at.tzinfo is None else strava_token.expires_at
+    if expires and expires > datetime.now(timezone.utc):
+        return strava_token.access_token
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(STRAVA_TOKEN_URL, data={
+            "client_id": settings.strava_client_id,
+            "client_secret": settings.strava_client_secret,
+            "refresh_token": strava_token.refresh_token,
+            "grant_type": "refresh_token",
+        })
+        response.raise_for_status()
+        data = response.json()
+
+    strava_token.access_token = data["access_token"]
+    strava_token.refresh_token = data["refresh_token"]
+    strava_token.expires_at = datetime.fromtimestamp(data["expires_at"], tz=timezone.utc)
+    db.commit()
+
+    return strava_token.access_token
+
+
+async def sync_activities(
+    db: Session, user: User, limit: int = 30
+) -> list[Ride]:
+    """
+    Fetch recent activities from Strava and create/update rides.
+
+    Gets activity summaries first, then fetches streams (power/HR/cadence)
+    for each activity.
+    """
+    strava_token = db.query(StravaToken).filter(StravaToken.user_id == user.id).first()
+    if not strava_token:
+        raise ValueError("Strava not connected")
+
+    access_token = await _refresh_token_if_needed(db, strava_token)
+
+    # Fetch activities
+    async with httpx.AsyncClient() as client:
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        # Get activities list
+        params = {"per_page": limit}
+        if strava_token.last_sync_at:
+            params["after"] = int(strava_token.last_sync_at.timestamp())
+
+        response = await client.get(
+            f"{STRAVA_API_BASE}/athlete/activities",
+            headers=headers,
+            params=params,
+        )
+        response.raise_for_status()
+        activities = response.json()
+
+    synced_rides = []
+    for activity in activities:
+        # Skip non-ride activities
+        if activity.get("type") not in ("Ride", "VirtualRide"):
+            continue
+
+        # Check if already synced
+        external_id = str(activity["id"])
+        existing = db.query(Ride).filter(
+            Ride.user_id == user.id,
+            Ride.external_id == external_id,
+        ).first()
+        if existing:
+            continue
+
+        # Skip if a Dropbox ride already covers this activity (richer data)
+        start_time = datetime.fromisoformat(
+            activity["start_date"].replace("Z", "+00:00")
+        )
+        dropbox_match = find_dropbox_duplicate(
+            db, user.id, start_time, activity.get("elapsed_time"),
+        )
+        if dropbox_match:
+            # Link the Strava activity ID onto the Dropbox ride for reference
+            if not dropbox_match.strava_activity_id:
+                dropbox_match.strava_activity_id = external_id
+            # Fetch segments for the Dropbox ride
+            try:
+                await fetch_and_store_segments(
+                    db, dropbox_match.id, external_id, access_token,
+                )
+            except Exception:
+                logger.warning("Failed to fetch segments for Dropbox ride %s", dropbox_match.id)
+            logger.info(
+                "Skipping Strava activity %s — Dropbox ride %s already exists",
+                external_id, dropbox_match.id,
+            )
+            continue
+
+        # Create ride from activity summary
+        ride = _activity_to_ride(user, activity)
+        db.add(ride)
+        db.flush()
+
+        # Fetch streams for detailed data
+        try:
+            streams = await _fetch_activity_streams(
+                access_token, activity["id"]
+            )
+            if streams:
+                _create_ride_data_from_streams(db, ride.id, streams)
+
+                # Recalculate NP/IF/TSS from actual power data
+                power_stream = streams.get("watts", {}).get("data", [])
+                if power_stream:
+                    _recalculate_ride_metrics(db, ride, power_stream, user.ftp)
+        except Exception:
+            # Streams may not be available for all activities
+            pass
+
+        # Fetch segment efforts and achievements
+        try:
+            await fetch_and_store_segments(
+                db, ride.id, str(activity["id"]), access_token,
+            )
+        except Exception:
+            logger.warning("Failed to fetch segments for activity %s", activity["id"])
+
+        synced_rides.append(ride)
+
+    # Update last sync time
+    strava_token.last_sync_at = datetime.now(timezone.utc)
+    db.commit()
+
+    return synced_rides
+
+
+def _activity_to_ride(user: User, activity: dict) -> Ride:
+    """Convert a Strava activity to a Ride model."""
+    start_time = datetime.fromisoformat(
+        activity["start_date"].replace("Z", "+00:00")
+    )
+
+    return Ride(
+        user_id=user.id,
+        external_id=str(activity["id"]),
+        source=RideSource.strava,
+        title=activity.get("name", "Strava Ride"),
+        ride_date=start_time,
+        duration_seconds=activity.get("elapsed_time"),
+        moving_time_seconds=activity.get("moving_time"),
+        distance_meters=activity.get("distance"),
+        elevation_gain_meters=activity.get("total_elevation_gain"),
+        average_power=activity.get("average_watts"),
+        max_power=activity.get("max_watts"),
+        average_hr=activity.get("average_heartrate"),
+        max_hr=activity.get("max_heartrate"),
+        average_cadence=activity.get("average_cadence"),
+        average_speed=activity.get("average_speed"),
+        calories=activity.get("calories"),
+        ftp_at_time=user.ftp,
+    )
+
+
+async def _fetch_activity_streams(
+    access_token: str, activity_id: int
+) -> dict | None:
+    """Fetch time-series streams for a Strava activity."""
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{STRAVA_API_BASE}/activities/{activity_id}/streams",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={
+                "keys": "time,watts,heartrate,cadence,altitude,latlng,distance,velocity_smooth",
+                "key_by_type": "true",
+            },
+        )
+        if response.status_code != 200:
+            return None
+        return response.json()
+
+
+def _create_ride_data_from_streams(
+    db: Session, ride_id: str, streams: dict
+) -> None:
+    """Create RideData rows from Strava streams."""
+    from sqlalchemy import insert
+
+    time_data = streams.get("time", {}).get("data", [])
+    if not time_data:
+        return
+
+    power_data = streams.get("watts", {}).get("data", [])
+    hr_data = streams.get("heartrate", {}).get("data", [])
+    cadence_data = streams.get("cadence", {}).get("data", [])
+    altitude_data = streams.get("altitude", {}).get("data", [])
+    latlng_data = streams.get("latlng", {}).get("data", [])
+    distance_data = streams.get("distance", {}).get("data", [])
+    speed_data = streams.get("velocity_smooth", {}).get("data", [])
+
+    data_rows = []
+    for i, t in enumerate(time_data):
+        lat = latlng_data[i][0] if i < len(latlng_data) and latlng_data[i] else None
+        lng = latlng_data[i][1] if i < len(latlng_data) and latlng_data[i] else None
+
+        data_rows.append({
+            "ride_id": ride_id,
+            "elapsed_seconds": t,
+            "power": power_data[i] if i < len(power_data) else None,
+            "heart_rate": hr_data[i] if i < len(hr_data) else None,
+            "cadence": cadence_data[i] if i < len(cadence_data) else None,
+            "altitude": altitude_data[i] if i < len(altitude_data) else None,
+            "latitude": lat,
+            "longitude": lng,
+            "distance": distance_data[i] if i < len(distance_data) else None,
+            "speed": speed_data[i] if i < len(speed_data) else None,
+        })
+
+    if data_rows:
+        db.execute(insert(RideData), data_rows)
+
+
+def _recalculate_ride_metrics(
+    db: Session, ride: Ride, power_data: list, ftp: int | None
+) -> None:
+    """Recalculate NP/IF/TSS from actual power stream data."""
+    np = normalized_power(power_data)
+    avg_power = sum(power_data) / len(power_data) if power_data else 0
+
+    ride.normalized_power = round(np, 1) if np else None
+    ride.average_power = round(avg_power, 1) if avg_power else None
+    ride.max_power = max(power_data) if power_data else None
+
+    if ftp and ftp > 0 and np > 0:
+        if_val = intensity_factor(np, ftp)
+        vi_val = variability_index(np, avg_power) if avg_power > 0 else None
+        duration = ride.duration_seconds or len(power_data)
+        tss_val = training_stress_score(duration, np, if_val, ftp)
+
+        ride.intensity_factor = round(if_val, 3)
+        ride.variability_index = round(vi_val, 3) if vi_val else None
+        ride.tss = round(tss_val, 1)
+
+
+async def fetch_and_store_segments(
+    db: Session,
+    ride_id: str,
+    strava_activity_id: str,
+    access_token: str,
+) -> int:
+    """
+    Fetch detailed activity from Strava and store segment efforts,
+    achievement counts, and kudos. Returns number of segment efforts stored.
+    """
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(
+            f"{STRAVA_API_BASE}/activities/{strava_activity_id}",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        if response.status_code != 200:
+            logger.warning(
+                "Failed to fetch detailed activity %s (status %d)",
+                strava_activity_id, response.status_code,
+            )
+            return 0
+        activity = response.json()
+
+    # Update ride-level counts
+    ride = db.query(Ride).filter(Ride.id == ride_id).first()
+    if not ride:
+        return 0
+
+    ride.achievement_count = activity.get("achievement_count")
+    ride.pr_count = activity.get("pr_count")
+    ride.kudos_count = activity.get("kudos_count")
+
+    # Process segment efforts
+    segment_efforts = activity.get("segment_efforts", [])
+    stored = 0
+
+    for effort in segment_efforts:
+        seg_data = effort.get("segment", {})
+        strava_seg_id = seg_data.get("id")
+        if not strava_seg_id:
+            continue
+
+        # Upsert segment metadata
+        segment = (
+            db.query(StravaSegment)
+            .filter(StravaSegment.strava_segment_id == strava_seg_id)
+            .first()
+        )
+        if not segment:
+            segment = StravaSegment(
+                strava_segment_id=strava_seg_id,
+                name=seg_data.get("name", "Unknown Segment"),
+                distance_meters=seg_data.get("distance"),
+                average_grade=seg_data.get("average_grade"),
+                climb_category=seg_data.get("climb_category"),
+                city=seg_data.get("city"),
+                state=seg_data.get("state"),
+            )
+            db.add(segment)
+            db.flush()
+
+        # Skip if effort already stored
+        strava_effort_id = effort.get("id")
+        if strava_effort_id:
+            existing_effort = (
+                db.query(SegmentEffort)
+                .filter(SegmentEffort.strava_effort_id == strava_effort_id)
+                .first()
+            )
+            if existing_effort:
+                continue
+
+        # Parse achievements for best type
+        achievements = effort.get("achievements", [])
+        achievement_type = None
+        for ach in achievements:
+            t = ach.get("type")
+            if t in ("overall", "kom"):
+                achievement_type = "kom"
+                break
+            elif t == "pr":
+                achievement_type = "pr"
+            elif t and not achievement_type:
+                achievement_type = t
+
+        segment_effort = SegmentEffort(
+            ride_id=ride_id,
+            segment_id=segment.id,
+            strava_effort_id=strava_effort_id,
+            elapsed_time_seconds=effort.get("elapsed_time", 0),
+            moving_time_seconds=effort.get("moving_time"),
+            average_watts=effort.get("average_watts"),
+            max_watts=effort.get("max_watts"),
+            average_hr=effort.get("average_heartrate"),
+            max_hr=effort.get("max_heartrate"),
+            pr_rank=effort.get("pr_rank"),
+            kom_rank=effort.get("kom_rank"),
+            achievement_type=achievement_type,
+        )
+        db.add(segment_effort)
+        stored += 1
+
+    db.flush()
+    logger.info(
+        "Stored %d segment efforts for ride %s (strava activity %s)",
+        stored, ride_id, strava_activity_id,
+    )
+    return stored
+
+
+def _store_segments_from_activity(
+    db: Session, ride_id: str, activity: dict
+) -> int:
+    """
+    Store segment efforts from an already-fetched detailed activity response.
+    Used by webhook handler which already has the full activity data.
+    """
+    ride = db.query(Ride).filter(Ride.id == ride_id).first()
+    if not ride:
+        return 0
+
+    ride.achievement_count = activity.get("achievement_count")
+    ride.pr_count = activity.get("pr_count")
+    ride.kudos_count = activity.get("kudos_count")
+
+    segment_efforts = activity.get("segment_efforts", [])
+    stored = 0
+
+    for effort in segment_efforts:
+        seg_data = effort.get("segment", {})
+        strava_seg_id = seg_data.get("id")
+        if not strava_seg_id:
+            continue
+
+        segment = (
+            db.query(StravaSegment)
+            .filter(StravaSegment.strava_segment_id == strava_seg_id)
+            .first()
+        )
+        if not segment:
+            segment = StravaSegment(
+                strava_segment_id=strava_seg_id,
+                name=seg_data.get("name", "Unknown Segment"),
+                distance_meters=seg_data.get("distance"),
+                average_grade=seg_data.get("average_grade"),
+                climb_category=seg_data.get("climb_category"),
+                city=seg_data.get("city"),
+                state=seg_data.get("state"),
+            )
+            db.add(segment)
+            db.flush()
+
+        strava_effort_id = effort.get("id")
+        if strava_effort_id:
+            existing_effort = (
+                db.query(SegmentEffort)
+                .filter(SegmentEffort.strava_effort_id == strava_effort_id)
+                .first()
+            )
+            if existing_effort:
+                continue
+
+        achievements = effort.get("achievements", [])
+        achievement_type = None
+        for ach in achievements:
+            t = ach.get("type")
+            if t in ("overall", "kom"):
+                achievement_type = "kom"
+                break
+            elif t == "pr":
+                achievement_type = "pr"
+            elif t and not achievement_type:
+                achievement_type = t
+
+        segment_effort = SegmentEffort(
+            ride_id=ride_id,
+            segment_id=segment.id,
+            strava_effort_id=strava_effort_id,
+            elapsed_time_seconds=effort.get("elapsed_time", 0),
+            moving_time_seconds=effort.get("moving_time"),
+            average_watts=effort.get("average_watts"),
+            max_watts=effort.get("max_watts"),
+            average_hr=effort.get("average_heartrate"),
+            max_hr=effort.get("max_heartrate"),
+            pr_rank=effort.get("pr_rank"),
+            kom_rank=effort.get("kom_rank"),
+            achievement_type=achievement_type,
+        )
+        db.add(segment_effort)
+        stored += 1
+
+    db.flush()
+    return stored
+
+
+def get_connection_status(db: Session, user_id: str) -> dict:
+    """Check if Strava is connected and token status."""
+    token = db.query(StravaToken).filter(StravaToken.user_id == user_id).first()
+    if not token:
+        return {"connected": False}
+
+    return {
+        "connected": True,
+        "athlete_id": token.athlete_id,
+        "last_sync_at": token.last_sync_at,
+        "token_expired": token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc) if token.expires_at else True,
+    }
+
+
+def disconnect(db: Session, user_id: str) -> None:
+    """Remove Strava connection."""
+    db.query(StravaToken).filter(StravaToken.user_id == user_id).delete()
+    db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Historical Backfill
+# ---------------------------------------------------------------------------
+
+async def backfill_history(db: Session, user: User) -> int:
+    """
+    Import full ride history from Strava. Called once on first connect.
+
+    Paginates through all activities, fetches streams for each ride.
+    Updates progress on StravaToken so the frontend can show progress.
+    Returns total rides imported.
+    """
+    strava_token = db.query(StravaToken).filter(StravaToken.user_id == user.id).first()
+    if not strava_token:
+        raise ValueError("Strava not connected")
+
+    # Mark backfill as running
+    strava_token.backfill_status = "running"
+    strava_token.backfill_started_at = datetime.now(timezone.utc)
+    strava_token.backfill_progress = 0
+    db.commit()
+
+    try:
+        access_token = await _refresh_token_if_needed(db, strava_token)
+
+        # Phase 1: Collect all activity summaries
+        all_activities = []
+        page = 1
+        per_page = 200  # Strava max
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            while True:
+                response = await client.get(
+                    f"{STRAVA_API_BASE}/athlete/activities",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                    params={"page": page, "per_page": per_page},
+                )
+                response.raise_for_status()
+                activities = response.json()
+
+                if not activities:
+                    break
+
+                # Only rides
+                rides = [a for a in activities if a.get("type") in ("Ride", "VirtualRide")]
+                all_activities.extend(rides)
+                page += 1
+
+                # Safety: Strava rate limit is 100 req/15min
+                if page > 50:  # 10,000 activities max
+                    break
+
+        # Update total count
+        strava_token.backfill_total = len(all_activities)
+        db.commit()
+
+        logger.info(
+            "Strava backfill: found %d rides for user %s",
+            len(all_activities), user.email,
+        )
+
+        # Phase 2: Import each activity (skip already synced)
+        imported = 0
+        for i, activity in enumerate(all_activities):
+            external_id = str(activity["id"])
+
+            # Skip if already exists
+            existing = db.query(Ride).filter(
+                Ride.user_id == user.id,
+                Ride.external_id == external_id,
+            ).first()
+            if existing:
+                strava_token.backfill_progress = i + 1
+                if (i + 1) % 50 == 0:
+                    db.commit()
+                continue
+
+            # Skip if a Dropbox ride already covers this activity
+            start_time = datetime.fromisoformat(
+                activity["start_date"].replace("Z", "+00:00")
+            )
+            dropbox_match = find_dropbox_duplicate(
+                db, user.id, start_time, activity.get("elapsed_time"),
+            )
+            if dropbox_match:
+                if not dropbox_match.strava_activity_id:
+                    dropbox_match.strava_activity_id = external_id
+                # Fetch segments for the Dropbox ride
+                try:
+                    access_token = await _refresh_token_if_needed(db, strava_token)
+                    await fetch_and_store_segments(
+                        db, dropbox_match.id, external_id, access_token,
+                    )
+                    await asyncio.sleep(2.0)
+                except Exception:
+                    logger.warning("Backfill: failed to fetch segments for Dropbox ride %s", dropbox_match.id)
+                strava_token.backfill_progress = i + 1
+                if (i + 1) % 50 == 0:
+                    db.commit()
+                continue
+
+            # Refresh token if needed (long backfill can outlast 6h token)
+            access_token = await _refresh_token_if_needed(db, strava_token)
+
+            ride = _activity_to_ride(user, activity)
+            db.add(ride)
+            db.flush()
+
+            # Fetch streams with rate limit retry
+            for attempt in range(3):
+                try:
+                    streams = await _fetch_activity_streams(access_token, activity["id"])
+                    if streams:
+                        _create_ride_data_from_streams(db, ride.id, streams)
+                        power_stream = streams.get("watts", {}).get("data", [])
+                        if power_stream:
+                            _recalculate_ride_metrics(db, ride, power_stream, user.ftp)
+                    break  # Success
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 429:
+                        wait_secs = 120 * (attempt + 1)  # 120s, 240s, 360s
+                        logger.warning(
+                            "Strava rate limit hit (attempt %d/3), pausing %ds...",
+                            attempt + 1, wait_secs,
+                        )
+                        db.commit()
+                        await asyncio.sleep(wait_secs)
+                        # Refresh token in case it expired during wait
+                        access_token = await _refresh_token_if_needed(db, strava_token)
+                    else:
+                        logger.warning("Failed to fetch streams for activity %s: %s", activity["id"], e)
+                        break
+
+            # Fetch segments for the new ride
+            try:
+                await fetch_and_store_segments(
+                    db, ride.id, str(activity["id"]), access_token,
+                )
+            except Exception:
+                logger.warning("Backfill: failed to fetch segments for activity %s", activity["id"])
+
+            imported += 1
+            strava_token.backfill_progress = i + 1
+
+            # Commit in batches
+            if imported % 10 == 0:
+                db.commit()
+                logger.info("Strava backfill: %d/%d imported", imported, len(all_activities))
+
+            # Rate limit pacing: 3s to account for extra detailed activity call
+            await asyncio.sleep(3.0)
+
+        # Mark complete
+        strava_token.backfill_status = "completed"
+        strava_token.backfill_completed_at = datetime.now(timezone.utc)
+        strava_token.last_sync_at = datetime.now(timezone.utc)
+        db.commit()
+
+        logger.info(
+            "Strava backfill complete: %d rides imported for %s",
+            imported, user.email,
+        )
+        return imported
+
+    except Exception as e:
+        logger.exception("Strava backfill failed for user %s", user.email)
+        strava_token.backfill_status = "failed"
+        db.commit()
+        raise
+
+
+async def run_backfill_background(user_id: str) -> None:
+    """
+    Run backfill in a background task with its own DB session.
+    Called via asyncio.create_task() so it doesn't block the request.
+    """
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            logger.error("Backfill: user %s not found", user_id)
+            return
+
+        count = await backfill_history(db, user)
+        logger.info("Background backfill done: %d rides for %s", count, user.email)
+
+        # Recalculate PMC after backfill
+        from app.services.metrics_service import recalculate_from_date
+        from datetime import date
+
+        earliest_ride = (
+            db.query(Ride)
+            .filter(Ride.user_id == user_id, Ride.source == RideSource.strava)
+            .order_by(Ride.ride_date.asc())
+            .first()
+        )
+        if earliest_ride and earliest_ride.ride_date:
+            rd = earliest_ride.ride_date
+            if hasattr(rd, "date"):
+                rd = rd.date()
+            recalculate_from_date(db, user_id, rd)
+            logger.info("PMC recalculated from %s for %s", rd, user.email)
+
+    except Exception:
+        logger.exception("Background backfill failed for user %s", user_id)
+    finally:
+        db.close()
+
+
+async def backfill_segments(db: Session, user_id: str) -> int:
+    """
+    Backfill segment data for existing rides that have a strava_activity_id
+    but no segment efforts yet.
+    """
+    strava_token = db.query(StravaToken).filter(StravaToken.user_id == user_id).first()
+    if not strava_token:
+        raise ValueError("Strava not connected")
+
+    access_token = await _refresh_token_if_needed(db, strava_token)
+
+    # Find rides with Strava link but no segments
+    from sqlalchemy import func as sqlfunc
+
+    rides_with_segments = (
+        db.query(SegmentEffort.ride_id).distinct().subquery()
+    )
+    rides_needing_segments = (
+        db.query(Ride)
+        .filter(
+            Ride.user_id == user_id,
+            Ride.strava_activity_id.isnot(None),
+            ~Ride.id.in_(db.query(rides_with_segments.c.ride_id)),
+        )
+        .all()
+    )
+
+    logger.info(
+        "Segment backfill: %d rides need segments for user %s",
+        len(rides_needing_segments), user_id,
+    )
+
+    total = 0
+    for ride in rides_needing_segments:
+        try:
+            access_token = await _refresh_token_if_needed(db, strava_token)
+            count = await fetch_and_store_segments(
+                db, ride.id, ride.strava_activity_id, access_token,
+            )
+            total += count
+            db.commit()
+        except Exception:
+            logger.warning(
+                "Segment backfill: failed for ride %s (strava %s)",
+                ride.id, ride.strava_activity_id,
+            )
+            db.rollback()
+
+        await asyncio.sleep(3.0)
+
+    logger.info("Segment backfill complete: %d efforts stored", total)
+    return total
+
+
+async def run_segment_backfill_background(user_id: str) -> None:
+    """Run segment backfill in a background task."""
+    db = SessionLocal()
+    try:
+        count = await backfill_segments(db, user_id)
+        logger.info("Background segment backfill done: %d efforts for user %s", count, user_id)
+    except Exception:
+        logger.exception("Background segment backfill failed for user %s", user_id)
+    finally:
+        db.close()
+
+
+def get_backfill_status(db: Session, user_id: str) -> dict | None:
+    """Get the current backfill progress for a user."""
+    token = db.query(StravaToken).filter(StravaToken.user_id == user_id).first()
+    if not token:
+        return None
+
+    return {
+        "status": token.backfill_status,
+        "total": token.backfill_total,
+        "progress": token.backfill_progress or 0,
+        "started_at": token.backfill_started_at.isoformat() if token.backfill_started_at else None,
+        "completed_at": token.backfill_completed_at.isoformat() if token.backfill_completed_at else None,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Webhook Handler
+# ---------------------------------------------------------------------------
+
+async def handle_webhook_event(event: dict) -> None:
+    """
+    Process a Strava webhook event. Called from the webhook endpoint.
+
+    Event format:
+    {
+        "object_type": "activity",
+        "object_id": 12345678,
+        "aspect_type": "create",  # create, update, delete
+        "owner_id": 98765,        # athlete ID
+        "subscription_id": 1,
+        "event_time": 1234567890
+    }
+    """
+    object_type = event.get("object_type")
+    aspect_type = event.get("aspect_type")
+    owner_id = event.get("owner_id")
+    activity_id = event.get("object_id")
+
+    # Only process activity creates/updates
+    if object_type != "activity" or aspect_type not in ("create", "update"):
+        return
+
+    db = SessionLocal()
+    try:
+        # Find user by Strava athlete ID
+        strava_token = (
+            db.query(StravaToken)
+            .filter(StravaToken.athlete_id == owner_id)
+            .first()
+        )
+        if not strava_token:
+            logger.warning("Webhook: no user found for athlete %s", owner_id)
+            return
+
+        user = db.query(User).filter(User.id == strava_token.user_id).first()
+        if not user:
+            return
+
+        access_token = await _refresh_token_if_needed(db, strava_token)
+
+        # Fetch the full activity
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{STRAVA_API_BASE}/activities/{activity_id}",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            if response.status_code != 200:
+                logger.warning("Webhook: failed to fetch activity %s (status %d)", activity_id, response.status_code)
+                return
+            activity = response.json()
+
+        # Skip non-rides
+        if activity.get("type") not in ("Ride", "VirtualRide"):
+            return
+
+        external_id = str(activity["id"])
+
+        if aspect_type == "create":
+            # Check if already exists (dedup)
+            existing = db.query(Ride).filter(
+                Ride.user_id == user.id,
+                Ride.external_id == external_id,
+            ).first()
+            if existing:
+                return
+
+            # Skip if a Dropbox ride already covers this activity
+            start_time = datetime.fromisoformat(
+                activity["start_date"].replace("Z", "+00:00")
+            )
+            dropbox_match = find_dropbox_duplicate(
+                db, user.id, start_time, activity.get("elapsed_time"),
+            )
+            if dropbox_match:
+                if not dropbox_match.strava_activity_id:
+                    dropbox_match.strava_activity_id = external_id
+                # Store segments on the Dropbox ride (no extra API call needed)
+                _store_segments_from_activity(db, dropbox_match.id, activity)
+                db.commit()
+                logger.info(
+                    "Webhook: skipping Strava activity %s — Dropbox ride %s exists (segments stored)",
+                    external_id, dropbox_match.id,
+                )
+                return
+
+            ride = _activity_to_ride(user, activity)
+            db.add(ride)
+            db.flush()
+
+            # Fetch streams
+            try:
+                streams = await _fetch_activity_streams(access_token, activity["id"])
+                if streams:
+                    _create_ride_data_from_streams(db, ride.id, streams)
+                    power_stream = streams.get("watts", {}).get("data", [])
+                    if power_stream:
+                        _recalculate_ride_metrics(db, ride, power_stream, user.ftp)
+            except Exception:
+                logger.warning("Webhook: failed to fetch streams for %s", activity_id)
+
+            # Store segments from the already-fetched detailed activity
+            _store_segments_from_activity(db, ride.id, activity)
+
+            # Update last sync time
+            strava_token.last_sync_at = datetime.now(timezone.utc)
+            db.commit()
+
+            # Recalculate PMC
+            from app.services.metrics_service import recalculate_from_date
+            if ride.tss and ride.ride_date:
+                rd = ride.ride_date
+                if hasattr(rd, "date"):
+                    rd = rd.date()
+                recalculate_from_date(db, user.id, rd)
+
+            logger.info(
+                "Webhook: synced new ride '%s' for %s",
+                ride.title, user.email,
+            )
+
+        elif aspect_type == "update":
+            # Update existing ride title if changed
+            existing = db.query(Ride).filter(
+                Ride.user_id == user.id,
+                Ride.external_id == external_id,
+            ).first()
+            if existing and activity.get("name"):
+                existing.title = activity["name"]
+                db.commit()
+
+    except Exception:
+        logger.exception("Webhook processing failed for activity %s", activity_id)
+    finally:
+        db.close()
