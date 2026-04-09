@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     # App
     app_name: str = "Advanced Cycling Coach"
     cors_origins: list[str] = ["http://localhost:3000"]
+    frontend_url: str = ""  # Set to Vercel URL in production
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
