@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Target,
@@ -19,7 +20,7 @@ import {
   Trophy,
   Star,
 } from "lucide-react";
-import { goals as goalsApi } from "@/lib/api";
+import { goals as goalsApi, training as trainingApi } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import type { GoalEvent } from "@/lib/api";
 
@@ -102,16 +103,28 @@ function daysUntilColor(days: number): string {
   return "bg-blue-600/10 text-blue-400";
 }
 
-export default function GoalsPage() {
+function GoalsPageInner() {
   const queryClient = useQueryClient();
   const gpxInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
 
   const [showForm, setShowForm] = useState(false);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [goalForm, setGoalForm] = useState<GoalFormData>(emptyGoalForm);
   const [gpxUploadingId, setGpxUploadingId] = useState<string | null>(null);
   const [pendingGpxFile, setPendingGpxFile] = useState<File | null>(null);
+  const [planGenerating, setPlanGenerating] = useState(false);
   const formGpxInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-open the add-goal form when navigated with ?new=1 (e.g. from the
+  // post-assessment "What's next?" prompt).
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      setEditingGoalId(null);
+      setGoalForm(emptyGoalForm);
+      setShowForm(true);
+    }
+  }, [searchParams]);
 
   const { data: goalsData, isLoading } = useQuery({
     queryKey: ["goals"],
@@ -143,6 +156,26 @@ export default function GoalsPage() {
         await goalsApi.uploadGpx(goal.id, pendingGpxFile);
         setPendingGpxFile(null);
       }
+
+      // If this was a NEW goal (not an edit), auto-generate a training plan
+      // that peaks on race day. This replaces any existing active plan so the
+      // user always has a block pointing at their most recent goal.
+      if (!editingGoalId && goal?.id) {
+        try {
+          setPlanGenerating(true);
+          await trainingApi.generatePlan({
+            goal_event_id: goal.id,
+            periodization_model: "traditional",
+          });
+          queryClient.invalidateQueries({ queryKey: ["plans"] });
+          queryClient.invalidateQueries({ queryKey: ["workouts-week"] });
+        } catch (planErr) {
+          console.error("Auto plan generation failed:", planErr);
+        } finally {
+          setPlanGenerating(false);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["goals"] });
       setShowForm(false);
       setEditingGoalId(null);
@@ -412,21 +445,31 @@ export default function GoalsPage() {
             </p>
           </div>
 
-          <div className="mt-4 flex gap-2">
+          {!editingGoalId && (
+            <p className="mt-3 text-xs text-slate-500">
+              After you create this goal we&apos;ll automatically build a training plan
+              that peaks on race day.
+            </p>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-2">
             <button
               onClick={() => saveGoal.mutate()}
               disabled={
                 !goalForm.event_name ||
                 !goalForm.event_date ||
-                saveGoal.isPending
+                saveGoal.isPending ||
+                planGenerating
               }
               className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
             >
               {saveGoal.isPending
                 ? "Saving..."
-                : editingGoalId
-                  ? "Update Goal"
-                  : "Create Goal"}
+                : planGenerating
+                  ? "Generating plan..."
+                  : editingGoalId
+                    ? "Update Goal"
+                    : "Create Goal"}
             </button>
             <button
               onClick={() => {
@@ -576,6 +619,20 @@ export default function GoalsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function GoalsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-20">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        </div>
+      }
+    >
+      <GoalsPageInner />
+    </Suspense>
   );
 }
 

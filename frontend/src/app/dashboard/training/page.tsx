@@ -81,7 +81,7 @@ export default function TrainingPage() {
   });
 
   const generateMutation = useMutation({
-    mutationFn: (data: { periodization_model: string }) =>
+    mutationFn: (data: { periodization_model: string; goal_event_id?: string }) =>
       training.generatePlan(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans"] });
@@ -89,6 +89,15 @@ export default function TrainingPage() {
       setShowGenerate(false);
     },
   });
+
+  // Find the next upcoming goal (if any) — used to auto-link newly generated
+  // plans to the goal so the plan peaks on race day.
+  const nextUpcomingGoal = goalsData?.goals
+    ?.filter((g) => g.status === "upcoming" && g.days_until != null && g.days_until >= 0)
+    ?.sort((a, b) => (a.days_until ?? 0) - (b.days_until ?? 0))?.[0];
+
+  const hasActivePlan =
+    plans && plans.plans.filter((p) => p.status === "active").length > 0;
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
@@ -120,13 +129,13 @@ export default function TrainingPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Training</h1>
-          {plans && plans.plans.filter((p) => p.status === "active").length > 0 ? (
+          {hasActivePlan ? (
             <p className="mt-1 text-sm text-slate-400">
               Active plan:{" "}
-              {plans.plans.find((p) => p.status === "active")?.name}
+              {plans?.plans.find((p) => p.status === "active")?.name}
             </p>
           ) : (
             <p className="mt-1 text-sm text-slate-400">No active plan</p>
@@ -140,6 +149,70 @@ export default function TrainingPage() {
         </button>
       </div>
 
+      {/* Prompt: user has an upcoming goal but no active plan */}
+      {!hasActivePlan && nextUpcomingGoal && !showGenerate && (
+        <div className="rounded-xl border border-blue-500/40 bg-blue-900/10 p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
+                <Trophy className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  Build a plan for {nextUpcomingGoal.event_name}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  {formatDate(nextUpcomingGoal.event_date)}
+                  {nextUpcomingGoal.days_until != null && nextUpcomingGoal.days_until > 0 && (
+                    <> &middot; {nextUpcomingGoal.days_until} days away</>
+                  )}
+                  {" "}&middot; We&apos;ll create a periodised plan that peaks on race day.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() =>
+                generateMutation.mutate({
+                  periodization_model: "traditional",
+                  goal_event_id: nextUpcomingGoal.id,
+                })
+              }
+              disabled={generateMutation.isPending}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              {generateMutation.isPending ? "Generating..." : "Generate Plan"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt: user has no active plan and no upcoming goal */}
+      {!hasActivePlan && !nextUpcomingGoal && !showGenerate && (
+        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 sm:p-5">
+          <p className="text-sm font-semibold text-white">
+            Ready to start training?
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Set a goal event first so your plan peaks on race day, or generate a
+            generic 12-week plan to start building fitness now.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/goals"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            >
+              Add a goal
+            </Link>
+            <button
+              onClick={() => setShowGenerate(true)}
+              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700"
+            >
+              Generate generic plan
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Generate Plan Dialog */}
       {showGenerate && (
         <div className="rounded-xl border border-slate-700 bg-slate-800 p-5">
@@ -147,10 +220,12 @@ export default function TrainingPage() {
             Generate Training Plan
           </h3>
           <p className="mt-1 text-xs text-slate-400">
-            Creates a 12-week periodized plan based on your profile
+            {nextUpcomingGoal
+              ? `Creates a periodised plan peaking on ${nextUpcomingGoal.event_name} (${formatDate(nextUpcomingGoal.event_date)}).`
+              : "Creates a 12-week periodised plan based on your profile."}
           </p>
-          <div className="mt-4 flex items-end gap-4">
-            <div className="flex-1">
+          <div className="mt-4 flex flex-wrap items-end gap-3 sm:gap-4">
+            <div className="min-w-[180px] flex-1">
               <label className="mb-1.5 block text-xs font-medium text-slate-300">
                 Periodization Model
               </label>
@@ -166,7 +241,10 @@ export default function TrainingPage() {
             </div>
             <button
               onClick={() =>
-                generateMutation.mutate({ periodization_model: genModel })
+                generateMutation.mutate({
+                  periodization_model: genModel,
+                  goal_event_id: nextUpcomingGoal?.id,
+                })
               }
               disabled={generateMutation.isPending}
               className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"

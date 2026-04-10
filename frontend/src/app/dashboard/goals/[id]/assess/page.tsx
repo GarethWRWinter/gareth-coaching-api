@@ -11,6 +11,8 @@ import {
   Frown,
   Ban,
   MessageCircle,
+  Target,
+  Calendar,
 } from "lucide-react";
 import { goals as goalsApi } from "@/lib/api";
 import { formatDate, formatDuration, cn } from "@/lib/utils";
@@ -114,27 +116,68 @@ export default function AssessPage() {
   // Success screen
   if (submitted) {
     return (
-      <div className="mx-auto max-w-lg space-y-6 py-12 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-600/20">
-          <Check className="h-8 w-8 text-green-400" />
+      <div className="mx-auto max-w-lg space-y-6 py-8">
+        <div className="text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-600/20">
+            <Check className="h-8 w-8 text-green-400" />
+          </div>
+          <h1 className="mt-4 text-2xl font-bold text-white">
+            Assessment Complete
+          </h1>
+          <p className="mt-1 text-slate-400">
+            Your race report for{" "}
+            <span className="font-medium text-white">{goal.event_name}</span>{" "}
+            has been saved.
+          </p>
+          <div className="mt-5 flex flex-col items-center gap-2">
+            <Link
+              href={`/dashboard/coach?goal_id=${goalId}&debrief=true`}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-500"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Debrief with Coach Marco
+            </Link>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-white">Assessment Complete</h1>
-        <p className="text-slate-400">
-          Your race report for <span className="font-medium text-white">{goal.event_name}</span> has been saved.
-        </p>
-        <div className="flex flex-col items-center gap-3">
-          <Link
-            href={`/dashboard/coach?goal_id=${goalId}&debrief=true`}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-500"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Debrief with Coach Marco
-          </Link>
+
+        {/* What's next — invite user to plan their next block */}
+        <div className="rounded-xl border border-blue-500/40 bg-blue-900/10 p-5">
+          <h2 className="text-base font-semibold text-white">What&apos;s next?</h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Keep momentum going — pick your next target and we&apos;ll build a plan
+            around it, or start a fresh training block to keep building fitness.
+          </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <Link
+              href="/dashboard/goals?new=1"
+              className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-800/60 p-3 hover:border-blue-500/60 hover:bg-slate-800"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
+                <Target className="h-4 w-4 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Add a new goal</p>
+                <p className="text-[11px] text-slate-400">Plan peaks for your next race</p>
+              </div>
+            </Link>
+            <Link
+              href="/dashboard/training"
+              className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-800/60 p-3 hover:border-blue-500/60 hover:bg-slate-800"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
+                <Calendar className="h-4 w-4 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">New training block</p>
+                <p className="text-[11px] text-slate-400">Generate a 12-week plan</p>
+              </div>
+            </Link>
+          </div>
           <Link
             href={`/dashboard/goals/${goalId}`}
-            className="text-sm text-slate-400 hover:text-white"
+            className="mt-4 block text-center text-xs text-slate-500 hover:text-slate-300"
           >
-            View goal details
+            Or view goal details
           </Link>
         </div>
       </div>

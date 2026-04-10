@@ -12,7 +12,7 @@ import {
   Upload,
   MapPin,
 } from "lucide-react";
-import { onboarding, users, goals } from "@/lib/api";
+import { onboarding, users, goals, training } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
@@ -159,6 +159,7 @@ export default function OnboardingPage() {
       await users.updateProfile(profileData);
 
       // 3. If training for event, create the goal event
+      let createdGoalId: string | null = null;
       if (isEventGoal && eventName && eventDate && eventType) {
         const createdGoal = await goals.create({
           event_name: eventName,
@@ -171,6 +172,7 @@ export default function OnboardingPage() {
           notes: eventNotes || undefined,
           route_url: routeUrl || undefined,
         });
+        createdGoalId = createdGoal?.id ?? null;
 
         // 4. If GPX file was selected, upload it
         if (gpxFile && createdGoal?.id) {
@@ -181,6 +183,22 @@ export default function OnboardingPage() {
             // Don't block onboarding for GPX upload failure
           }
         }
+      }
+
+      // 5. Auto-generate a training plan
+      //    - If the user has a target event, build it around that goal so the
+      //      plan peaks on race day.
+      //    - Otherwise still generate a default 12-week plan so the user lands
+      //      on the dashboard with something to do.
+      try {
+        await training.generatePlan({
+          goal_event_id: createdGoalId ?? undefined,
+          periodization_model: "traditional",
+        });
+      } catch (planErr) {
+        console.error("Plan generation failed during onboarding:", planErr);
+        // Don't block onboarding — user can generate manually from the
+        // training page if something went wrong here.
       }
 
       await refreshUser();
