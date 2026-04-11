@@ -858,9 +858,16 @@ export interface StravaStatus {
 export const strava = {
   getAuthUrl: () => request<{ auth_url: string }>("/integrations/strava/auth-url"),
   getStatus: () => request<StravaStatus>("/integrations/strava/status"),
-  sync: () => request<{ synced: number }>("/integrations/strava/sync", { method: "POST" }),
-  startBackfill: () =>
-    request<{ status: string }>("/integrations/strava/backfill", { method: "POST" }),
+  sync: () =>
+    request<{
+      synced: number;
+      rides?: { id: string; title: string; date: string }[];
+    }>("/integrations/strava/sync", { method: "POST" }),
+  startBackfill: (force?: boolean) =>
+    request<{ status: string }>(
+      `/integrations/strava/backfill${force ? "?force=true" : ""}`,
+      { method: "POST" }
+    ),
   backfillSegments: () =>
     request<{ status: string }>("/integrations/strava/backfill-segments", { method: "POST" }),
   disconnect: () => request("/integrations/strava", { method: "DELETE" }),
