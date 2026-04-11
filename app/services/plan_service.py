@@ -12,7 +12,7 @@ Generates truly personalised training plans based on:
 from datetime import date, timedelta
 from math import ceil
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.workout_templates import (
     PHASE_WORKOUT_MIX,
@@ -747,6 +747,7 @@ def get_workouts_by_date(
         db.query(Workout)
         .join(TrainingPhase, Workout.phase_id == TrainingPhase.id)
         .join(TrainingPlan, TrainingPhase.plan_id == TrainingPlan.id)
+        .options(joinedload(Workout.actual_ride))
         .filter(
             Workout.user_id == user_id,
             TrainingPlan.status == PlanStatus.active,

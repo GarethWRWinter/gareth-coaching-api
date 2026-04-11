@@ -16,6 +16,7 @@ from app.schemas.training import (
     TrainingPlanDetailResponse,
     TrainingPlanResponse,
     TrainingPhaseResponse,
+    WorkoutAssessmentResponse,
     WorkoutDetailResponse,
     WorkoutLinkRideRequest,
     WorkoutResponse,
@@ -32,6 +33,7 @@ from app.services.plan_service import (
     link_ride_to_workout,
     update_workout_status,
 )
+from app.services.workout_assessment_service import generate_assessment
 
 router = APIRouter(tags=["training"])
 
@@ -167,6 +169,44 @@ def link_ride(
 
     workout = link_ride_to_workout(db, workout, body.ride_id)
     return WorkoutResponse.model_validate(workout)
+
+
+@router.get(
+    "/workouts/{workout_id}/assessment",
+    response_model=WorkoutAssessmentResponse,
+)
+def get_workout_assessment(
+    workout_id: str,
+    force: bool = Query(False, description="Regenerate feedback even if cached"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Score the actual ride against the planned workout and return supportive
+    feedback from Coach Marco plus suggested adjustments to upcoming days.
+
+    The numeric score is always recomputed; the written feedback is cached on
+    the workout row and only regenerated when `force=true` or when no cached
+    feedback exists yet.
+    """
+    workout = get_workout(db, workout_id, current_user.id)
+    if not workout:
+        raise NotFoundException(detail="Workout not found")
+    if not workout.actual_ride_id:
+        raise BadRequestException(detail="No ride is linked to this workout yet")
+
+    try:
+        workout = generate_assessment(db, current_user, workout, force=force)
+    except ValueError as e:
+        raise BadRequestException(detail=str(e))
+
+    return WorkoutAssessmentResponse(
+        workout_id=workout.id,
+        score=workout.execution_score or 0.0,
+        feedback=workout.execution_feedback or "",
+        adjustments=workout.execution_adjustments or [],
+        assessed_at=workout.execution_assessed_at,
+    )
 
 
 # --- Helpers ---

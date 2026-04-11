@@ -441,7 +441,10 @@ export default function TrainingPage() {
                 {/* Workouts */}
                 {dayWorkouts
                   .filter((w) => w.status !== "skipped")
-                  .map((workout) => (
+                  .map((workout) => {
+                    const hasActual = !!workout.actual_ride;
+                    const score = workout.execution_score;
+                    return (
                   <div
                     key={workout.id}
                     className={cn(
@@ -454,16 +457,36 @@ export default function TrainingPage() {
                       href={`/dashboard/training/${workout.id}`}
                       className="block"
                     >
-                      <p className="truncate text-xs font-medium text-white hover:text-blue-400">
-                        {workout.title}
-                      </p>
+                      <div className="flex items-start justify-between gap-1">
+                        <p className="truncate text-xs font-medium text-white hover:text-blue-400">
+                          {workout.title}
+                        </p>
+                        {score != null && (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold",
+                              score >= 8
+                                ? "bg-green-500/20 text-green-400"
+                                : score >= 6
+                                  ? "bg-yellow-500/20 text-yellow-400"
+                                  : "bg-orange-500/20 text-orange-400"
+                            )}
+                          >
+                            {score.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
                     </Link>
-                    {workout.description && (
+                    {workout.description && !hasActual && (
                       <p className="mt-0.5 line-clamp-2 text-[10px] text-slate-500">
                         {workout.description}
                       </p>
                     )}
+                    {/* Planned stats */}
                     <div className="mt-1 flex items-center gap-1.5">
+                      <span className="text-[9px] uppercase text-slate-600">
+                        Plan
+                      </span>
                       {workout.planned_duration_seconds && (
                         <span className="text-[10px] text-slate-400">
                           {formatDuration(workout.planned_duration_seconds)}
@@ -475,6 +498,29 @@ export default function TrainingPage() {
                         </span>
                       )}
                     </div>
+                    {/* Actual stats (shown when linked) */}
+                    {hasActual && workout.actual_ride && (
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className="text-[9px] uppercase text-green-500/70">
+                          Did
+                        </span>
+                        {(workout.actual_ride.moving_time_seconds ||
+                          workout.actual_ride.duration_seconds) && (
+                          <span className="text-[10px] text-green-400">
+                            {formatDuration(
+                              workout.actual_ride.moving_time_seconds ??
+                                workout.actual_ride.duration_seconds ??
+                                0
+                            )}
+                          </span>
+                        )}
+                        {workout.actual_ride.tss != null && (
+                          <span className="text-[10px] text-green-400">
+                            {Math.round(workout.actual_ride.tss)} TSS
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {/* Status buttons */}
                     <div className="mt-1.5 flex gap-1">
                       {workout.status === "planned" && (
@@ -505,14 +551,15 @@ export default function TrainingPage() {
                           </button>
                         </>
                       )}
-                      {workout.status === "completed" && (
+                      {workout.status === "completed" && !hasActual && (
                         <span className="text-[10px] text-green-400">
                           Done
                         </span>
                       )}
                     </div>
                   </div>
-                ))}
+                    );
+                  })}
                 {dayWorkouts.filter((w) => w.status !== "skipped").length === 0 && dayGoals.length === 0 && (
                   <p className="py-2 text-center text-[10px] text-slate-600">
                     Rest

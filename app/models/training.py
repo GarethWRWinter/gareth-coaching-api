@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Date, DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, Date, DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, generate_uuid
@@ -127,6 +127,13 @@ class Workout(Base):
         String(36), ForeignKey("rides.id"), nullable=True
     )
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Post-ride execution assessment — lazily generated the first time the
+    # linked ride is viewed, cached until the user re-runs it.
+    execution_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    execution_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+    execution_adjustments: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    execution_assessed_at: Mapped[str | None] = mapped_column(DateTime, nullable=True)
 
     phase = relationship("TrainingPhase", back_populates="workouts")
     user = relationship("User", back_populates="workouts")

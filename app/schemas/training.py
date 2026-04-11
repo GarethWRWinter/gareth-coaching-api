@@ -1,6 +1,7 @@
 """Pydantic schemas for training plans, phases, workouts, and steps."""
 
 from datetime import date, datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,6 +26,24 @@ class WorkoutStepResponse(BaseModel):
 
 # --- Workouts ---
 
+class ActualRideSummary(BaseModel):
+    """Summary of the actual ride linked to a workout (the 'did' side)."""
+    id: str
+    title: str | None = None
+    ride_date: datetime
+    moving_time_seconds: int | None = None
+    duration_seconds: int | None = None
+    distance_meters: float | None = None
+    elevation_gain_meters: float | None = None
+    average_power: float | None = None
+    normalized_power: float | None = None
+    intensity_factor: float | None = None
+    tss: float | None = None
+    average_hr: int | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class WorkoutResponse(BaseModel):
     """Summary of a planned workout."""
     id: str
@@ -37,9 +56,23 @@ class WorkoutResponse(BaseModel):
     planned_if: float | None = None
     status: str
     actual_ride_id: str | None = None
+    actual_ride: ActualRideSummary | None = None
+    execution_score: float | None = None
+    execution_feedback: str | None = None
+    execution_adjustments: list[dict[str, Any]] | None = None
+    execution_assessed_at: datetime | None = None
     sort_order: int = 0
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class WorkoutAssessmentResponse(BaseModel):
+    """Score + supportive feedback + suggested adjustments for a completed workout."""
+    workout_id: str
+    score: float
+    feedback: str
+    adjustments: list[dict[str, Any]] = []
+    assessed_at: datetime | None = None
 
 
 class WorkoutDetailResponse(WorkoutResponse):

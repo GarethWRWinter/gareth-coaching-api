@@ -221,6 +221,18 @@ async def sync_activities(
     strava_token.last_sync_at = datetime.now(timezone.utc)
     db.commit()
 
+    # Try to auto-link each new ride to a planned workout on the same day.
+    # Done after the main commit so partial failures don't roll back the sync.
+    try:
+        from app.services.workout_assessment_service import auto_link_ride_to_workout
+        for r in synced_rides:
+            try:
+                auto_link_ride_to_workout(db, r)
+            except Exception:
+                logger.exception("Failed to auto-link ride %s to a workout", r.id)
+    except Exception:
+        logger.exception("Auto-link module failed to load")
+
     return synced_rides
 
 
@@ -955,6 +967,13 @@ async def handle_webhook_event(event: dict) -> None:
                 if hasattr(rd, "date"):
                     rd = rd.date()
                 recalculate_from_date(db, user.id, rd)
+
+            # Auto-link to the planned workout for this day
+            try:
+                from app.services.workout_assessment_service import auto_link_ride_to_workout
+                auto_link_ride_to_workout(db, ride)
+            except Exception:
+                logger.exception("Webhook: failed to auto-link ride %s", ride.id)
 
             logger.info(
                 "Webhook: synced new ride '%s' for %s",

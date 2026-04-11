@@ -414,6 +414,28 @@ export interface TrainingPhase {
   sort_order: number;
 }
 
+export interface ActualRideSummary {
+  id: string;
+  title: string | null;
+  ride_date: string;
+  moving_time_seconds: number | null;
+  duration_seconds: number | null;
+  distance_meters: number | null;
+  elevation_gain_meters: number | null;
+  average_power: number | null;
+  normalized_power: number | null;
+  intensity_factor: number | null;
+  tss: number | null;
+  average_hr: number | null;
+}
+
+export interface WorkoutAdjustment {
+  date?: string;
+  workout_id?: string;
+  change?: string;
+  reason?: string;
+}
+
 export interface Workout {
   id: string;
   scheduled_date: string;
@@ -425,7 +447,20 @@ export interface Workout {
   planned_if: number | null;
   status: string;
   actual_ride_id: string | null;
+  actual_ride?: ActualRideSummary | null;
+  execution_score?: number | null;
+  execution_feedback?: string | null;
+  execution_adjustments?: WorkoutAdjustment[] | null;
+  execution_assessed_at?: string | null;
   steps?: WorkoutStep[];
+}
+
+export interface WorkoutAssessment {
+  workout_id: string;
+  score: number;
+  feedback: string;
+  adjustments: WorkoutAdjustment[];
+  assessed_at: string | null;
 }
 
 export interface WorkoutStep {
@@ -477,6 +512,11 @@ export const training = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+
+  getWorkoutAssessment: (id: string, force = false) =>
+    request<WorkoutAssessment>(
+      `/workouts/${id}/assessment${force ? "?force=true" : ""}`
+    ),
 };
 
 // === Onboarding ===

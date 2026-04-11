@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   ArrowLeft,
   Download,
@@ -11,6 +13,10 @@ import {
   Zap,
   ChevronDown,
   Play,
+  Sparkles,
+  RefreshCw,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
 import { training, exports_ } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -37,6 +43,7 @@ export default function WorkoutDetailPage() {
   const params = useParams();
   const workoutId = params.id as string;
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const ftp = user?.ftp || 200;
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -44,6 +51,24 @@ export default function WorkoutDetailPage() {
   const { data: workout, isLoading } = useQuery({
     queryKey: ["workout", workoutId],
     queryFn: () => training.getWorkout(workoutId),
+  });
+
+  const hasActualRide = !!workout?.actual_ride_id;
+
+  // Auto-generate assessment the first time we view a workout with a linked ride.
+  const { data: assessment, isFetching: assessmentLoading } = useQuery({
+    queryKey: ["workout-assessment", workoutId],
+    queryFn: () => training.getWorkoutAssessment(workoutId),
+    enabled: hasActualRide,
+  });
+
+  const regenerateAssessment = useMutation({
+    mutationFn: () => training.getWorkoutAssessment(workoutId, true),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["workout-assessment", workoutId], data);
+      queryClient.invalidateQueries({ queryKey: ["workout", workoutId] });
+      queryClient.invalidateQueries({ queryKey: ["workouts-week"] });
+    },
   });
 
   const handleDownload = async (format: string) => {
@@ -186,6 +211,163 @@ export default function WorkoutDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Planned vs Actual — shown when a ride has been linked to this workout */}
+      {hasActualRide && workout.actual_ride && (
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
+              <Activity className="h-4 w-4 text-blue-400" />
+              Planned vs. Actual
+            </h2>
+            {assessment?.score != null && (
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                  assessment.score >= 8
+                    ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                    : assessment.score >= 6
+                      ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
+                      : "bg-orange-500/15 text-orange-400 border border-orange-500/30"
+                )}
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                {assessment.score.toFixed(1)}/10
+              </div>
+            )}
+          </div>
+
+          {/* Stat comparison grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCompare
+              label="Duration"
+              planned={
+                workout.planned_duration_seconds
+                  ? formatDuration(workout.planned_duration_seconds)
+                  : "—"
+              }
+              actual={
+                workout.actual_ride.moving_time_seconds ||
+                workout.actual_ride.duration_seconds
+                  ? formatDuration(
+                      (workout.actual_ride.moving_time_seconds ??
+                        workout.actual_ride.duration_seconds)!
+                    )
+                  : "—"
+              }
+            />
+            <StatCompare
+              label="TSS"
+              planned={
+                workout.planned_tss != null
+                  ? Math.round(workout.planned_tss).toString()
+                  : "—"
+              }
+              actual={
+                workout.actual_ride.tss != null
+                  ? Math.round(workout.actual_ride.tss).toString()
+                  : "—"
+              }
+            />
+            <StatCompare
+              label="IF"
+              planned={
+                workout.planned_if != null
+                  ? workout.planned_if.toFixed(2)
+                  : "—"
+              }
+              actual={
+                workout.actual_ride.intensity_factor != null
+                  ? workout.actual_ride.intensity_factor.toFixed(2)
+                  : "—"
+              }
+            />
+            <StatCompare
+              label="NP"
+              planned="—"
+              actual={
+                workout.actual_ride.normalized_power != null
+                  ? `${Math.round(workout.actual_ride.normalized_power)}W`
+                  : "—"
+              }
+            />
+          </div>
+
+          {/* Marco's feedback */}
+          <div className="mt-5 rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600/80">
+                  <Sparkles className="h-3 w-3 text-white" />
+                </div>
+                <p className="text-xs font-semibold text-blue-300">
+                  Coach Marco&apos;s debrief
+                </p>
+              </div>
+              <button
+                onClick={() => regenerateAssessment.mutate()}
+                disabled={
+                  regenerateAssessment.isPending || assessmentLoading
+                }
+                className="flex items-center gap-1 rounded text-[10px] text-slate-400 hover:text-blue-400 disabled:opacity-50"
+                title="Regenerate feedback"
+              >
+                <RefreshCw
+                  className={cn(
+                    "h-3 w-3",
+                    (regenerateAssessment.isPending || assessmentLoading) &&
+                      "animate-spin"
+                  )}
+                />
+                Regenerate
+              </button>
+            </div>
+            {assessmentLoading && !assessment ? (
+              <p className="text-xs text-slate-400">
+                Marco is reviewing your ride…
+              </p>
+            ) : assessment?.feedback ? (
+              <div className="prose prose-invert prose-sm max-w-none prose-p:text-slate-200">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {assessment.feedback}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                No feedback yet.
+              </p>
+            )}
+
+            {assessment?.adjustments && assessment.adjustments.length > 0 && (
+              <div className="mt-4 border-t border-blue-500/20 pt-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-blue-300">
+                  Suggested adjustments
+                </p>
+                <ul className="space-y-2">
+                  {assessment.adjustments.map((adj, i) => (
+                    <li
+                      key={i}
+                      className="rounded-md border border-slate-700 bg-slate-800/60 p-2.5 text-xs text-slate-300"
+                    >
+                      {adj.date && (
+                        <p className="mb-0.5 font-medium text-slate-200">
+                          {adj.date}
+                        </p>
+                      )}
+                      {adj.change && <p>{adj.change}</p>}
+                      {adj.reason && (
+                        <p className="mt-1 text-[10px] text-slate-500">
+                          {adj.reason}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Visual Workout Profile */}
       {workout.steps && workout.steps.length > 0 && (
@@ -362,6 +544,34 @@ export default function WorkoutDetailPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatCompare({
+  label,
+  planned,
+  actual,
+}: {
+  label: string;
+  planned: string;
+  actual: string;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3">
+      <p className="text-[10px] uppercase tracking-wide text-slate-500">
+        {label}
+      </p>
+      <div className="mt-1 space-y-0.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-[9px] uppercase text-slate-600">Plan</span>
+          <span className="text-sm font-mono text-slate-300">{planned}</span>
+        </div>
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-[9px] uppercase text-green-500/70">Did</span>
+          <span className="text-sm font-mono text-green-400">{actual}</span>
+        </div>
+      </div>
     </div>
   );
 }
