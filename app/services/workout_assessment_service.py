@@ -346,6 +346,34 @@ def generate_assessment(
 
 # --- Auto-link ----------------------------------------------------------------
 
+def backfill_auto_links(db: Session, user_id: str, days: int = 14) -> int:
+    """
+    Retroactively link any rides from the past `days` days that don't yet
+    have an associated workout. Idempotent — skips rides already linked.
+
+    Returns the number of newly-linked rides.
+    """
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+
+    unlinked_rides = (
+        db.query(Ride)
+        .outerjoin(Workout, Workout.actual_ride_id == Ride.id)
+        .filter(
+            Ride.user_id == user_id,
+            Ride.ride_date >= since,
+            Workout.id.is_(None),  # no workout points at this ride
+        )
+        .order_by(Ride.ride_date.desc())
+        .all()
+    )
+
+    count = 0
+    for ride in unlinked_rides:
+        if auto_link_ride_to_workout(db, ride) is not None:
+            count += 1
+    return count
+
+
 def auto_link_ride_to_workout(db: Session, ride: Ride) -> Workout | None:
     """
     When a new ride is imported, try to link it to a planned workout for the

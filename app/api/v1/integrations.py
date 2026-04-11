@@ -80,6 +80,14 @@ async def sync_strava(
                     rd = rd.date()
                 recalculate_from_date(db, current_user.id, rd)
 
+        # Retroactively link any rides from the past 2 weeks that don't yet
+        # have a planned workout associated with them. Idempotent.
+        from app.services.workout_assessment_service import backfill_auto_links
+        try:
+            backfill_auto_links(db, current_user.id, days=14)
+        except Exception:
+            pass
+
         return {
             "synced": len(rides),
             "rides": [
