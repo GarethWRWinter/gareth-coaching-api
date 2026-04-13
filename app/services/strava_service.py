@@ -233,6 +233,17 @@ async def sync_activities(
     except Exception:
         logger.exception("Auto-link module failed to load")
 
+    # Auto-generate Coach Marco debriefs for each new ride (fire-and-forget).
+    try:
+        from app.services.coach_insights_service import generate_ride_debrief
+        for r in synced_rides:
+            try:
+                await generate_ride_debrief(db, user, r)
+            except Exception:
+                logger.warning("Failed to generate debrief for ride %s", r.id)
+    except Exception:
+        logger.warning("Coach insights module failed to load")
+
     return synced_rides
 
 

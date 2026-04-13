@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Index, Integer, String
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, generate_uuid
@@ -64,6 +64,10 @@ class Ride(TimestampMixin, Base):
     achievement_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     pr_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     kudos_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Coach debrief (Marco's post-ride feedback)
+    debrief_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    debrief_generated_at: Mapped[str | None] = mapped_column(DateTime, nullable=True)
 
     # Relationships
     user = relationship("User", back_populates="rides")

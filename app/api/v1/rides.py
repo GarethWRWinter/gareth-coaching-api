@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user
@@ -21,9 +21,22 @@ from app.services.metrics_service import recalculate_from_date
 
 router = APIRouter(prefix="/rides", tags=["rides"])
 
+import logging
+_logger = logging.getLogger(__name__)
+
+
+async def _generate_debrief_bg(db: Session, user: User, ride):
+    """Background task to generate a Coach Marco debrief for a new ride."""
+    try:
+        from app.services.coach_insights_service import generate_ride_debrief
+        await generate_ride_debrief(db, user, ride)
+    except Exception:
+        _logger.warning("Failed to generate debrief for ride %s", ride.id)
+
 
 @router.post("/upload", response_model=RideResponse, status_code=201)
 def upload_fit_file(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -47,11 +60,15 @@ def upload_fit_file(
     if ride.tss and ride.ride_date:
         recalculate_from_date(db, current_user.id, ride.ride_date.date())
 
+    # Auto-generate Coach Marco debrief in background
+    background_tasks.add_task(_generate_debrief_bg, db, current_user, ride)
+
     return ride
 
 
 @router.post("/record", response_model=RideResponse, status_code=201)
 def record_ride(
+    background_tasks: BackgroundTasks,
     body: RideRecordRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -68,6 +85,9 @@ def record_ride(
 
     if ride.tss and ride.ride_date:
         recalculate_from_date(db, current_user.id, ride.ride_date.date())
+
+    # Auto-generate Coach Marco debrief in background
+    background_tasks.add_task(_generate_debrief_bg, db, current_user, ride)
 
     return ride
 

@@ -151,10 +151,12 @@ export default function PerformancePage() {
           label="FTP"
           value={user?.ftp ?? "-"}
           unit="W"
+          explainable="FTP"
         />
         <StatCard
           label="Fitness (CTL)"
           value={Math.round(fitness?.current_ctl ?? 0)}
+          explainable="CTL"
           trend={
             (fitness?.ramp_rate ?? 0) > 0
               ? "up"
@@ -166,6 +168,7 @@ export default function PerformancePage() {
         <StatCard
           label="Fatigue (ATL)"
           value={Math.round(fitness?.current_atl ?? 0)}
+          explainable="ATL"
         />
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -180,6 +183,7 @@ export default function PerformancePage() {
           value={currentWeekTSS}
           unit={`TSS · ${currentWeekRides} rides`}
           trend={weeklyTrend as "up" | "down" | undefined}
+          explainable="Weekly TSS"
         />
       </div>
 

@@ -10,9 +10,13 @@ import {
   Target,
   Calendar,
   ClipboardCheck,
+  Bot,
+  MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { metrics, rides, training, goals as goalsApi } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { metrics, rides, training, goals as goalsApi, coachInsights } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDuration, formatDate, daysUntil } from "@/lib/utils";
 import { StatCard } from "@/components/ui/stat-card";
@@ -52,6 +56,24 @@ export default function DashboardPage() {
     queryFn: () => goalsApi.list(),
   });
 
+  // Coach Marco's daily nudge
+  const { data: nudge } = useQuery({
+    queryKey: ["coach-nudge"],
+    queryFn: () => coachInsights.getNudge(),
+    staleTime: 30 * 60 * 1000, // cache 30 min
+    retry: false,
+  });
+
+  // Most recent ride debrief
+  const latestRide = recentRides?.rides?.[0];
+  const { data: latestDebrief } = useQuery({
+    queryKey: ["ride-debrief", latestRide?.id],
+    queryFn: () => coachInsights.getRideDebrief(latestRide!.id),
+    enabled: !!latestRide?.id,
+    staleTime: 60 * 60 * 1000, // cache 1 hour
+    retry: false,
+  });
+
   const tsbColor =
     (fitness?.current_tsb ?? 0) > 10
       ? "text-green-400"
@@ -83,6 +105,7 @@ export default function DashboardPage() {
         <StatCard
           label="Fitness (CTL)"
           value={Math.round(fitness?.current_ctl ?? 0)}
+          explainable="CTL"
           trend={
             (fitness?.ramp_rate ?? 0) > 0
               ? "up"
@@ -94,6 +117,7 @@ export default function DashboardPage() {
         <StatCard
           label="Fatigue (ATL)"
           value={Math.round(fitness?.current_atl ?? 0)}
+          explainable="ATL"
         />
         <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -110,8 +134,33 @@ export default function DashboardPage() {
           label="FTP"
           value={user?.ftp ?? "-"}
           unit="W"
+          explainable="FTP"
         />
       </div>
+
+      {/* Coach Marco's Daily Nudge */}
+      {nudge && (
+        <div className="flex gap-3 rounded-xl border border-blue-500/20 bg-blue-950/20 p-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600">
+            <Bot className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <div className="mb-1 flex items-center gap-2">
+              <span className="text-xs font-semibold text-blue-400">Coach Marco</span>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-200">
+              {nudge.nudge}
+            </p>
+          </div>
+          <Link
+            href="/dashboard/coach"
+            className="flex h-8 shrink-0 items-center gap-1 self-center rounded-lg border border-blue-500/30 px-2.5 text-xs text-blue-400 hover:bg-blue-500/10"
+          >
+            <MessageCircle className="h-3 w-3" />
+            Chat
+          </Link>
+        </div>
+      )}
 
       {/* Rider Profile with Radar Chart */}
       {fitness && fitness.rider_type !== "unknown" && fitness.profile_scores && fitness.profile_scores.length > 0 && (
@@ -190,6 +239,33 @@ export default function DashboardPage() {
           </span>
         </Link>
       ))}
+
+      {/* Latest Ride Debrief */}
+      {latestDebrief && latestRide && (
+        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600">
+                <Bot className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xs font-semibold text-blue-400">
+                Coach Marco on your last ride
+              </span>
+            </div>
+            <Link
+              href={`/dashboard/rides/${latestRide.id}`}
+              className="text-xs text-slate-400 hover:text-slate-300"
+            >
+              {latestRide.title} &rarr;
+            </Link>
+          </div>
+          <div className="prose prose-sm prose-invert max-w-none text-slate-300 prose-p:leading-relaxed prose-p:my-1.5 prose-strong:text-white">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {latestDebrief.debrief}
+            </ReactMarkdown>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Rides */}

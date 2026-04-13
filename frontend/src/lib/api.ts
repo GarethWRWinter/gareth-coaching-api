@@ -984,6 +984,37 @@ async function downloadFile(path: string, filename: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+// --- Coach Insights (Marco's proactive presence) ---
+
+export interface CoachNudge {
+  nudge: string;
+  generated_at: string;
+  cached: boolean;
+}
+
+export interface RideDebrief {
+  debrief: string;
+  generated_at: string;
+  cached: boolean;
+}
+
+export interface MetricExplanation {
+  explanation: string;
+}
+
+export const coachInsights = {
+  getNudge: () => request<CoachNudge>("/coach/nudge"),
+
+  getRideDebrief: (rideId: string, force = false) =>
+    request<RideDebrief>(`/coach/ride-debrief/${rideId}${force ? "?force=true" : ""}`),
+
+  explainMetric: (metricName: string, metricValue: string | number) =>
+    request<MetricExplanation>("/coach/explain", {
+      method: "POST",
+      body: JSON.stringify({ metric_name: metricName, metric_value: String(metricValue) }),
+    }),
+};
+
 export const exports_ = {
   downloadZWO: (workoutId: string, title?: string) =>
     downloadFile(

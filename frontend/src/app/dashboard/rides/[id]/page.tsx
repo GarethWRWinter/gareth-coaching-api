@@ -16,8 +16,11 @@ import {
   Medal,
   ThumbsUp,
   Flag,
+  Bot,
 } from "lucide-react";
-import { rides, exports_, metrics } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { rides, exports_, metrics, coachInsights } from "@/lib/api";
 import type { SegmentEffort } from "@/lib/api";
 import { formatDuration, formatDate, formatPower } from "@/lib/utils";
 import { RideChart } from "@/components/charts/ride-chart";
@@ -56,6 +59,13 @@ export default function RideDetailPage() {
     queryKey: ["ride-segments", rideId],
     queryFn: () => rides.getSegments(rideId),
     enabled: !!ride,
+  });
+
+  const { data: debrief, isLoading: debriefLoading } = useQuery({
+    queryKey: ["ride-debrief", rideId],
+    queryFn: () => coachInsights.getRideDebrief(rideId),
+    enabled: !!ride,
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   if (isLoading) {
@@ -121,16 +131,18 @@ export default function RideDetailPage() {
           }
           unit="km"
         />
-        <StatCard label="TSS" value={ride.tss ? Math.round(ride.tss) : "-"} />
-        <StatCard label="NP" value={ride.normalized_power ? Math.round(ride.normalized_power) : "-"} unit="W" />
+        <StatCard label="TSS" value={ride.tss ? Math.round(ride.tss) : "-"} explainable="TSS" />
+        <StatCard label="NP" value={ride.normalized_power ? Math.round(ride.normalized_power) : "-"} unit="W" explainable="Normalized Power" />
         <StatCard
           label="Avg Power"
           value={ride.average_power ? Math.round(ride.average_power) : "-"}
           unit="W"
+          explainable="Average Power"
         />
         <StatCard
           label="IF"
           value={ride.intensity_factor ? ride.intensity_factor.toFixed(2) : "-"}
+          explainable="Intensity Factor"
         />
         <StatCard
           label="Avg HR"
@@ -189,6 +201,37 @@ export default function RideDetailPage() {
               {segments.kudos_count} kudo{segments.kudos_count !== 1 ? "s" : ""}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Coach Marco Debrief */}
+      {debriefLoading && (
+        <div className="flex items-center gap-3 rounded-xl border border-blue-500/20 bg-blue-950/20 p-5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600">
+            <Bot className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-400">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+            Coach Marco is reviewing your ride...
+          </div>
+        </div>
+      )}
+      {debrief && (
+        <div className="rounded-xl border border-blue-500/20 bg-blue-950/20 p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600">
+              <Bot className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-blue-400">Coach Marco</span>
+              <span className="ml-2 text-xs text-slate-500">Post-ride debrief</span>
+            </div>
+          </div>
+          <div className="prose prose-sm prose-invert max-w-none text-slate-300 prose-headings:text-white prose-p:leading-relaxed prose-p:my-1.5 prose-strong:text-white prose-ul:my-1.5">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {debrief.debrief}
+            </ReactMarkdown>
+          </div>
         </div>
       )}
 
