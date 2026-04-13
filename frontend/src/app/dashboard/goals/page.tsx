@@ -157,14 +157,13 @@ function GoalsPageInner() {
         setPendingGpxFile(null);
       }
 
-      // If this was a NEW goal (not an edit), auto-generate a training plan
-      // that peaks on race day. This replaces any existing active plan so the
-      // user always has a block pointing at their most recent goal.
+      // Auto-regenerate a unified training plan that considers ALL goals.
+      // The backend auto-detects the primary (highest-priority A-race),
+      // builds the macro periodization toward it, and accommodates B/C races.
       if (!editingGoalId && goal?.id) {
         try {
           setPlanGenerating(true);
           await trainingApi.generatePlan({
-            goal_event_id: goal.id,
             periodization_model: "traditional",
           });
           queryClient.invalidateQueries({ queryKey: ["plans"] });

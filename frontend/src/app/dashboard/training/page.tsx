@@ -174,7 +174,7 @@ export default function TrainingPage() {
               onClick={() =>
                 generateMutation.mutate({
                   periodization_model: "traditional",
-                  goal_event_id: nextUpcomingGoal.id,
+                  // Let backend auto-detect primary goal from all upcoming goals
                 })
               }
               disabled={generateMutation.isPending}
@@ -243,7 +243,7 @@ export default function TrainingPage() {
               onClick={() =>
                 generateMutation.mutate({
                   periodization_model: genModel,
-                  goal_event_id: nextUpcomingGoal?.id,
+                  // Let backend auto-detect primary goal from all upcoming goals
                 })
               }
               disabled={generateMutation.isPending}

@@ -20,7 +20,7 @@ from app.core.workout_templates import (
     estimate_tss,
     get_template,
 )
-from app.models.onboarding import GoalEvent, GoalStatus
+from app.models.onboarding import EventPriority, GoalEvent, GoalStatus
 from app.models.training import (
     PeriodizationModel,
     PhaseType,
@@ -79,6 +79,54 @@ GOAL_WORKOUT_EMPHASIS = {
 DEFAULT_EMPHASIS = {
     "endurance": 2, "sweet_spot": 2, "threshold": 1, "tempo": 1, "recovery": 1,
 }
+
+# Priority ranking — lower is more important
+PRIORITY_RANK = {
+    EventPriority.a_race: 1,
+    "a_race": 1,
+    EventPriority.b_race: 2,
+    "b_race": 2,
+    EventPriority.c_race: 3,
+    "c_race": 3,
+}
+
+
+def _rank_goal(goal: GoalEvent) -> tuple[int, date]:
+    """Sort key: highest priority first, then soonest date."""
+    return (PRIORITY_RANK.get(goal.priority, 9), goal.event_date)
+
+
+def _blend_emphasis(
+    goals: list[GoalEvent],
+) -> dict[str, int]:
+    """
+    Blend workout emphasis across multiple goals weighted by priority.
+
+    A-race gets full weight (1.0), B-race gets 0.4, C-race gets 0.
+    """
+    weights_by_priority = {"a_race": 1.0, "b_race": 0.4, "c_race": 0.0}
+    merged: dict[str, float] = {}
+
+    for goal in goals:
+        w = weights_by_priority.get(str(goal.priority), 0.0)
+        if w == 0:
+            continue
+        emphasis = GOAL_WORKOUT_EMPHASIS.get(goal.event_type, DEFAULT_EMPHASIS)
+        for wtype, val in emphasis.items():
+            merged[wtype] = merged.get(wtype, 0) + val * w
+
+    if not merged:
+        return dict(DEFAULT_EMPHASIS)
+
+    # Normalise back to integer weights (round, min 1 for non-zero)
+    max_val = max(merged.values()) or 1
+    result = {}
+    for wtype, val in merged.items():
+        normalised = round(val / max_val * 4)
+        if normalised > 0:
+            result[wtype] = max(1, normalised)
+
+    return result or dict(DEFAULT_EMPHASIS)
 
 
 def _get_recovery_cycle(experience: str | None) -> int:
@@ -219,14 +267,14 @@ def generate_plan(
     name: str | None = None,
 ) -> TrainingPlan:
     """
-    Generate a personalised periodized training plan.
+    Generate a personalised periodized training plan that considers ALL
+    upcoming goals, prioritised by A/B/C race classification.
 
-    Adapts to:
-    - Current fitness (CTL/ATL/TSB) for appropriate starting load
-    - Goal event type for workout selection emphasis
-    - Experience level for ramp rate and recovery frequency
-    - Available hours for volume scaling
-    - Progressive overload with scheduled recovery weeks
+    - A-race: drives the macro periodization (phases, peak, taper)
+    - B-race: gets a 3-day mini-taper and blends into workout emphasis
+    - C-race: rest day on event date, no other accommodation
+
+    Adapts to current fitness, experience, available hours, and goal types.
     """
     today = date.today()
 
@@ -244,24 +292,44 @@ def generate_plan(
     if existing_active:
         db.flush()
 
-    # ── 2. Gather context ──
-    goal_event = None
-    end_date = today + timedelta(weeks=12)
-
-    if goal_event_id:
-        goal_event = db.query(GoalEvent).filter(
-            GoalEvent.id == goal_event_id,
+    # ── 2. Gather ALL upcoming goals, sorted by priority then date ──
+    all_goals = (
+        db.query(GoalEvent)
+        .filter(
             GoalEvent.user_id == user.id,
-        ).first()
-        if goal_event:
-            end_date = goal_event.event_date
+            GoalEvent.event_date >= today,
+            GoalEvent.status == GoalStatus.upcoming,
+        )
+        .all()
+    )
+    all_goals.sort(key=_rank_goal)
+
+    # Determine primary goal
+    primary_goal = None
+    if goal_event_id:
+        # Explicit goal_event_id takes precedence (backward compat)
+        primary_goal = next((g for g in all_goals if g.id == goal_event_id), None)
+    if not primary_goal and all_goals:
+        # Auto-detect: highest priority, then soonest
+        primary_goal = all_goals[0]
+
+    # Plan end date = primary goal event date, or 12 weeks
+    if primary_goal:
+        end_date = primary_goal.event_date
+    else:
+        end_date = today + timedelta(weeks=12)
+
+    # If there are goals AFTER the primary, extend the plan to cover them
+    # but only if the primary is an A-race (we don't extend for B/C)
+    latest_goal_date = max((g.event_date for g in all_goals), default=end_date)
+    if latest_goal_date > end_date:
+        end_date = latest_goal_date
 
     weeks_available = max(4, (end_date - today).days // 7)
 
     # Current fitness
     fitness = get_current_fitness(db, user.id)
     current_ctl = fitness["ctl"]
-    current_atl = fitness["atl"]
     current_tsb = fitness["tsb"]
 
     # User context
@@ -269,23 +337,43 @@ def generate_plan(
     weekly_hours = user.weekly_hours_available or 6
     experience = user.experience_level or "intermediate"
 
-    # Goal emphasis
-    goal_type = goal_event.event_type if goal_event else None
-    goal_emphasis = GOAL_WORKOUT_EMPHASIS.get(goal_type, DEFAULT_EMPHASIS)
-    goal_priority = goal_event.priority if goal_event else None
+    # ── 3. Blend workout emphasis across goals by priority ──
+    goals_in_plan = [g for g in all_goals if g.event_date <= end_date]
+    if goals_in_plan:
+        goal_emphasis = _blend_emphasis(goals_in_plan)
+    elif primary_goal:
+        goal_emphasis = GOAL_WORKOUT_EMPHASIS.get(
+            primary_goal.event_type, DEFAULT_EMPHASIS
+        )
+    else:
+        goal_emphasis = dict(DEFAULT_EMPHASIS)
 
-    # ── 3. Plan naming ──
+    # ── 4. Collect event dates + B-race mini-taper windows ──
+    goal_event_dates = {g.event_date for g in all_goals}
+    # B-race mini-taper: reduce volume 3 days before
+    b_race_taper_dates: set[date] = set()
+    for g in all_goals:
+        if str(g.priority) == "b_race":
+            for d in range(1, 4):
+                b_race_taper_dates.add(g.event_date - timedelta(days=d))
+
+    # ── 5. Plan naming ──
     if name is None:
-        if goal_event:
-            name = f"Plan for {goal_event.event_name}"
+        if primary_goal:
+            other_count = len(goals_in_plan) - 1
+            if other_count > 0:
+                name = f"Plan for {primary_goal.event_name} (+{other_count} {'race' if other_count == 1 else 'races'})"
+            else:
+                name = f"Plan for {primary_goal.event_name}"
         else:
             name = f"Training Plan - {today.strftime('%b %Y')}"
 
-    # ── 4. Create plan ──
+    # ── 6. Create plan ──
+    # Link to primary goal for backward compat
     plan = TrainingPlan(
         user_id=user.id,
         name=name,
-        goal_event_id=goal_event_id,
+        goal_event_id=primary_goal.id if primary_goal else None,
         start_date=today,
         end_date=end_date,
         status=PlanStatus.active,
@@ -294,24 +382,16 @@ def generate_plan(
     db.add(plan)
     db.flush()
 
-    # ── 5. Collect race dates to avoid ──
-    all_goals = db.query(GoalEvent).filter(
-        GoalEvent.user_id == user.id,
-        GoalEvent.event_date >= today,
-        GoalEvent.status == GoalStatus.upcoming,
-    ).all()
-    goal_event_dates = {g.event_date for g in all_goals}
-
-    # ── 6. Build phases ──
+    # ── 7. Build phases targeting primary goal ──
     phases = _build_phases(weeks_available, today, end_date, periodization_model)
 
-    # ── 7. Calculate progressive TSS targets ──
+    # ── 8. Calculate progressive TSS targets ──
     starting_tss = _starting_weekly_tss(current_ctl, current_tsb)
     ramp_per_week = _ramp_rate_tss_per_week(experience)
     recovery_cycle = _get_recovery_cycle(experience)
     training_days = _days_per_week(weekly_hours, experience)
 
-    # ── 8. Generate workouts per phase ──
+    # ── 9. Generate workouts per phase ──
     sort_order = 0
     cumulative_week = 0
 
@@ -342,6 +422,7 @@ def generate_plan(
             recovery_cycle=recovery_cycle,
             goal_emphasis=goal_emphasis,
             goal_event_dates=goal_event_dates,
+            b_race_taper_dates=b_race_taper_dates,
             cumulative_week=cumulative_week,
         )
 
@@ -363,6 +444,7 @@ def _generate_adaptive_workouts(
     goal_emphasis: dict[str, int],
     goal_event_dates: set,
     cumulative_week: int,
+    b_race_taper_dates: set[date] | None = None,
 ) -> int:
     """
     Generate workouts for a phase with progressive overload and recovery weeks.
@@ -435,6 +517,7 @@ def _generate_adaptive_workouts(
 
         # 1. Build available days (exclude rest days and race days)
         available = []
+        taper_set = b_race_taper_dates or set()
         for d in range(days_in_week):
             day_date = current_week_start + timedelta(days=d)
             dow = day_date.weekday()
@@ -496,8 +579,16 @@ def _generate_adaptive_workouts(
                 break
             wtype = ordered[slot_idx]
 
+            # B-race mini-taper: swap hard workouts to easy on taper days
+            if workout_day in taper_set and wtype in intensity_types:
+                wtype = "endurance"
+
             # Calculate per-workout TSS target
             workout_tss_target = target_weekly_tss * (tss_weights[slot_idx] / total_weight)
+
+            # Reduce TSS on B-race mini-taper days (70% volume)
+            if workout_day in taper_set:
+                workout_tss_target *= 0.7
 
             # Pick template closest to TSS target (via duration hint)
             # TSS ≈ (hours) × IF² × 100, so target_hours ≈ TSS / (IF² × 100)
