@@ -114,13 +114,41 @@ def strava_status(
 
 @router.post("/strava/backfill")
 async def start_backfill(
+    force: bool = Query(False, description="Force restart even if a backfill is running"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Manually trigger historical backfill (re-run if failed or import new)."""
+    """
+    Manually trigger historical backfill. Safe to call repeatedly — the
+    underlying import is idempotent (already-imported rides are skipped).
+
+    If a backfill is currently running and making progress (last update <15min),
+    this is a no-op unless `force=true`.
+    """
+    from datetime import datetime, timezone
+    from app.models.integration import StravaToken
+
     backfill = strava_service.get_backfill_status(db, current_user.id)
-    if backfill and backfill["status"] == "running":
-        raise BadRequestException(detail="Backfill already in progress")
+    if backfill and backfill["status"] == "running" and not force:
+        # Consider the backfill stale if started > 15 min ago — likely
+        # crashed with no recent progress update.
+        started_at = backfill.get("started_at")
+        stale = True
+        if started_at:
+            try:
+                started = datetime.fromisoformat(started_at)
+                if started.tzinfo is None:
+                    started = started.replace(tzinfo=timezone.utc)
+                age_secs = (datetime.now(timezone.utc) - started).total_seconds()
+                stale = age_secs > 15 * 60
+            except Exception:
+                stale = True
+        if not stale:
+            return {
+                "status": "already_running",
+                "progress": backfill["progress"],
+                "total": backfill["total"],
+            }
 
     asyncio.create_task(
         strava_service.run_backfill_background(current_user.id)

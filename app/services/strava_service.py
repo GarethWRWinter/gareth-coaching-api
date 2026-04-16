@@ -601,24 +601,51 @@ async def backfill_history(db: Session, user: User) -> int:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             while True:
-                response = await client.get(
-                    f"{STRAVA_API_BASE}/athlete/activities",
-                    headers={"Authorization": f"Bearer {access_token}"},
-                    params={"page": page, "per_page": per_page},
-                )
-                response.raise_for_status()
+                # Pagination with rate-limit retry
+                for attempt in range(5):
+                    response = await client.get(
+                        f"{STRAVA_API_BASE}/athlete/activities",
+                        headers={"Authorization": f"Bearer {access_token}"},
+                        params={"page": page, "per_page": per_page},
+                    )
+                    if response.status_code == 429:
+                        wait_secs = 16 * 60
+                        logger.warning(
+                            "Rate limited fetching page %d (attempt %d/5), pausing %ds",
+                            page, attempt + 1, wait_secs,
+                        )
+                        strava_token.backfill_status = "paused"
+                        db.commit()
+                        await asyncio.sleep(wait_secs)
+                        strava_token.backfill_status = "running"
+                        db.commit()
+                        access_token = await _refresh_token_if_needed(db, strava_token)
+                        continue
+                    response.raise_for_status()
+                    break
+                else:
+                    raise RuntimeError(f"Exhausted retries fetching activities page {page}")
+
                 activities = response.json()
 
                 if not activities:
                     break
 
-                # Only rides
-                rides = [a for a in activities if a.get("type") in ("Ride", "VirtualRide")]
+                # Include all cycling-type activities. Strava exposes:
+                #   type: legacy field — "Ride" covers road/MTB/gravel
+                #   sport_type: newer field — more granular
+                cycling_types = {"Ride", "VirtualRide", "EBikeRide", "Velomobile"}
+                rides = [
+                    a for a in activities
+                    if a.get("type") in cycling_types
+                    or a.get("sport_type") in cycling_types
+                    or a.get("sport_type") in {"MountainBikeRide", "GravelRide"}
+                ]
                 all_activities.extend(rides)
                 page += 1
 
-                # Safety: Strava rate limit is 100 req/15min
-                if page > 50:  # 10,000 activities max
+                # Safety: 50 pages * 200 = 10,000 activities
+                if page > 50:
                     break
 
         # Update total count
@@ -677,8 +704,11 @@ async def backfill_history(db: Session, user: User) -> int:
             db.add(ride)
             db.flush()
 
-            # Fetch streams with rate limit retry
-            for attempt in range(3):
+            # Fetch streams with rate limit retry.
+            # Strava limits 100 req/15min — on 429 we wait the FULL 15-min window
+            # to let the quota reset, and retry up to 5 times. Long waits are fine
+            # because backfill runs in the background.
+            for attempt in range(5):
                 try:
                     streams = await _fetch_activity_streams(access_token, activity["id"])
                     if streams:
@@ -689,13 +719,17 @@ async def backfill_history(db: Session, user: User) -> int:
                     break  # Success
                 except httpx.HTTPStatusError as e:
                     if e.response.status_code == 429:
-                        wait_secs = 120 * (attempt + 1)  # 120s, 240s, 360s
+                        wait_secs = 16 * 60  # Full Strava 15-min window + buffer
                         logger.warning(
-                            "Strava rate limit hit (attempt %d/3), pausing %ds...",
+                            "Strava rate limit hit (attempt %d/5), pausing %ds to reset quota...",
                             attempt + 1, wait_secs,
                         )
+                        # Mark paused so any observer sees the state
+                        strava_token.backfill_status = "paused"
                         db.commit()
                         await asyncio.sleep(wait_secs)
+                        strava_token.backfill_status = "running"
+                        db.commit()
                         # Refresh token in case it expired during wait
                         access_token = await _refresh_token_if_needed(db, strava_token)
                     else:
@@ -857,6 +891,41 @@ def get_backfill_status(db: Session, user_id: str) -> dict | None:
         "started_at": token.backfill_started_at.isoformat() if token.backfill_started_at else None,
         "completed_at": token.backfill_completed_at.isoformat() if token.backfill_completed_at else None,
     }
+
+
+async def resume_incomplete_backfills() -> None:
+    """
+    On app startup, find any Strava backfills that were interrupted (server
+    restart mid-backfill) and restart them. Idempotent — already-imported
+    rides are skipped by `external_id` uniqueness.
+
+    Targets tokens with status in {"running", "paused"} — these indicate an
+    in-flight backfill that stopped without completing.
+    """
+    # Brief delay so the app has finished starting
+    await asyncio.sleep(20)
+
+    db = SessionLocal()
+    try:
+        tokens = db.query(StravaToken).filter(
+            StravaToken.backfill_status.in_(["running", "paused"])
+        ).all()
+
+        if not tokens:
+            logger.info("No incomplete Strava backfills to resume")
+            return
+
+        for token in tokens:
+            logger.info(
+                "Resuming Strava backfill for user %s (was %s)",
+                token.user_id, token.backfill_status,
+            )
+            # Fire-and-forget — each runs in its own DB session
+            asyncio.create_task(run_backfill_background(token.user_id))
+    except Exception:
+        logger.exception("Failed to resume incomplete backfills")
+    finally:
+        db.close()
 
 
 # ---------------------------------------------------------------------------
