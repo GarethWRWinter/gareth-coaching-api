@@ -880,7 +880,7 @@ export const chat = {
 // === Strava ===
 
 export interface StravaBackfillStatus {
-  status: string | null; // null, "running", "completed", "failed"
+  status: string | null; // null, "running", "paused", "completed", "failed"
   total: number | null;
   progress: number;
   started_at: string | null;

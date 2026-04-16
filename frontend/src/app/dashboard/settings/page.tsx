@@ -122,8 +122,9 @@ export default function SettingsPage() {
     queryFn: () => strava.getStatus(),
     refetchInterval: (query) => {
       const data = query.state.data as StravaStatus | undefined;
-      // Poll every 3s while backfill is running
-      return data?.backfill?.status === "running" ? 3000 : false;
+      // Poll every 3s while backfill is running or paused
+      const status = data?.backfill?.status;
+      return status === "running" || status === "paused" ? 3000 : false;
     },
   });
 
@@ -823,6 +824,29 @@ export default function SettingsPage() {
                     Completed {formatDate(stravaStatus.backfill.completed_at)}
                   </p>
                 )}
+                <button
+                  onClick={async () => {
+                    await strava.startBackfill(true);
+                    queryClient.invalidateQueries({ queryKey: ["strava-status"] });
+                  }}
+                  className="mt-2 rounded border border-green-500/40 bg-green-500/10 px-3 py-1 text-xs font-medium text-green-300 hover:bg-green-500/20"
+                >
+                  Re-import from Strava
+                </button>
+              </div>
+            )}
+
+            {stravaStatus.backfill?.status === "paused" && (
+              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-yellow-400">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Paused — waiting for Strava rate limit to reset
+                </div>
+                {stravaStatus.backfill.total ? (
+                  <p className="mt-1 text-xs text-slate-400">
+                    {stravaStatus.backfill.progress} / {stravaStatus.backfill.total} processed — resuming automatically
+                  </p>
+                ) : null}
               </div>
             )}
 
