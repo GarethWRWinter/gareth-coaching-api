@@ -122,9 +122,12 @@ export default function SettingsPage() {
     queryFn: () => strava.getStatus(),
     refetchInterval: (query) => {
       const data = query.state.data as StravaStatus | undefined;
-      // Poll every 3s while backfill is running or paused
       const status = data?.backfill?.status;
-      return status === "running" || status === "paused" ? 3000 : false;
+      // Poll fast while actively running, slow while paused (long waits)
+      if (status === "running") return 3000;
+      if (status === "paused") return 30_000; // 30s while in 15-min pause
+      if (status === "paused_daily") return 5 * 60_000; // 5min while in daily pause
+      return false;
     },
   });
 
@@ -840,13 +843,27 @@ export default function SettingsPage() {
               <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-yellow-400">
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  Paused — waiting for Strava rate limit to reset
+                  Paused — waiting for Strava 15-min rate limit to reset
                 </div>
-                {stravaStatus.backfill.total ? (
-                  <p className="mt-1 text-xs text-slate-400">
-                    {stravaStatus.backfill.progress} / {stravaStatus.backfill.total} processed — resuming automatically
-                  </p>
-                ) : null}
+                <p className="mt-1 text-xs text-slate-400">
+                  {stravaStatus.backfill.total
+                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed — resuming in ~15 minutes`
+                    : "Resuming in ~15 minutes"}
+                </p>
+              </div>
+            )}
+
+            {stravaStatus.backfill?.status === "paused_daily" && (
+              <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-orange-400">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Paused — Strava daily limit reached
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  {stravaStatus.backfill.total
+                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed. Strava allows 1,000 requests/day — your backfill will auto-resume at midnight UTC.`
+                    : "Strava allows 1,000 requests/day — your backfill will auto-resume at midnight UTC."}
+                </p>
               </div>
             )}
 

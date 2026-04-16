@@ -39,6 +39,62 @@ STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_BASE = "https://www.strava.com/api/v3"
 
 
+class StravaRateLimit(Exception):
+    """
+    Raised when Strava returns 429. Carries enough info to decide how long
+    to wait. Strava response headers used:
+      X-ReadRateLimit-Limit: "100,1000"     (short, long)
+      X-ReadRateLimit-Usage: "101,250"      (short, long)
+    Short window = 15 minutes. Long window = daily (resets at midnight UTC).
+    """
+
+    def __init__(self, is_daily: bool, wait_secs: int, usage: str | None = None):
+        self.is_daily = is_daily
+        self.wait_secs = wait_secs
+        self.usage = usage
+        super().__init__(
+            f"Strava rate limit hit ({'daily' if is_daily else '15-min'}), "
+            f"wait {wait_secs}s. Usage: {usage}"
+        )
+
+
+def _parse_rate_limit_response(response) -> StravaRateLimit:
+    """
+    Inspect a 429 response and return a StravaRateLimit exception with
+    the appropriate wait time based on which limit was hit.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    limit_header = response.headers.get("X-ReadRateLimit-Limit") or response.headers.get("X-RateLimit-Limit", "100,1000")
+    usage_header = response.headers.get("X-ReadRateLimit-Usage") or response.headers.get("X-RateLimit-Usage", "")
+
+    try:
+        short_limit, long_limit = [int(x) for x in limit_header.split(",")]
+    except Exception:
+        short_limit, long_limit = 100, 1000
+
+    short_usage, long_usage = 0, 0
+    try:
+        parts = usage_header.split(",")
+        if len(parts) >= 2:
+            short_usage = int(parts[0])
+            long_usage = int(parts[1])
+    except Exception:
+        pass
+
+    # Daily limit hit — wait until midnight UTC (+ 60s buffer)
+    if long_usage >= long_limit:
+        now = datetime.now(timezone.utc)
+        midnight = (now + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        wait_secs = int((midnight - now).total_seconds()) + 60
+        return StravaRateLimit(is_daily=True, wait_secs=wait_secs, usage=usage_header)
+
+    # 15-min limit hit — wait 16 min to ensure the rolling window clears
+    return StravaRateLimit(is_daily=False, wait_secs=16 * 60, usage=usage_header)
+
+
 def get_auth_url(state: str = "") -> str:
     """Generate Strava OAuth authorization URL with user ID in state."""
     params = {
@@ -277,7 +333,7 @@ def _activity_to_ride(user: User, activity: dict) -> Ride:
 async def _fetch_activity_streams(
     access_token: str, activity_id: int
 ) -> dict | None:
-    """Fetch time-series streams for a Strava activity."""
+    """Fetch time-series streams for a Strava activity. Raises StravaRateLimit on 429."""
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"{STRAVA_API_BASE}/activities/{activity_id}/streams",
@@ -287,6 +343,8 @@ async def _fetch_activity_streams(
                 "key_by_type": "true",
             },
         )
+        if response.status_code == 429:
+            raise _parse_rate_limit_response(response)
         if response.status_code != 200:
             return None
         return response.json()
@@ -369,6 +427,8 @@ async def fetch_and_store_segments(
             f"{STRAVA_API_BASE}/activities/{strava_activity_id}",
             headers={"Authorization": f"Bearer {access_token}"},
         )
+        if response.status_code == 429:
+            raise _parse_rate_limit_response(response)
         if response.status_code != 200:
             logger.warning(
                 "Failed to fetch detailed activity %s (status %d)",
@@ -601,7 +661,7 @@ async def backfill_history(db: Session, user: User) -> int:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             while True:
-                # Pagination with rate-limit retry
+                # Pagination with smart rate-limit retry (handles daily vs 15-min)
                 for attempt in range(5):
                     response = await client.get(
                         f"{STRAVA_API_BASE}/athlete/activities",
@@ -609,14 +669,18 @@ async def backfill_history(db: Session, user: User) -> int:
                         params={"page": page, "per_page": per_page},
                     )
                     if response.status_code == 429:
-                        wait_secs = 16 * 60
+                        rl = _parse_rate_limit_response(response)
                         logger.warning(
-                            "Rate limited fetching page %d (attempt %d/5), pausing %ds",
-                            page, attempt + 1, wait_secs,
+                            "Rate limited fetching page %d (attempt %d/5): %s, waiting %ds",
+                            page, attempt + 1,
+                            "DAILY" if rl.is_daily else "15-min",
+                            rl.wait_secs,
                         )
-                        strava_token.backfill_status = "paused"
+                        strava_token.backfill_status = (
+                            "paused_daily" if rl.is_daily else "paused"
+                        )
                         db.commit()
-                        await asyncio.sleep(wait_secs)
+                        await asyncio.sleep(rl.wait_secs)
                         strava_token.backfill_status = "running"
                         db.commit()
                         access_token = await _refresh_token_if_needed(db, strava_token)
@@ -704,11 +768,12 @@ async def backfill_history(db: Session, user: User) -> int:
             db.add(ride)
             db.flush()
 
-            # Fetch streams with rate limit retry.
-            # Strava limits 100 req/15min — on 429 we wait the FULL 15-min window
-            # to let the quota reset, and retry up to 5 times. Long waits are fine
-            # because backfill runs in the background.
-            for attempt in range(5):
+            # Fetch streams with smart rate-limit retry.
+            # On 429: parse Strava's rate-limit headers — if the DAILY limit
+            # (1000 req/day) was hit, wait until midnight UTC. If the 15-min
+            # rolling limit was hit, wait 16 minutes. Backfill runs in
+            # background so long waits are fine.
+            for attempt in range(10):
                 try:
                     streams = await _fetch_activity_streams(access_token, activity["id"])
                     if streams:
@@ -717,32 +782,48 @@ async def backfill_history(db: Session, user: User) -> int:
                         if power_stream:
                             _recalculate_ride_metrics(db, ride, power_stream, user.ftp)
                     break  # Success
+                except StravaRateLimit as rl:
+                    logger.warning(
+                        "Strava rate limit (%s) on streams for %s, waiting %ds (attempt %d/10)",
+                        "DAILY" if rl.is_daily else "15-min",
+                        activity["id"], rl.wait_secs, attempt + 1,
+                    )
+                    strava_token.backfill_status = (
+                        "paused_daily" if rl.is_daily else "paused"
+                    )
+                    db.commit()
+                    await asyncio.sleep(rl.wait_secs)
+                    strava_token.backfill_status = "running"
+                    db.commit()
+                    access_token = await _refresh_token_if_needed(db, strava_token)
                 except httpx.HTTPStatusError as e:
-                    if e.response.status_code == 429:
-                        wait_secs = 16 * 60  # Full Strava 15-min window + buffer
-                        logger.warning(
-                            "Strava rate limit hit (attempt %d/5), pausing %ds to reset quota...",
-                            attempt + 1, wait_secs,
-                        )
-                        # Mark paused so any observer sees the state
-                        strava_token.backfill_status = "paused"
-                        db.commit()
-                        await asyncio.sleep(wait_secs)
-                        strava_token.backfill_status = "running"
-                        db.commit()
-                        # Refresh token in case it expired during wait
-                        access_token = await _refresh_token_if_needed(db, strava_token)
-                    else:
-                        logger.warning("Failed to fetch streams for activity %s: %s", activity["id"], e)
-                        break
+                    logger.warning("Failed to fetch streams for activity %s: %s", activity["id"], e)
+                    break
 
-            # Fetch segments for the new ride
-            try:
-                await fetch_and_store_segments(
-                    db, ride.id, str(activity["id"]), access_token,
-                )
-            except Exception:
-                logger.warning("Backfill: failed to fetch segments for activity %s", activity["id"])
+            # Fetch segments for the new ride (with rate-limit retry)
+            for seg_attempt in range(10):
+                try:
+                    await fetch_and_store_segments(
+                        db, ride.id, str(activity["id"]), access_token,
+                    )
+                    break
+                except StravaRateLimit as rl:
+                    logger.warning(
+                        "Strava rate limit (%s) on segments for %s, waiting %ds",
+                        "DAILY" if rl.is_daily else "15-min",
+                        activity["id"], rl.wait_secs,
+                    )
+                    strava_token.backfill_status = (
+                        "paused_daily" if rl.is_daily else "paused"
+                    )
+                    db.commit()
+                    await asyncio.sleep(rl.wait_secs)
+                    strava_token.backfill_status = "running"
+                    db.commit()
+                    access_token = await _refresh_token_if_needed(db, strava_token)
+                except Exception:
+                    logger.warning("Backfill: failed to fetch segments for activity %s", activity["id"])
+                    break
 
             imported += 1
             strava_token.backfill_progress = i + 1
@@ -908,7 +989,7 @@ async def resume_incomplete_backfills() -> None:
     db = SessionLocal()
     try:
         tokens = db.query(StravaToken).filter(
-            StravaToken.backfill_status.in_(["running", "paused"])
+            StravaToken.backfill_status.in_(["running", "paused", "paused_daily"])
         ).all()
 
         if not tokens:
