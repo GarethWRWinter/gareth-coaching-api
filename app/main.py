@@ -65,4 +65,12 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy"}
+    """Health check with DB connectivity test."""
+    from app.database import engine
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception as e:
+        return {"status": "unhealthy", "database": str(e)}
