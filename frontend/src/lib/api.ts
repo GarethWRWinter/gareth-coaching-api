@@ -273,6 +273,22 @@ export const rides = {
     request<RideSegmentsResponse>(`/rides/${id}/segments`),
 
   upload: (file: File) => uploadFile<Ride>("/rides/upload", file),
+
+  /**
+   * Save an in-app workout recording (from the in-app session player).
+   * Backend computes derived metrics (avg power, NP, IF, TSS, ...) and
+   * triggers a Marco debrief in the background.
+   */
+  record: (body: {
+    title: string;
+    ride_date: string; // ISO datetime
+    workout_id: string | null;
+    data_points: RideDataPoint[];
+  }) =>
+    request<Ride>("/rides/record", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };
 
 // === Metrics ===

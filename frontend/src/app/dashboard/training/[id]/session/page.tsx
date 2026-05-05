@@ -27,12 +27,13 @@ import {
   VolumeX,
   Radio,
 } from "lucide-react";
-import { training } from "@/lib/api";
+import { rides, training } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDuration, cn } from "@/lib/utils";
 import { getZoneFromPct, getZoneColors, ZONE_COLORS } from "@/lib/trainingZones";
 import { useBluetooth } from "@/hooks/useBluetooth";
 import { useCoachRadio } from "@/hooks/useCoachRadio";
+import { useTelemetryBuffer } from "@/hooks/useTelemetryBuffer";
 import {
   useTrainingSession,
   type SessionStep,
@@ -107,6 +108,15 @@ export default function TrainingSessionPage() {
     null
   );
 
+  // Save flow state
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [resumePrompt, setResumePrompt] = useState<{
+    startedAt: string;
+    dataPointCount: number;
+  } | null>(null);
+  const startedSavingRef = useRef(false);
+
   const { data: workout, isLoading } = useQuery({
     queryKey: ["workout", workoutId],
     queryFn: () => training.getWorkout(workoutId),
@@ -128,6 +138,93 @@ export default function TrainingSessionPage() {
     ftp,
     handleTargetPowerChange
   );
+
+  // === Telemetry buffering ===
+  const buffer = useTelemetryBuffer({
+    workoutId,
+    elapsedSeconds: session.totalElapsedSeconds,
+    btState,
+    running: session.status === "running",
+  });
+
+  // Initialise buffer when the session leaves "idle" for the first time.
+  // The buffer hook also lazy-inits on first sample, but doing it here keeps
+  // startedAt tied to the user's actual "Start" click rather than the first
+  // BLE tick.
+  const sessionStartedRef = useRef(false);
+  useEffect(() => {
+    if (session.status !== "idle" && !sessionStartedRef.current) {
+      sessionStartedRef.current = true;
+      buffer.start();
+    }
+  }, [session.status, buffer]);
+
+  // Check for a resumable buffered session on mount.
+  useEffect(() => {
+    if (!buffer.hasStored()) return;
+    if (session.status !== "idle") return;
+    const stored = window.localStorage.getItem(
+      `marco:session-buffer:${workoutId}`
+    );
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as {
+        startedAt: string;
+        dataPoints: unknown[];
+      };
+      setResumePrompt({
+        startedAt: parsed.startedAt,
+        dataPointCount: parsed.dataPoints?.length ?? 0,
+      });
+    } catch {
+      // ignore — corrupted entry, will be overwritten on next start
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // === Save flow ===
+  const saveSession = useCallback(async () => {
+    if (startedSavingRef.current) return;
+    startedSavingRef.current = true;
+    setSaving(true);
+    setSaveError(null);
+
+    try {
+      buffer.flush();
+      const dataPoints = buffer.getBuffer();
+      const startedAt = buffer.getStartTime() ?? new Date();
+
+      if (dataPoints.length === 0) {
+        // Nothing to save — discard quietly and bail
+        buffer.clear();
+        router.push(`/dashboard/training/${workoutId}`);
+        return;
+      }
+
+      const ride = await rides.record({
+        title: workout?.title || "Indoor Session",
+        ride_date: startedAt.toISOString(),
+        workout_id: workoutId,
+        data_points: dataPoints,
+      });
+
+      buffer.clear();
+      router.push(`/dashboard/rides/${ride.id}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      setSaveError(msg);
+      startedSavingRef.current = false;
+    } finally {
+      setSaving(false);
+    }
+  }, [buffer, router, workout?.title, workoutId]);
+
+  // Auto-save when the session naturally completes.
+  useEffect(() => {
+    if (session.status === "completed" && !startedSavingRef.current) {
+      void saveSession();
+    }
+  }, [session.status, saveSession]);
 
   // === Coach Radio ===
   const currentStep_ = session.steps[session.currentStepIndex];
@@ -1187,25 +1284,98 @@ export default function TrainingSessionPage() {
             <h3 className="text-lg font-semibold text-white mb-2">
               End Workout?
             </h3>
-            <p className="text-sm text-slate-400 mb-6">
-              Are you sure you want to stop? Your progress will not be saved.
+            <p className="text-sm text-slate-400 mb-2">
+              You&apos;ve recorded {buffer.getBuffer().length} seconds of data
+              so far.
             </p>
-            <div className="flex gap-3">
+            <p className="text-sm text-slate-400 mb-6">
+              Save the ride, or discard and exit?
+            </p>
+            {saveError && (
+              <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                Save failed: {saveError}. Your data is still buffered — try
+                again.
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
               <button
-                onClick={() => setShowConfirmStop(false)}
-                className="flex-1 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                disabled={saving}
+                onClick={async () => {
+                  sessionActions.stop();
+                  await btActions.stopTrainer();
+                  await saveSession();
+                  setShowConfirmStop(false);
+                }}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
               >
-                Cancel
+                {saving ? "Saving..." : "Save ride & end"}
               </button>
               <button
+                disabled={saving}
                 onClick={() => {
                   setShowConfirmStop(false);
                   sessionActions.stop();
                   btActions.stopTrainer();
+                  buffer.clear();
+                  router.push(`/dashboard/training/${workoutId}`);
                 }}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 transition-colors"
+                className="rounded-lg border border-red-500/40 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
               >
-                End Workout
+                Discard & end
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => setShowConfirmStop(false)}
+                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors disabled:opacity-50"
+              >
+                Keep going
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resume previous session prompt */}
+      {resumePrompt && session.status === "idle" && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-2">
+              Unfinished session found
+            </h3>
+            <p className="text-sm text-slate-400 mb-2">
+              You have a buffered session for this workout from{" "}
+              {new Date(resumePrompt.startedAt).toLocaleString()} with{" "}
+              {resumePrompt.dataPointCount} seconds of data.
+            </p>
+            <p className="text-sm text-slate-400 mb-6">
+              Save what you recorded, or discard and start fresh?
+            </p>
+            {saveError && (
+              <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                Save failed: {saveError}
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              <button
+                disabled={saving}
+                onClick={async () => {
+                  buffer.restore();
+                  await saveSession();
+                  setResumePrompt(null);
+                }}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Save buffered ride"}
+              </button>
+              <button
+                disabled={saving}
+                onClick={() => {
+                  buffer.clear();
+                  setResumePrompt(null);
+                }}
+                className="rounded-lg border border-red-500/40 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+              >
+                Discard & start fresh
               </button>
             </div>
           </div>
