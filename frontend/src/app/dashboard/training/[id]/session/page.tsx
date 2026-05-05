@@ -695,10 +695,15 @@ export default function TrainingSessionPage() {
                       <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
                       <div className="text-left">
                         <p className="text-sm font-medium text-amber-400">
-                          Bluetooth Not Available
+                          Bluetooth not available in this browser
                         </p>
                         <p className="text-xs text-amber-400/70 mt-1">
-                          Web Bluetooth requires Chrome or Edge. Safari and Firefox are not supported.
+                          Use <strong>Chrome</strong>, <strong>Edge</strong>, or
+                          <strong> Brave</strong> on a Mac, PC, or Android.{" "}
+                          <strong>iPhone and iPad aren&apos;t supported</strong> —
+                          every iOS browser (including Chrome) runs on Safari&apos;s
+                          engine, which doesn&apos;t have Web Bluetooth. Native
+                          iOS app coming soon.
                         </p>
                       </div>
                     </div>
@@ -1182,11 +1187,15 @@ export default function TrainingSessionPage() {
                   <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
                   <div>
                     <p className="text-sm font-medium text-amber-400">
-                      Bluetooth Not Available
+                      Bluetooth not available in this browser
                     </p>
                     <p className="text-xs text-amber-400/70 mt-1">
-                      Web Bluetooth requires Chrome or Edge browser. Safari and
-                      Firefox are not supported.
+                      Use <strong>Chrome</strong>, <strong>Edge</strong>, or
+                      <strong> Brave</strong> on a Mac, PC, or Android.{" "}
+                      <strong>iPhone and iPad aren&apos;t supported</strong> —
+                      every iOS browser (including Chrome) runs on Safari&apos;s
+                      engine, which doesn&apos;t have Web Bluetooth. Native iOS
+                      app coming soon.
                     </p>
                   </div>
                 </div>
