@@ -262,28 +262,36 @@ export default function SettingsPage() {
   }
 
   const inputClasses =
-    "w-full rounded border border-slate-600 bg-slate-700 px-2.5 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none";
+    "w-full border-2 border-vb-border bg-vb-bg px-2.5 py-1.5 text-sm text-vb-text focus:border-vb-text focus:outline-none";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <h1 className="text-2xl font-bold text-white">Settings</h1>
+    <div className="mx-auto max-w-3xl space-y-10">
+      {/* ============ MASTHEAD ============ */}
+      <header className="border-b-2 border-vb-text pb-5">
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
+          The desk
+        </p>
+        <h1 className="font-display text-5xl leading-[0.95] tracking-tight md:text-6xl">
+          Settings.
+        </h1>
+      </header>
 
       {/* Profile */}
-      <section className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-        <h2 className="text-lg font-semibold text-white">Profile</h2>
+      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="font-display text-2xl tracking-tight text-vb-text">Profile</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
               Full Name
             </label>
             <input
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
               Weight (kg)
             </label>
             <input
@@ -291,44 +299,44 @@ export default function SettingsPage() {
               step="0.1"
               value={form.weight_kg}
               onChange={(e) => setForm({ ...form, weight_kg: e.target.value })}
-              className="w-full rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
               FTP (watts)
             </label>
             <input
               type="number"
               value={form.ftp}
               onChange={(e) => setForm({ ...form, ftp: e.target.value })}
-              className="w-full rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
               Max HR (bpm)
             </label>
             <input
               type="number"
               value={form.max_hr}
               onChange={(e) => setForm({ ...form, max_hr: e.target.value })}
-              className="w-full rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
               Resting HR (bpm)
             </label>
             <input
               type="number"
               value={form.resting_hr}
               onChange={(e) => setForm({ ...form, resting_hr: e.target.value })}
-              className="w-full rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
               Weekly Hours Available
             </label>
             <input
@@ -338,7 +346,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setForm({ ...form, weekly_hours_available: e.target.value })
               }
-              className="w-full rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
             />
           </div>
         </div>
@@ -404,7 +412,7 @@ export default function SettingsPage() {
           <button
             onClick={() => saveProfile.mutate()}
             disabled={saveProfile.isPending}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            className="flex items-center gap-2 border-2 border-vb-text bg-vb-text px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Save className="h-4 w-4" />
             {saveProfile.isPending ? "Saving..." : "Save Profile"}
@@ -416,14 +424,14 @@ export default function SettingsPage() {
       </section>
 
       {/* FTP Test */}
-      <section className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-        <h2 className="text-lg font-semibold text-white">FTP Test</h2>
-        <p className="mt-1 text-sm text-slate-400">
+      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="font-display text-2xl tracking-tight text-vb-text">FTP Test</h2>
+        <p className="mt-2 text-sm text-vb-text-dim">
           Enter your 20-minute average power to calculate FTP (95% of 20-min avg)
         </p>
         <div className="mt-4 flex items-end gap-3">
           <div className="flex-1">
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
               20-min Avg Power (W)
             </label>
             <input
@@ -431,13 +439,13 @@ export default function SettingsPage() {
               value={ftpTestPower}
               onChange={(e) => setFtpTestPower(e.target.value)}
               placeholder="e.g. 280"
-              className="w-full rounded-lg border border-slate-700 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
             />
           </div>
           <button
             onClick={() => submitFTPTest.mutate()}
             disabled={!ftpTestPower || submitFTPTest.isPending}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
+            className="border-2 border-vb-text bg-vb-text px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text disabled:cursor-not-allowed disabled:opacity-40"
           >
             Calculate
           </button>
@@ -450,19 +458,19 @@ export default function SettingsPage() {
       </section>
 
       {/* Goals */}
-      <section className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Goal Events</h2>
+            <h2 className="font-display text-2xl tracking-tight text-vb-text">Goal Events</h2>
             <p className="mt-0.5 text-xs text-slate-500">
-              <Link href="/dashboard/goals" className="text-blue-400 hover:text-blue-300">
+              <Link href="/dashboard/goals" className="font-bold uppercase tracking-[0.08em] text-vb-text hover:text-vb-red">
                 View full goals page
               </Link>
             </p>
           </div>
           <button
             onClick={openAddGoal}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500"
+            className="flex items-center gap-1.5 border-2 border-vb-text bg-vb-text px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text"
           >
             <Plus className="h-3.5 w-3.5" /> Add Goal
           </button>
@@ -489,7 +497,7 @@ export default function SettingsPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {/* Event Name */}
               <div>
-                <label className="mb-1 block text-xs text-slate-400">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
                   Event Name *
                 </label>
                 <input
@@ -504,7 +512,7 @@ export default function SettingsPage() {
 
               {/* Date */}
               <div>
-                <label className="mb-1 block text-xs text-slate-400">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
                   Event Date *
                 </label>
                 <input
@@ -519,7 +527,7 @@ export default function SettingsPage() {
 
               {/* Type */}
               <div>
-                <label className="mb-1 block text-xs text-slate-400">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
                   Event Type
                 </label>
                 <select
@@ -539,7 +547,7 @@ export default function SettingsPage() {
 
               {/* Priority */}
               <div>
-                <label className="mb-1 block text-xs text-slate-400">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
                   Priority
                 </label>
                 <select
@@ -559,7 +567,7 @@ export default function SettingsPage() {
 
               {/* Target Duration */}
               <div>
-                <label className="mb-1 block text-xs text-slate-400">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
                   Target Duration (minutes)
                 </label>
                 <input
@@ -578,7 +586,7 @@ export default function SettingsPage() {
 
               {/* Route URL */}
               <div>
-                <label className="mb-1 block text-xs text-slate-400">
+                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
                   Route / Event URL
                 </label>
                 <input
@@ -595,7 +603,7 @@ export default function SettingsPage() {
 
             {/* Notes - full width */}
             <div className="mt-3">
-              <label className="mb-1 block text-xs text-slate-400">
+              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
                 Notes
               </label>
               <textarea
@@ -775,8 +783,8 @@ export default function SettingsPage() {
       </section>
 
       {/* Strava Integration */}
-      <section className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-        <h2 className="text-lg font-semibold text-white">Strava</h2>
+      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="font-display text-2xl tracking-tight text-vb-text">Strava</h2>
         {stravaStatus?.connected ? (
           <div className="mt-3 space-y-3">
             <div className="flex items-center gap-2 text-sm text-green-400">
@@ -952,7 +960,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Dropbox Integration */}
-      <section className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
         <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
           <HardDrive className="h-5 w-5 text-blue-400" />
           Dropbox
