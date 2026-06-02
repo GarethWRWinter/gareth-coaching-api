@@ -115,6 +115,12 @@ def strava_status(
 @router.post("/strava/backfill")
 async def start_backfill(
     force: bool = Query(False, description="Force restart even if a backfill is running"),
+    since_years: int | None = Query(
+        None,
+        description="Only import rides newer than this many years (e.g. 2 keeps DB lean). Omit for full history.",
+        ge=1,
+        le=20,
+    ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -124,8 +130,11 @@ async def start_backfill(
 
     If a backfill is currently running and making progress (last update <15min),
     this is a no-op unless `force=true`.
+
+    Pass `since_years=2` (or similar) to keep the import lean — useful after a
+    fresh DB to avoid re-pulling decades of data.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime, timedelta, timezone
     from app.models.integration import StravaToken
 
     backfill = strava_service.get_backfill_status(db, current_user.id)
@@ -150,10 +159,17 @@ async def start_backfill(
                 "total": backfill["total"],
             }
 
+    since = None
+    if since_years:
+        since = datetime.now(timezone.utc) - timedelta(days=since_years * 365)
+
     asyncio.create_task(
-        strava_service.run_backfill_background(current_user.id)
+        strava_service.run_backfill_background(current_user.id, since=since)
     )
-    return {"status": "backfill_started"}
+    return {
+        "status": "backfill_started",
+        "since": since.isoformat() if since else None,
+    }
 
 
 @router.post("/strava/backfill-segments")

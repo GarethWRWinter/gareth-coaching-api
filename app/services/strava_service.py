@@ -644,11 +644,18 @@ def disconnect(db: Session, user_id: str) -> None:
 # Historical Backfill
 # ---------------------------------------------------------------------------
 
-async def backfill_history(db: Session, user: User) -> int:
+async def backfill_history(
+    db: Session, user: User, since: datetime | None = None
+) -> int:
     """
-    Import full ride history from Strava. Called once on first connect.
+    Import ride history from Strava.
 
-    Paginates through all activities, fetches streams for each ride.
+    Args:
+        since: If provided, only import rides newer than this UTC datetime.
+            Useful for keeping a fresh DB lean (e.g. only re-import the
+            last 2 years after a volume wipe). If None, imports full history.
+
+    Paginates through activities, fetches streams for each ride.
     Updates progress on StravaToken so the frontend can show progress.
     Returns total rides imported.
     """
@@ -672,12 +679,19 @@ async def backfill_history(db: Session, user: User) -> int:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             while True:
+                # Build params, optionally constraining to rides after `since`.
+                # Strava's `after` is a unix timestamp; activities returned
+                # are strictly newer than it.
+                params: dict = {"page": page, "per_page": per_page}
+                if since is not None:
+                    params["after"] = int(since.timestamp())
+
                 # Pagination with smart rate-limit retry (handles daily vs 15-min)
                 for attempt in range(5):
                     response = await client.get(
                         f"{STRAVA_API_BASE}/athlete/activities",
                         headers={"Authorization": f"Bearer {access_token}"},
-                        params={"page": page, "per_page": per_page},
+                        params=params,
                     )
                     if response.status_code == 429:
                         rl = _parse_rate_limit_response(response)
@@ -866,10 +880,15 @@ async def backfill_history(db: Session, user: User) -> int:
         raise
 
 
-async def run_backfill_background(user_id: str) -> None:
+async def run_backfill_background(
+    user_id: str, since: datetime | None = None
+) -> None:
     """
     Run backfill in a background task with its own DB session.
     Called via asyncio.create_task() so it doesn't block the request.
+
+    Args:
+        since: Optional UTC datetime cutoff — only imports rides newer than this.
     """
     db = SessionLocal()
     try:
@@ -878,8 +897,11 @@ async def run_backfill_background(user_id: str) -> None:
             logger.error("Backfill: user %s not found", user_id)
             return
 
-        count = await backfill_history(db, user)
-        logger.info("Background backfill done: %d rides for %s", count, user.email)
+        count = await backfill_history(db, user, since=since)
+        logger.info(
+            "Background backfill done: %d rides for %s (since=%s)",
+            count, user.email, since.isoformat() if since else "all-time",
+        )
 
         # Recalculate PMC after backfill
         from app.services.metrics_service import recalculate_from_date
