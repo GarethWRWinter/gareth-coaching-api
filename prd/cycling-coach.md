@@ -137,7 +137,7 @@ Email + password + OAuth (Google, Apple), per-user data isolation via Postgres R
 
 - Cycling, indoor + outdoor (analytics on outdoor; in-app execution indoor only).
 - Single-rider use (one human, one account).
-- Strava ingestion + Dropbox FIT import + manual FIT upload.
+- Strava ingestion + Dropbox FIT import + manual FIT upload. **A free Strava account is sufficient** — users do not need a paid Strava subscription. The endpoints we use (athlete, activities, streams, detailed activity) are available to free Strava accounts. The paid-Strava requirement in the developer program applies only to *our* developer-account registration, not to end users.
 - Goal definition (event date, type, route via GPX, A/B/C tag, history notes).
 - AI plan generation tied to goal + availability + history.
 - Workout detail with targets (power, cadence, duration, zones).
@@ -218,6 +218,8 @@ Email + password + OAuth (Google, Apple), per-user data isolation via Postgres R
 | **Total per active user / month** | | | | **~$1.87** |
 
 **Subscription target: £19.99/month (annual £180).** Annual must be ≥ 70% of users to keep blended margin healthy.
+
+**No double subscription.** Users keep their existing (free) Strava account. Marco is one £19.99/mo line item — not Marco + Strava Premium + something else. This is a real positioning advantage over TrainingPeaks Premium (~$20/mo, typically stacked on Strava Premium for serious users). Lead marketing copy with this when we launch: *"Free Strava + Marco. That's all you need."*
 
 **Headroom:** ~92% gross margin at target engagement. Massive cushion.
 
