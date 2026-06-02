@@ -33,6 +33,7 @@ Existing tools each solve one slice. Nobody solves the whole relationship.
 - **TrainerRoad / Adaptive Training** — strong workout library and AT plan adaptation, but the personalisation is statistical, not relational. It does not know your life, your race history, your psychology, or your context. There is no one to talk to.
 - **Join / Humango** — closer; AI plan generation exists. But the experience is "set the plan and follow it". There is no sustained companion. No memory of who you are across months. No mindset coaching.
 - **Strava** — a social feed and ride store. Not a coach.
+- **Strava's official MCP** (rolling out from 1 June 2026, included with Strava subscription) — an AI-native query tool that lets users slice their own Strava data conversationally. This is **analytics-as-a-service, not coaching.** It answers *"what was my best 20-min in June?"* It does not generate adaptive training plans, hold persistent memory across years of conversations, ride with you on the trainer, or coach the head as well as the legs. Strava is going down the data-analysis path; Marco is going up into the relationship layer. The two can coexist — Marco can in future consume Strava's MCP as a tool while remaining the coach. Strategically, Strava's move *validates* the AI-on-cycling thesis and trains users to expect AI on their data — which grows the addressable market for a real coach product.
 
 ## Vision
 
@@ -350,11 +351,18 @@ This is what exists today, walked from the live URL.
 - GDPR / UK GDPR compliant. Data export = JSON archive of all layers + raw FIT files.
 - Strava terms compliance (data not redistributed; user is the only consumer of their data).
 
-### Strava API budget
+### Strava API budget & Developer Program
 
-- Strava: 100 requests / 15 min / app, 1000 / day / app.
+- Strava: 100 requests / 15 min / app, 1000 / day / app (Standard Tier).
 - Webhook-driven on new ride; bulk backfill rate-limited to fit window.
 - Each user's initial 5–10 year backfill is queued, not real-time.
+
+**Developer Program changes (announced May 2026):**
+
+- **Standard Tier** (current) — direct OAuth integration, ≤10 athletes self-serve. Requires the registered developer's Strava account to have an active subscription from 1 June 2026 (existing devs: 30 June 2026). 3-month free promo available via code `a44e571570` if no current subscription.
+- **Extended Access Tier** — higher rate limits, greater user capacity, prioritised support, Partner API eligibility, **no developer-account subscription required.** Apply once we hit ≥25 active beta users. This is the long-term lane.
+- **Intermediary platform restriction** (1 June 2026) — apps routing data through third-party brokers are no longer supported. **We are compliant:** direct REST calls to `strava.com` from our FastAPI backend, no proxy / no broker. Audited in `app/services/strava_service.py`.
+- **June 2027 technical migration** — auth tokens already in `Authorization: Bearer` headers (compliant). Base URL change is one-line: `STRAVA_API_BASE = "https://www.strava.com/api/v3"` → `"https://www.api-v3.strava.com"` in `strava_service.py` line 39. No use of the retiring `oauth/deauthorize` endpoint; should add `oauth/revoke` call to `disconnect()` for clean revocation (security hygiene, not a blocker).
 
 ### Reliability
 
@@ -451,6 +459,7 @@ Three horizons, no dates. Each milestone has an exit gate — a thing that must 
 - Stripe billing, quota enforcement.
 - Onboarding flow polished (Strava connect → goal → first plan → first ride) under 10 minutes.
 - Beta feedback capture in-app.
+- **Apply for Strava Extended Access Tier** once we cross ~25 active beta users — drops the dev-account subscription requirement, lifts rate limits, signals seriousness to Strava. Required before public launch.
 
 **Exit gate:** ≥ 10 paying beta users. Median user has completed ≥ 8 in-app rides. Cost-per-user dashboard live, blended cost ≤ £6/user/month.
 
@@ -467,7 +476,8 @@ Three horizons, no dates. Each milestone has an exit gate — a thing that must 
 |---|---|
 | Claude + ElevenLabs cost exceeds subscription revenue | Tiered model routing, per-user token budget, voice caps, prompt caching, Pro tier for heavy users (cost model above) |
 | Web Bluetooth dead-end on mobile blocks Pillar 3 at scale | Native iOS Capacitor companion in v1.1 (Epic E) |
-| Strava API rate limit / API access policy change | Multiple ingestion paths (Strava + Dropbox + manual FIT). Cache aggressively. Don't depend on Strava social features. |
+| Strava API rate limit / access policy change | **Actively managed (May 2026):** direct integration audited (compliant with intermediary restriction); token-in-headers already correct; June 2027 base-URL migration is a one-line change tracked in code. Multiple ingestion paths (Strava + Dropbox + manual FIT) as fallback. Extended Access Tier application planned at ≥25 users to lift rate limits. |
+| Strava's official MCP becomes "good enough" and users skip the coach | Marco's wedge is *relationship + plan + execution*, not analytics. The MCP answers questions; Marco proposes actions, remembers context, rides with you. Lean marketing positioning into this: *"Strava tells you what you did. Marco tells you what to do next, and rides with you while you do it."* |
 | Solo-dev bandwidth | Ruthless scoping per milestone. Claude Code as a force multiplier. No sport extension until cycling retention proven. |
 | Memory privacy breach (cross-user PII leak) | RLS at DB layer, retrieval audit log, automated tests asserting cross-user isolation, no shared embedding namespace |
 | Anthropic / ElevenLabs pricing or model changes | Provider abstraction in `marco-core` so a model swap is one config change. Hold a 25% margin buffer on cost ceilings. |

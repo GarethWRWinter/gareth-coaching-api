@@ -38,6 +38,17 @@ STRAVA_AUTH_URL = "https://www.strava.com/oauth/authorize"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 STRAVA_API_BASE = "https://www.strava.com/api/v3"
 
+# TODO(2027-06-01): Strava Developer Program migration deadline.
+#   - Update STRAVA_API_BASE to "https://www.api-v3.strava.com" (one-line change).
+#   - Verify all calls keep using the Authorization: Bearer header pattern (already correct).
+#   - Replace the (unused) oauth/deauthorize flow with POST https://www.strava.com/oauth/revoke
+#     {client_id, client_secret, access_token} — add to disconnect() below for clean revocation.
+#   - Background: Strava's May 2026 Developer Program changes. We are Standard Tier with a
+#     direct OAuth integration (no intermediary broker), so the June 2026 intermediary
+#     restriction does not affect us. Required: developer-account Strava subscription
+#     from 1 June 2026 (or 30 June 2026 for existing devs). Plan to apply for Extended
+#     Access Tier at ≥25 active users to lift rate limits and drop subscription requirement.
+
 
 class StravaRateLimit(Exception):
     """
