@@ -1,44 +1,40 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Bike,
-  Target,
-  Calendar,
-  ClipboardCheck,
-  Bot,
-  MessageCircle,
-} from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { metrics, rides, training, goals as goalsApi, coachInsights } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { formatDuration, formatDate, daysUntil } from "@/lib/utils";
-import { StatCard } from "@/components/ui/stat-card";
+import { formatDuration, formatDate } from "@/lib/utils";
 import { RiderProfileRadar } from "@/components/charts/rider-profile-radar";
+
+/**
+ * VoiceBox-styled dashboard.
+ *
+ * Layout philosophy:
+ *  - Top section is the masthead "Today" — overline rubric + huge display headline.
+ *  - Marco's nudge lives as a pull-quote with a 4px red left border.
+ *  - Fitness stats live as one continuous strip (no card gaps), 4 columns,
+ *    Archivo Black numerals, single red accent on FTP.
+ *  - Rides + Goals as editorial lists with rubrics over each title.
+ */
 
 export default function DashboardPage() {
   const { user } = useAuth();
 
-  // Fast query for CTL/ATL/TSB (skips expensive power profile scan)
   const { data: fitnessQuick } = useQuery({
     queryKey: ["fitness-summary-quick"],
     queryFn: () => metrics.getFitnessSummary(false),
   });
 
-  // Full query with power profile for rider radar (loads in background)
   const { data: fitnessFull } = useQuery({
     queryKey: ["fitness-summary"],
     queryFn: () => metrics.getFitnessSummary(true),
-    staleTime: 5 * 60 * 1000, // cache for 5 min
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Use full data when available, fall back to quick
   const fitness = fitnessFull ?? fitnessQuick;
 
   const { data: recentRides } = useQuery({
@@ -56,353 +52,490 @@ export default function DashboardPage() {
     queryFn: () => goalsApi.list(),
   });
 
-  // Coach Marco's daily nudge
   const { data: nudge } = useQuery({
     queryKey: ["coach-nudge"],
     queryFn: () => coachInsights.getNudge(),
-    staleTime: 30 * 60 * 1000, // cache 30 min
+    staleTime: 30 * 60 * 1000,
     retry: false,
   });
 
-  // Most recent ride debrief
   const latestRide = recentRides?.rides?.[0];
   const { data: latestDebrief } = useQuery({
     queryKey: ["ride-debrief", latestRide?.id],
     queryFn: () => coachInsights.getRideDebrief(latestRide!.id),
     enabled: !!latestRide?.id,
-    staleTime: 60 * 60 * 1000, // cache 1 hour
+    staleTime: 60 * 60 * 1000,
     retry: false,
   });
 
-  const tsbColor =
-    (fitness?.current_tsb ?? 0) > 10
-      ? "text-green-400"
-      : (fitness?.current_tsb ?? 0) < -20
-        ? "text-red-400"
-        : "text-yellow-400";
+  const tsb = Math.round(fitness?.current_tsb ?? 0);
+  const tsbLabel = tsb > 10 ? "Fresh" : tsb < -20 ? "Fatigued" : "Productive";
 
-  const tsbLabel =
-    (fitness?.current_tsb ?? 0) > 10
-      ? "Fresh"
-      : (fitness?.current_tsb ?? 0) < -20
-        ? "Fatigued"
-        : "Neutral";
+  const today = new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const firstName = user?.full_name?.split(" ")[0] || "Rider";
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">
-          Welcome back, {user?.full_name?.split(" ")[0] || "Rider"}
-        </h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Here&apos;s your training overview
+    <div className="space-y-12">
+      {/* ============ MASTHEAD ============ */}
+      <header className="border-b-2 border-vb-border-subtle pb-8">
+        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
+          Today · {today}
         </p>
-      </div>
+        <h1 className="font-display text-5xl leading-[0.95] tracking-tight md:text-6xl">
+          Welcome back,<br />
+          {firstName}.
+        </h1>
+      </header>
 
-      {/* Fitness Stats */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          label="Fitness (CTL)"
-          value={Math.round(fitness?.current_ctl ?? 0)}
-          explainable="CTL"
-          trend={
-            (fitness?.ramp_rate ?? 0) > 0
-              ? "up"
-              : (fitness?.ramp_rate ?? 0) < 0
-                ? "down"
-                : undefined
-          }
-        />
-        <StatCard
-          label="Fatigue (ATL)"
-          value={Math.round(fitness?.current_atl ?? 0)}
-          explainable="ATL"
-        />
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Form (TSB)
-          </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className={`text-2xl font-bold ${tsbColor}`}>
-              {Math.round(fitness?.current_tsb ?? 0)}
-            </span>
-            <span className={`text-sm ${tsbColor}`}>{tsbLabel}</span>
-          </div>
-        </div>
-        <StatCard
-          label="FTP"
-          value={user?.ftp ?? "-"}
-          unit="W"
-          explainable="FTP"
-        />
-      </div>
-
-      {/* Coach Marco's Daily Nudge */}
+      {/* ============ COACH MARCO NUDGE (pull-quote) ============ */}
       {nudge && (
-        <div className="flex gap-3 rounded-xl border border-blue-500/20 bg-blue-950/20 p-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600">
-            <Bot className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-xs font-semibold text-blue-400">Coach Marco</span>
-            </div>
-            <p className="text-sm leading-relaxed text-slate-200">
-              {nudge.nudge}
+        <section className="border-l-4 border-vb-red bg-vb-surface px-6 py-6 md:px-8 md:py-7">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+              A note from Marco
             </p>
+            <Link
+              href="/dashboard/coach"
+              className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+            >
+              Reply →
+            </Link>
           </div>
+          <blockquote className="font-sans text-xl italic leading-relaxed text-vb-text md:text-2xl">
+            &ldquo;{nudge.nudge}&rdquo;
+          </blockquote>
+        </section>
+      )}
+
+      {/* ============ FITNESS STAT STRIP ============ */}
+      <section className="border-y-2 border-vb-text">
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          {/* CTL */}
+          <StatCell
+            label="Fitness · CTL"
+            value={Math.round(fitness?.current_ctl ?? 0)}
+            sub={
+              (fitness?.ramp_rate ?? 0) > 0
+                ? "↑ rising"
+                : (fitness?.ramp_rate ?? 0) < 0
+                ? "↓ easing"
+                : "steady"
+            }
+          />
+          {/* ATL */}
+          <StatCell
+            label="Fatigue · ATL"
+            value={Math.round(fitness?.current_atl ?? 0)}
+            sub="rolling 7-day"
+          />
+          {/* TSB */}
+          <StatCell
+            label="Form · TSB"
+            value={tsb}
+            sub={tsbLabel}
+            tone={tsb > 10 ? "good" : tsb < -20 ? "warn" : "neutral"}
+          />
+          {/* FTP */}
+          <StatCell
+            label="FTP"
+            value={user?.ftp ?? 0}
+            sub={user?.weight_kg ? `${((user.ftp ?? 0) / user.weight_kg).toFixed(2)} W/kg` : "watts"}
+            featured
+            isLast
+          />
+        </div>
+      </section>
+
+      {/* ============ GOALS NEEDING ASSESSMENT ============ */}
+      {goalsData?.goals
+        .filter((g) => g.needs_assessment)
+        .map((goal) => (
           <Link
-            href="/dashboard/coach"
-            className="flex h-8 shrink-0 items-center gap-1 self-center rounded-lg border border-blue-500/30 px-2.5 text-xs text-blue-400 hover:bg-blue-500/10"
+            key={goal.id}
+            href={`/dashboard/goals/${goal.id}/assess`}
+            className="block border-2 border-vb-red bg-vb-surface px-6 py-5 transition-colors hover:bg-vb-surface-raised"
           >
-            <MessageCircle className="h-3 w-3" />
-            Chat
-          </Link>
-        </div>
-      )}
-
-      {/* Rider Profile with Radar Chart */}
-      {fitness && fitness.rider_type !== "unknown" && fitness.profile_scores && fitness.profile_scores.length > 0 && (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold text-white">Rider Profile</h2>
-              <span className="rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-400 capitalize">
-                {fitness.rider_type.replace("_", " ")}
-              </span>
-              {fitness.w_per_kg && (
-                <span className="text-sm text-slate-400">
-                  {fitness.w_per_kg.toFixed(2)} W/kg
-                </span>
-              )}
-            </div>
-            <Link
-              href="/dashboard/performance"
-              className="text-xs text-blue-400 hover:text-blue-300"
-            >
-              Full performance &rarr;
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-            <div className="w-[200px] shrink-0 sm:w-[240px]">
-              <RiderProfileRadar
-                scores={fitness.profile_scores}
-                riderType={fitness.rider_type ?? "unknown"}
-                strengths={fitness.strengths}
-                weaknesses={fitness.weaknesses}
-                compact
-              />
-            </div>
-            <div className="flex flex-1 flex-wrap justify-center gap-1.5 sm:justify-start">
-              {fitness.strengths.map((s) => (
-                <span
-                  key={s}
-                  className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-400"
-                >
-                  {s}
-                </span>
-              ))}
-              {fitness.weaknesses.map((w) => (
-                <span
-                  key={w}
-                  className="rounded-full bg-orange-500/15 px-2.5 py-0.5 text-xs font-medium text-orange-400"
-                >
-                  {w}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Goals Needing Assessment */}
-      {goalsData?.goals.filter((g) => g.needs_assessment).map((goal) => (
-        <Link
-          key={goal.id}
-          href={`/dashboard/goals/${goal.id}/assess`}
-          className="flex items-center gap-4 rounded-xl border border-amber-500/30 bg-amber-900/10 p-4 transition-colors hover:border-amber-500/50"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
-            <ClipboardCheck className="h-5 w-5 text-amber-400" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">
-              You completed {goal.event_name}!
-            </p>
-            <p className="text-xs text-amber-400/70">
-              Tell us how it went — complete your race report
-            </p>
-          </div>
-          <span className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white">
-            Race Report
-          </span>
-        </Link>
-      ))}
-
-      {/* Latest Ride Debrief */}
-      {latestDebrief && latestRide && (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600">
-                <Bot className="h-4 w-4 text-white" />
+            <div className="flex items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <ClipboardCheck className="h-5 w-5 shrink-0 text-vb-red" />
+                <div>
+                  <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
+                    Race Report Pending
+                  </p>
+                  <p className="font-display text-2xl leading-none tracking-tight">
+                    {goal.event_name}
+                  </p>
+                  <p className="mt-1 text-sm text-vb-text-dim">
+                    Tell Marco how it went.
+                  </p>
+                </div>
               </div>
-              <span className="text-xs font-semibold text-blue-400">
-                Coach Marco on your last ride
+              <span className="border-2 border-vb-text px-4 py-2 text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text">
+                Write report →
               </span>
             </div>
-            <Link
-              href={`/dashboard/rides/${latestRide.id}`}
-              className="text-xs text-slate-400 hover:text-slate-300"
-            >
-              {latestRide.title} &rarr;
-            </Link>
-          </div>
-          <div className="prose prose-sm prose-invert max-w-none text-slate-300 prose-p:leading-relaxed prose-p:my-1.5 prose-strong:text-white">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {latestDebrief.debrief}
-            </ReactMarkdown>
-          </div>
-        </div>
+          </Link>
+        ))}
+
+      {/* ============ LATEST DEBRIEF (editorial article) ============ */}
+      {latestDebrief && latestRide && (
+        <section>
+          <SectionHead
+            rubric={`Yesterday · ${formatDate(latestRide.ride_date)}`}
+            title="Marco's debrief"
+            meta={
+              <Link
+                href={`/dashboard/rides/${latestRide.id}`}
+                className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+              >
+                Full ride →
+              </Link>
+            }
+          />
+          <article className="bg-vb-surface px-6 py-6 md:px-8 md:py-8">
+            <p className="mb-3 font-display text-2xl leading-tight tracking-tight text-vb-text">
+              {latestRide.title}
+            </p>
+            <div className="prose prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-p:text-vb-text-dim prose-strong:text-vb-text prose-strong:font-bold prose-em:text-vb-text">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {latestDebrief.debrief}
+              </ReactMarkdown>
+            </div>
+          </article>
+        </section>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Rides */}
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50">
-          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-            <h2 className="font-semibold text-white">Recent Rides</h2>
-            <Link
-              href="/dashboard/rides"
-              className="text-xs text-blue-400 hover:text-blue-300"
-            >
-              View all
-            </Link>
-          </div>
-          <div className="divide-y divide-slate-800">
-            {recentRides?.rides.length === 0 && (
-              <div className="px-5 py-8 text-center text-sm text-slate-500">
-                No rides yet.{" "}
+      {/* ============ RIDER PROFILE ============ */}
+      {fitness &&
+        fitness.rider_type !== "unknown" &&
+        fitness.profile_scores &&
+        fitness.profile_scores.length > 0 && (
+          <section>
+            <SectionHead
+              rubric="Profile"
+              title="Rider type"
+              meta={
                 <Link
-                  href="/dashboard/rides"
-                  className="text-blue-400 hover:text-blue-300"
+                  href="/dashboard/performance"
+                  className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
                 >
-                  Upload your first FIT file
+                  Full performance →
+                </Link>
+              }
+            />
+            <div className="bg-vb-surface px-6 py-6 md:px-8 md:py-8">
+              <div className="mb-6 flex flex-wrap items-baseline gap-3">
+                <span className="font-display text-3xl leading-none tracking-tight capitalize">
+                  {fitness.rider_type.replace("_", " ")}
+                </span>
+                {fitness.w_per_kg && (
+                  <span className="font-mono text-sm text-vb-text-dim">
+                    {fitness.w_per_kg.toFixed(2)} W/kg
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start sm:gap-10">
+                <div className="w-[200px] shrink-0 sm:w-[240px]">
+                  <RiderProfileRadar
+                    scores={fitness.profile_scores}
+                    riderType={fitness.rider_type ?? "unknown"}
+                    strengths={fitness.strengths}
+                    weaknesses={fitness.weaknesses}
+                    compact
+                  />
+                </div>
+                <div className="flex flex-1 flex-col gap-4">
+                  {fitness.strengths.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                        Strengths
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {fitness.strengths.map((s) => (
+                          <span
+                            key={s}
+                            className="border-2 border-vb-text px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-text"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {fitness.weaknesses.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                        To work on
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {fitness.weaknesses.map((w) => (
+                          <span
+                            key={w}
+                            className="border-2 border-vb-red px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-red"
+                          >
+                            {w}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+      {/* ============ TWO-COLUMN: RECENT RIDES + GOALS / PLAN ============ */}
+      <div className="grid gap-10 md:grid-cols-2">
+        {/* Recent rides */}
+        <section>
+          <SectionHead
+            rubric="Latest"
+            title="Recent rides"
+            meta={
+              <Link
+                href="/dashboard/rides"
+                className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+              >
+                All →
+              </Link>
+            }
+          />
+          {recentRides?.rides.length === 0 ? (
+            <div className="border-2 border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
+              No rides yet.{" "}
+              <Link
+                href="/dashboard/rides"
+                className="text-vb-text hover:text-vb-red"
+              >
+                Upload your first FIT file →
+              </Link>
+            </div>
+          ) : (
+            <ul>
+              {recentRides?.rides.map((ride, idx) => (
+                <li
+                  key={ride.id}
+                  className={
+                    idx > 0 ? "border-t border-vb-border-subtle" : undefined
+                  }
+                >
+                  <Link
+                    href={`/dashboard/rides/${ride.id}`}
+                    className="flex items-baseline justify-between gap-4 py-4 transition-colors hover:bg-vb-surface hover:px-3 hover:-mx-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                        {formatDate(ride.ride_date)}
+                        {ride.duration_seconds &&
+                          ` · ${formatDuration(ride.duration_seconds)}`}
+                      </p>
+                      <p className="truncate font-sans font-bold text-vb-text">
+                        {ride.title}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-baseline gap-6 font-mono text-vb-text">
+                      {ride.normalized_power != null && (
+                        <span className="text-sm">
+                          {Math.round(ride.normalized_power)}
+                          <span className="ml-0.5 text-[10px] text-vb-text-dim">W</span>
+                        </span>
+                      )}
+                      {ride.tss != null && (
+                        <span className="text-sm">
+                          {Math.round(ride.tss)}
+                          <span className="ml-0.5 text-[10px] text-vb-text-dim">TSS</span>
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Goals + Plan */}
+        <div className="space-y-10">
+          {/* Goals */}
+          <section>
+            <SectionHead
+              rubric="Calendar"
+              title="Active goals"
+              meta={
+                <Link
+                  href="/dashboard/goals"
+                  className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+                >
+                  All →
+                </Link>
+              }
+            />
+            {!goalsData ||
+            goalsData.goals.filter((g) => g.status === "upcoming").length === 0 ? (
+              <div className="border-2 border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
+                No upcoming goals.{" "}
+                <Link
+                  href="/dashboard/goals"
+                  className="text-vb-text hover:text-vb-red"
+                >
+                  Add one →
                 </Link>
               </div>
+            ) : (
+              <ul>
+                {goalsData.goals
+                  .filter((g) => g.status === "upcoming")
+                  .slice(0, 3)
+                  .map((goal, idx) => (
+                    <li
+                      key={goal.id}
+                      className={cn(
+                        "flex items-baseline justify-between gap-4 py-4",
+                        idx > 0 && "border-t border-vb-border-subtle"
+                      )}
+                    >
+                      <div className="min-w-0">
+                        <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                          {formatDate(goal.event_date)} ·{" "}
+                          <span>{goal.priority.replace("_", "-")}</span>
+                        </p>
+                        <p className="truncate font-sans font-bold text-vb-text">
+                          {goal.event_name}
+                        </p>
+                      </div>
+                      {goal.days_until != null && goal.days_until > 0 && (
+                        <span className="shrink-0 border-2 border-vb-text px-3 py-1 font-mono text-xs text-vb-text">
+                          {goal.days_until}d
+                        </span>
+                      )}
+                    </li>
+                  ))}
+              </ul>
             )}
-            {recentRides?.rides.map((ride) => (
-              <Link
-                key={ride.id}
-                href={`/dashboard/rides/${ride.id}`}
-                className="flex items-center justify-between px-5 py-3 hover:bg-slate-800/50"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">
-                    {ride.title}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {formatDate(ride.ride_date)}
-                    {ride.duration_seconds &&
-                      ` \u00B7 ${formatDuration(ride.duration_seconds)}`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4 text-right">
-                  {ride.tss != null && (
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {Math.round(ride.tss)}
-                      </p>
-                      <p className="text-xs text-slate-500">TSS</p>
-                    </div>
-                  )}
-                  {ride.normalized_power != null && (
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        {Math.round(ride.normalized_power)}W
-                      </p>
-                      <p className="text-xs text-slate-500">NP</p>
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+          </section>
 
-        {/* Goals & Plan */}
-        <div className="space-y-6">
-          {/* Upcoming Goals */}
-          <div className="rounded-xl border border-slate-800 bg-slate-800/50">
-            <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-              <h2 className="font-semibold text-white">Active Goals</h2>
-              <Link
-                href="/dashboard/goals"
-                className="text-xs text-blue-400 hover:text-blue-300"
-              >
-                View all
-              </Link>
-            </div>
-            <div className="divide-y divide-slate-800">
-              {(!goalsData || goalsData.goals.filter((g) => g.status === "upcoming").length === 0) && (
-                <div className="px-5 py-6 text-center text-sm text-slate-500">
-                  No upcoming goals
-                </div>
-              )}
-              {goalsData?.goals.filter((g) => g.status === "upcoming").slice(0, 3).map((goal) => (
-                <div key={goal.id} className="flex items-center gap-3 px-5 py-3">
-                  <Target className="h-4 w-4 shrink-0 text-blue-400" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
-                      {goal.event_name}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {formatDate(goal.event_date)} &middot;{" "}
-                      <span className="capitalize">
-                        {goal.priority.replace("_", " ")}
-                      </span>
-                    </p>
-                  </div>
-                  {goal.days_until != null && goal.days_until > 0 && (
-                    <span className="rounded-full bg-blue-600/10 px-2.5 py-0.5 text-xs font-medium text-blue-400">
-                      {goal.days_until}d
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Plan */}
+          {/* Active plan */}
           {plans && plans.plans.length > 0 && (
-            <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-blue-400" />
-                <h2 className="font-semibold text-white">Active Plan</h2>
-              </div>
+            <section>
+              <SectionHead rubric="In flight" title="Active plan" />
               {plans.plans
                 .filter((p) => p.status === "active")
                 .slice(0, 1)
                 .map((plan) => (
-                  <div key={plan.id} className="mt-3">
-                    <p className="text-sm text-white">{plan.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {formatDate(plan.start_date)} &ndash;{" "}
-                      {formatDate(plan.end_date)} &middot; {plan.total_weeks}{" "}
-                      weeks &middot; {plan.phase_count} phases
+                  <div
+                    key={plan.id}
+                    className="border-l-4 border-vb-text bg-vb-surface px-5 py-5"
+                  >
+                    <p className="mb-2 font-display text-2xl leading-tight tracking-tight">
+                      {plan.name}
+                    </p>
+                    <p className="font-mono text-xs text-vb-text-dim">
+                      {formatDate(plan.start_date)} – {formatDate(plan.end_date)}
+                      <br />
+                      {plan.total_weeks} weeks · {plan.phase_count} phases
                     </p>
                     <Link
                       href="/dashboard/training"
-                      className="mt-3 inline-block text-xs text-blue-400 hover:text-blue-300"
+                      className="mt-4 inline-block text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
                     >
-                      View training calendar &rarr;
+                      View calendar →
                     </Link>
                   </div>
                 ))}
-            </div>
+            </section>
           )}
         </div>
       </div>
     </div>
   );
+}
+
+// ============ COMPONENT: stat cell in the editorial strip ============
+
+function StatCell({
+  label,
+  value,
+  sub,
+  tone,
+  featured,
+  isLast,
+}: {
+  label: string;
+  value: number | string;
+  sub?: string;
+  tone?: "good" | "warn" | "neutral";
+  featured?: boolean;
+  isLast?: boolean;
+}) {
+  const valueColor = featured
+    ? "text-vb-red"
+    : tone === "warn"
+    ? "text-vb-red"
+    : tone === "good"
+    ? "text-vb-text"
+    : "text-vb-text";
+
+  return (
+    <div
+      className={cn(
+        "px-5 py-5 md:px-6 md:py-7",
+        !isLast && "border-r-0 md:border-r-2 md:border-vb-border-subtle",
+        "border-b-2 border-vb-border-subtle md:border-b-0",
+        "[&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r-2"
+      )}
+    >
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "font-display text-5xl leading-none tracking-tight tabular-nums md:text-6xl",
+          valueColor
+        )}
+      >
+        {value}
+      </p>
+      {sub && (
+        <p className="mt-3 font-mono text-[11px] text-vb-text-dim">{sub}</p>
+      )}
+    </div>
+  );
+}
+
+// ============ COMPONENT: editorial section header ============
+
+function SectionHead({
+  rubric,
+  title,
+  meta,
+}: {
+  rubric: string;
+  title: string;
+  meta?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-5 flex items-baseline justify-between gap-4 border-b-2 border-vb-text pb-3">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+          {rubric}
+        </p>
+        <h2 className="mt-1 font-display text-2xl leading-none tracking-tight md:text-3xl">
+          {title}
+        </h2>
+      </div>
+      {meta && <div className="shrink-0">{meta}</div>}
+    </div>
+  );
+}
+
+// ============ tiny cn re-export so this file stays self-contained ============
+function cn(...classes: Array<string | undefined | boolean | null>): string {
+  return classes.filter(Boolean).join(" ");
 }
