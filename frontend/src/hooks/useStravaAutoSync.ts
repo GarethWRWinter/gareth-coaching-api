@@ -34,6 +34,7 @@ export function useStravaAutoSync({ enabled = true }: UseStravaAutoSyncOptions =
   const queryClient = useQueryClient();
   const [syncing, setSyncing] = useState(false);
   const [lastSyncedCount, setLastSyncedCount] = useState<number | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
   const inFlightRef = useRef(false);
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export function useStravaAutoSync({ enabled = true }: UseStravaAutoSyncOptions =
 
         if (cancelled) return;
         setSyncing(true);
+        setLastError(null);
         const result = await strava.sync();
         if (cancelled) return;
 
@@ -82,9 +84,14 @@ export function useStravaAutoSync({ enabled = true }: UseStravaAutoSyncOptions =
           queryClient.invalidateQueries({ queryKey: ["workouts-week"] });
         }
       } catch (err) {
-        // Swallow errors — auto-sync is best-effort. The user can still use
-        // the manual "Sync Recent" button in settings if something goes wrong.
-        console.debug(`Strava auto-sync (${reason}) failed:`, err);
+        // Auto-sync failed. Surface to console.warn (visible by default in
+        // Chrome's console) and to a toast via lastError so the user can
+        // see something is wrong, rather than silently failing forever.
+        // The user can still recover via the manual "Sync Recent" /
+        // "Reconnect Strava" controls in settings.
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`Strava auto-sync (${reason}) failed:`, err);
+        if (!cancelled) setLastError(msg);
       } finally {
         inFlightRef.current = false;
         if (!cancelled) setSyncing(false);
@@ -109,5 +116,5 @@ export function useStravaAutoSync({ enabled = true }: UseStravaAutoSyncOptions =
     };
   }, [enabled, queryClient]);
 
-  return { syncing, lastSyncedCount };
+  return { syncing, lastSyncedCount, lastError };
 }
