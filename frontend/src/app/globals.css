@@ -1,94 +1,95 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* ============================================================
+   VoiceBox design system tokens (dark-adapted for Marco)
+   Brand: editorial magazine. Bold black + single red accent.
+   ============================================================ */
+@theme {
+  /* Surfaces */
+  --color-vb-bg: #0A0A0A;
+  --color-vb-surface: #141414;
+  --color-vb-surface-raised: #1F1F1F;
+
+  /* Content */
+  --color-vb-text: #FAFAFA;
+  --color-vb-text-dim: #A3A3A3;
+  --color-vb-text-muted: #525252;
+
+  /* Borders */
+  --color-vb-border-subtle: #262626;
+  --color-vb-border: #404040;
+  --color-vb-border-strong: #FAFAFA;
+
+  /* Accent (use as a scalpel — one per viewport) */
+  --color-vb-red: #EF4444;
+  --color-vb-red-bright: #F87171;
+  --color-vb-red-dim: #DC2626;
+
+  /* Semantic */
+  --color-vb-success: #22C55E;
+  --color-vb-warning: #CA8A04;
+
+  /* Typography stack — wired through next/font CSS vars */
+  --font-display: var(--font-archivo-black), Impact, "Arial Black", sans-serif;
+  --font-sans: var(--font-work-sans), -apple-system, "Segoe UI", Helvetica, sans-serif;
+  --font-mono: var(--font-space-mono), "Courier New", Consolas, monospace;
+
+  /* No-radius philosophy (VoiceBox is angular). Avatars only use full. */
+  --radius-none: 0px;
+  --radius-full: 9999px;
+}
+
+/* ---- Legacy slate-* tokens kept as aliases so non-converted pages
+        still render. Remove once every page is VoiceBox-styled. ---- */
 :root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --card: #1e293b;
-  --card-foreground: #f8fafc;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --secondary: #334155;
-  --secondary-foreground: #f8fafc;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
-  --destructive: #ef4444;
-  --border: #334155;
-  --input: #334155;
-  --ring: #3b82f6;
+  --background: #0A0A0A;
+  --foreground: #FAFAFA;
+  --card: #141414;
+  --card-foreground: #FAFAFA;
+  --primary: #FAFAFA;
+  --primary-foreground: #0A0A0A;
+  --secondary: #1F1F1F;
+  --secondary-foreground: #FAFAFA;
+  --muted: #1F1F1F;
+  --muted-foreground: #A3A3A3;
+  --accent: #EF4444;
+  --accent-foreground: #FAFAFA;
+  --destructive: #EF4444;
+  --border: #262626;
+  --input: #262626;
+  --ring: #EF4444;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--color-vb-bg);
+  color: var(--color-vb-text);
+  font-family: var(--font-sans);
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* Magazine numerals — tabular figures for consistent column alignment. */
+.tabular-nums { font-variant-numeric: tabular-nums; }
 
-::-webkit-scrollbar-track {
-  background: #1e293b;
-}
+/* Scrollbar — dark, minimal, no flourish. */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--color-vb-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-vb-border); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-vb-text-muted); }
 
-::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
-
-/* Voice waveform animation */
+/* ----- Existing animation utilities (preserved) ----- */
 @keyframes voice-bar {
-  0%,
-  100% {
-    height: 4px;
-  }
-  50% {
-    height: 20px;
-  }
+  0%, 100% { height: 4px; }
+  50% { height: 20px; }
 }
+.voice-bar { animation: voice-bar 0.8s ease-in-out infinite; }
+.voice-bar:nth-child(2) { animation-delay: 0.1s; }
+.voice-bar:nth-child(3) { animation-delay: 0.2s; }
+.voice-bar:nth-child(4) { animation-delay: 0.3s; }
+.voice-bar:nth-child(5) { animation-delay: 0.15s; }
 
-.voice-bar {
-  animation: voice-bar 0.8s ease-in-out infinite;
-}
-
-.voice-bar:nth-child(2) {
-  animation-delay: 0.1s;
-}
-
-.voice-bar:nth-child(3) {
-  animation-delay: 0.2s;
-}
-
-.voice-bar:nth-child(4) {
-  animation-delay: 0.3s;
-}
-
-.voice-bar:nth-child(5) {
-  animation-delay: 0.15s;
-}
-
-/* Pulsing ring for active mic button */
 @keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-  }
+  0%   { box-shadow: 0 0 0 0   rgba(239, 68, 68, 0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(239, 68, 68, 0); }
 }
-
-.pulse-ring {
-  animation: pulse-ring 1.5s ease-out infinite;
-}
+.pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
