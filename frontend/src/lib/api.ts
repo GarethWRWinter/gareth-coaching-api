@@ -919,11 +919,24 @@ export const strava = {
       synced: number;
       rides?: { id: string; title: string; date: string }[];
     }>("/integrations/strava/sync", { method: "POST" }),
-  startBackfill: (force?: boolean) =>
-    request<{ status: string }>(
-      `/integrations/strava/backfill${force ? "?force=true" : ""}`,
+  /**
+   * Trigger the historical backfill.
+   *
+   * @param force - Force restart even if a backfill is already running.
+   * @param sinceYears - Only import rides newer than this many years.
+   *   Defaults to 2 (keeps the DB lean after a fresh start). Pass `null`
+   *   explicitly to import full history.
+   */
+  startBackfill: (force?: boolean, sinceYears: number | null = 2) => {
+    const params = new URLSearchParams();
+    if (force) params.set("force", "true");
+    if (sinceYears != null) params.set("since_years", String(sinceYears));
+    const qs = params.toString();
+    return request<{ status: string; since?: string | null }>(
+      `/integrations/strava/backfill${qs ? `?${qs}` : ""}`,
       { method: "POST" }
-    ),
+    );
+  },
   backfillSegments: () =>
     request<{ status: string }>("/integrations/strava/backfill-segments", { method: "POST" }),
   disconnect: () => request("/integrations/strava", { method: "DELETE" }),
