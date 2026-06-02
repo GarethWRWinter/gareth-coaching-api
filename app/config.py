@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     # Dropbox auto-sync interval in seconds (0 = disabled, default 15 min)
     dropbox_sync_interval: int = 900
 
+    # Strava auto-sync interval in seconds (0 = disabled, default 5 min).
+    # Belt-and-braces against webhook failures and frontend-only sync.
+    # Polls every connected Strava user on this cadence.
+    strava_sync_interval: int = 300
+
     # App
     app_name: str = "Advanced Cycling Coach"
     cors_origins: list[str] = ["http://localhost:3000"]

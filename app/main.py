@@ -7,7 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.config import settings
-from app.services.auto_sync import start_auto_sync, stop_auto_sync
+from app.services.auto_sync import (
+    start_auto_sync,
+    stop_auto_sync,
+    start_strava_auto_sync,
+    stop_strava_auto_sync,
+)
 from app.services.strava_service import resume_incomplete_backfills
 
 logger = logging.getLogger(__name__)
@@ -30,6 +35,13 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("Dropbox auto-sync disabled (interval=0)")
 
+    strava_sync_interval = settings.strava_sync_interval
+    if strava_sync_interval > 0:
+        start_strava_auto_sync(interval=strava_sync_interval)
+        logger.info("Strava auto-sync enabled (every %ds)", strava_sync_interval)
+    else:
+        logger.info("Strava auto-sync disabled (interval=0)")
+
     # Resume any Strava backfills that were interrupted by a previous restart.
     # Runs in background so we don't block startup.
     asyncio.create_task(resume_incomplete_backfills())
@@ -38,6 +50,7 @@ async def lifespan(app: FastAPI):
     yield
     # --- Shutdown ---
     stop_auto_sync()
+    stop_strava_auto_sync()
     logger.info("App shutdown complete")
 
 
