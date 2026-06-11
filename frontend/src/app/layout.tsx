@@ -1,27 +1,31 @@
 import type { Metadata } from "next";
-import { Archivo_Black, Work_Sans, Space_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Schibsted_Grotesk, Caveat } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { QueryProvider } from "@/lib/query-provider";
 
-const archivoBlack = Archivo_Black({
-  weight: "400",
+// ALMANAC type system:
+//  - display  → Bricolage Grotesque (characterful humanist grotesk, light weights)
+//  - sans     → Schibsted Grotesk (the workhorse, Arket-like humanist sans)
+//  - script   → Caveat (Marco's handwritten signature only)
+const bricolage = Bricolage_Grotesque({
+  weight: ["300", "400", "500", "600"],
   subsets: ["latin"],
-  variable: "--font-archivo-black",
+  variable: "--font-bricolage",
   display: "swap",
 });
 
-const workSans = Work_Sans({
-  weight: ["400", "500", "700", "900"],
+const schibsted = Schibsted_Grotesk({
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
-  variable: "--font-work-sans",
+  variable: "--font-schibsted",
   display: "swap",
 });
 
-const spaceMono = Space_Mono({
-  weight: ["400", "700"],
+const caveat = Caveat({
+  weight: ["500"],
   subsets: ["latin"],
-  variable: "--font-space-mono",
+  variable: "--font-caveat",
   display: "swap",
 });
 
@@ -38,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${archivoBlack.variable} ${workSans.variable} ${spaceMono.variable}`}
+      className={`${bricolage.variable} ${schibsted.variable} ${caveat.variable}`}
     >
       <body className="min-h-screen bg-vb-bg font-sans text-vb-text antialiased">
         <QueryProvider>

@@ -43,15 +43,15 @@ export default function RidesPage() {
   return (
     <div className="space-y-10">
       {/* ============ MASTHEAD ============ */}
-      <header className="flex items-end justify-between gap-6 border-b-2 border-vb-text pb-5">
+      <header className="flex items-end justify-between gap-6 border-b border-vb-border-subtle pb-5">
         <div>
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
             Archive
           </p>
-          <h1 className="font-display text-5xl leading-[0.95] tracking-tight md:text-6xl">
-            Rides.
+          <h1 className="font-display text-5xl font-light leading-[1.04] tracking-[-0.02em] md:text-6xl">
+            Rides
           </h1>
-          <p className="mt-3 font-mono text-xs text-vb-text-dim">
+          <p className="mt-3 text-xs text-vb-text-muted">
             {data?.total ?? "—"} total · page {page}
             {totalPages > 0 && ` of ${totalPages}`}
           </p>
@@ -68,7 +68,7 @@ export default function RidesPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 border-2 border-vb-text bg-vb-text px-5 py-3 text-[12px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Upload className="h-3.5 w-3.5" />
             {uploading ? "Uploading…" : "Upload FIT"}
@@ -77,43 +77,43 @@ export default function RidesPage() {
       </header>
 
       {error && (
-        <div className="border-l-4 border-vb-red bg-vb-surface px-4 py-3 text-sm text-vb-text">
+        <div className="rounded-md border border-vb-clay/40 border-l-[3px] border-l-vb-clay bg-vb-surface px-4 py-3 text-sm text-vb-text">
           {error}
         </div>
       )}
 
       {/* ============ RIDES LIST ============ */}
       {isLoading ? (
-        <div className="border-2 border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
+        <div className="rounded-md border border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
           Loading rides…
         </div>
       ) : data?.rides.length === 0 ? (
-        <div className="border-2 border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
+        <div className="rounded-md border border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
           No rides yet. Upload a FIT file or wait for the Strava backfill to catch up.
         </div>
       ) : (
         <>
           {/* Column rubric — visible on lg+ only, gives editorial structure */}
           <div className="hidden border-b border-vb-border-subtle pb-2 lg:grid lg:grid-cols-[1fr_90px_90px_90px_90px_70px_60px] lg:gap-6">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Ride
             </span>
-            <span className="text-right text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Time
             </span>
-            <span className="text-right text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Distance
             </span>
-            <span className="text-right text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Avg
             </span>
-            <span className="text-right text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               NP
             </span>
-            <span className="text-right text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               TSS
             </span>
-            <span className="text-right text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               IF
             </span>
           </div>
@@ -132,20 +132,20 @@ export default function RidesPage() {
                 >
                   {/* Title + rubric */}
                   <div className="min-w-0">
-                    <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                       {formatDate(ride.ride_date)}
                       {ride.source === "strava" && " · Strava"}
                       {ride.source === "fit_upload" && " · Upload"}
                       {ride.source === "in_app" && " · In-app"}
                       {ride.source === "dropbox" && " · Dropbox"}
                     </p>
-                    <p className="truncate font-sans text-base font-bold text-vb-text">
+                    <p className="truncate font-sans text-base font-medium text-vb-text">
                       {ride.title}
                     </p>
                   </div>
 
                   {/* Compact numbers row — visible always, repositioned on lg */}
-                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 font-mono text-sm text-vb-text lg:hidden">
+                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-vb-text lg:hidden">
                     {ride.duration_seconds != null && (
                       <NumWithLabel
                         n={formatDuration(ride.duration_seconds)}
@@ -170,30 +170,30 @@ export default function RidesPage() {
                   </div>
 
                   {/* Desktop columns */}
-                  <span className="hidden text-right font-mono text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.duration_seconds
                       ? formatDuration(ride.duration_seconds)
                       : "—"}
                   </span>
-                  <span className="hidden text-right font-mono text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.distance_meters
                       ? `${(ride.distance_meters / 1000).toFixed(1)} km`
                       : "—"}
                   </span>
-                  <span className="hidden text-right font-mono text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.average_power
                       ? `${Math.round(ride.average_power)}`
                       : "—"}
                   </span>
-                  <span className="hidden text-right font-mono text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.normalized_power
                       ? `${Math.round(ride.normalized_power)}`
                       : "—"}
                   </span>
-                  <span className="hidden text-right font-mono text-sm font-bold text-vb-text tabular-nums lg:inline">
+                  <span className="hidden text-right text-sm font-medium text-vb-text tabular-nums lg:inline">
                     {ride.tss ? Math.round(ride.tss) : "—"}
                   </span>
-                  <span className="hidden text-right font-mono text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.intensity_factor
                       ? ride.intensity_factor.toFixed(2)
                       : "—"}
@@ -207,21 +207,21 @@ export default function RidesPage() {
 
       {/* ============ PAGINATION ============ */}
       {data && data.total > 20 && (
-        <div className="flex items-center justify-between gap-4 border-t-2 border-vb-text pt-5">
+        <div className="flex items-center justify-between gap-4 border-t border-vb-border-subtle pt-5">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="border-2 border-vb-text px-4 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-text transition-colors hover:bg-vb-text hover:text-vb-bg disabled:cursor-not-allowed disabled:border-vb-border disabled:text-vb-text-dim disabled:hover:bg-transparent disabled:hover:text-vb-text-dim"
+            className="rounded-sm border border-vb-border px-4 py-2 text-sm font-medium text-vb-forest transition-colors hover:bg-vb-surface disabled:cursor-not-allowed disabled:border-vb-border-subtle disabled:text-vb-text-muted disabled:hover:bg-transparent"
           >
             ← Previous
           </button>
-          <span className="font-mono text-xs text-vb-text-dim">
+          <span className="text-xs text-vb-text-muted">
             Page {page} of {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={page * 20 >= data.total}
-            className="border-2 border-vb-text px-4 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-text transition-colors hover:bg-vb-text hover:text-vb-bg disabled:cursor-not-allowed disabled:border-vb-border disabled:text-vb-text-dim disabled:hover:bg-transparent disabled:hover:text-vb-text-dim"
+            className="rounded-sm border border-vb-border px-4 py-2 text-sm font-medium text-vb-forest transition-colors hover:bg-vb-surface disabled:cursor-not-allowed disabled:border-vb-border-subtle disabled:text-vb-text-muted disabled:hover:bg-transparent"
           >
             Next →
           </button>

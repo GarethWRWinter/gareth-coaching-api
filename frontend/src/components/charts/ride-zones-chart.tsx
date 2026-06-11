@@ -38,12 +38,12 @@ export function RideZonesChart({ zones, totalSeconds }: RideZonesChartProps) {
 
         return (
           <div key={zone.zone} className="flex items-center gap-3">
-            <div className="w-8 text-right text-xs font-medium text-slate-400">
+            <div className="w-8 text-right text-xs font-medium text-vb-text-dim">
               {zone.zone}
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-6 rounded bg-slate-700/50 overflow-hidden">
+                <div className="flex-1 h-6 rounded bg-vb-sunken overflow-hidden">
                   <div
                     className="h-full rounded transition-all duration-500"
                     style={{
@@ -54,15 +54,15 @@ export function RideZonesChart({ zones, totalSeconds }: RideZonesChartProps) {
                   />
                 </div>
                 <div className="w-24 text-right">
-                  <span className="text-xs text-white font-medium">
+                  <span className="text-xs text-vb-text font-medium">
                     {zone.percentage.toFixed(1)}%
                   </span>
-                  <span className="ml-1 text-xs text-slate-500">
+                  <span className="ml-1 text-xs text-vb-text-muted">
                     {formatTime(zone.seconds)}
                   </span>
                 </div>
               </div>
-              <div className="mt-0.5 text-[10px] text-slate-500">
+              <div className="mt-0.5 text-[10px] text-vb-text-muted">
                 {zone.zone_name} · {zone.low_watts}-{zone.high_watts}W
               </div>
             </div>

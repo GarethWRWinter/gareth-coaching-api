@@ -84,23 +84,20 @@ function formatDurationMinutes(minutes: number): string {
 }
 
 function priorityColor(priority: string): string {
+  // ALMANAC: A-race gets a sage-tint forest chip. B and C get neutral
+  // outlined tags.
   switch (priority) {
     case "a_race":
-      return "bg-red-500/10 text-red-400 border-red-500/20";
-    case "b_race":
-      return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
-    case "c_race":
-      return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+      return "border-transparent bg-vb-sage-tint text-vb-forest";
     default:
-      return "bg-slate-500/10 text-slate-400 border-slate-500/20";
+      return "border-vb-border text-vb-text-dim";
   }
 }
 
 function daysUntilColor(days: number): string {
-  if (days <= 14) return "bg-red-600/10 text-red-400";
-  if (days <= 30) return "bg-orange-600/10 text-orange-400";
-  if (days <= 60) return "bg-yellow-600/10 text-yellow-400";
-  return "bg-blue-600/10 text-blue-400";
+  // Imminent (<=30) reads in forest; neutral after that.
+  if (days <= 30) return "border-vb-forest text-vb-forest";
+  return "border-vb-border text-vb-text-dim";
 }
 
 function GoalsPageInner() {
@@ -212,25 +209,30 @@ function GoalsPageInner() {
     ) || [];
 
   const inputClasses =
-    "w-full rounded border border-slate-600 bg-slate-700 px-2.5 py-1.5 text-sm text-white focus:border-blue-500 focus:outline-none";
+    "w-full rounded-sm border border-vb-border-subtle bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none";
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-forest" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="space-y-10">
+      {/* ============ MASTHEAD ============ */}
+      <header className="flex items-end justify-between gap-6 border-b border-vb-border-subtle pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-white">Goals</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Your target events and races. Add route data and get AI coaching
-            tailored to each goal.
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
+            Calendar
+          </p>
+          <h1 className="font-display text-5xl font-light leading-[0.95] tracking-[-0.01em] md:text-6xl">
+            Goals.
+          </h1>
+          <p className="mt-3 max-w-md text-sm text-vb-text-dim">
+            Your target events and races. Add route data and Marco tailors
+            coaching to each goal.
           </p>
         </div>
         <button
@@ -239,17 +241,17 @@ function GoalsPageInner() {
             setGoalForm(emptyGoalForm);
             setShowForm(true);
           }}
-          className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+          className="flex shrink-0 items-center gap-2 rounded-sm bg-vb-forest px-5 py-3 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft"
         >
-          <Plus className="h-4 w-4" /> Add Goal
+          <Plus className="h-3.5 w-3.5" /> Add Goal
         </button>
-      </div>
+      </header>
 
       {/* Goal Form */}
       {showForm && (
-        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-5">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
               {editingGoalId ? "Edit Goal" : "New Goal"}
             </h2>
             <button
@@ -257,7 +259,7 @@ function GoalsPageInner() {
                 setShowForm(false);
                 setEditingGoalId(null);
               }}
-              className="rounded p-1 text-slate-400 hover:text-white"
+              className="rounded-sm p-1 text-vb-text-muted hover:text-vb-text"
             >
               <X className="h-5 w-5" />
             </button>
@@ -265,7 +267,7 @@ function GoalsPageInner() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Event Name *
               </label>
               <input
@@ -278,7 +280,7 @@ function GoalsPageInner() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Event Date *
               </label>
               <input
@@ -291,7 +293,7 @@ function GoalsPageInner() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Event Type
               </label>
               <select
@@ -309,7 +311,7 @@ function GoalsPageInner() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Priority
               </label>
               <select
@@ -327,7 +329,7 @@ function GoalsPageInner() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Target Duration (minutes)
               </label>
               <input
@@ -344,7 +346,7 @@ function GoalsPageInner() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Route / Event URL
               </label>
               <input
@@ -360,7 +362,7 @@ function GoalsPageInner() {
           </div>
 
           <div className="mt-4">
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Notes
             </label>
             <textarea
@@ -376,7 +378,7 @@ function GoalsPageInner() {
 
           {/* GPX Upload */}
           <div className="mt-4">
-            <label className="mb-1 block text-xs font-medium text-slate-400">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               GPX Route File (optional)
             </label>
             <input
@@ -402,7 +404,7 @@ function GoalsPageInner() {
               <button
                 type="button"
                 onClick={() => formGpxInputRef.current?.click()}
-                className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-600 px-3 py-2 text-sm text-slate-300 hover:border-green-500 hover:text-green-400"
+                className="flex items-center gap-1.5 rounded-sm border border-dashed border-vb-border px-3 py-2 text-sm text-vb-text-dim hover:border-vb-forest hover:text-vb-forest"
               >
                 <Upload className="h-4 w-4" />
                 {pendingGpxFile
@@ -413,14 +415,14 @@ function GoalsPageInner() {
               </button>
               {pendingGpxFile && (
                 <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-xs text-green-400">
+                  <span className="flex items-center gap-1 text-xs text-vb-forest">
                     <Mountain className="h-3 w-3" />
                     {pendingGpxFile.name}
                   </span>
                   <button
                     type="button"
                     onClick={() => setPendingGpxFile(null)}
-                    className="rounded p-0.5 text-slate-500 hover:text-red-400"
+                    className="rounded-sm p-0.5 text-vb-text-muted hover:text-vb-clay"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -430,7 +432,7 @@ function GoalsPageInner() {
                 const editGoal = goalsData?.goals.find((g) => g.id === editingGoalId);
                 if (editGoal?.gpx_file_path) {
                   return (
-                    <span className="flex items-center gap-1 text-xs text-green-400">
+                    <span className="flex items-center gap-1 text-xs text-vb-forest">
                       <Mountain className="h-3 w-3" />
                       GPX uploaded
                     </span>
@@ -439,13 +441,13 @@ function GoalsPageInner() {
                 return null;
               })()}
             </div>
-            <p className="mt-1 text-[10px] text-slate-600">
+            <p className="mt-1 text-[10px] text-vb-text-muted">
               Export from Strava, RideWithGPS, or Komoot for elevation profile and pacing analysis
             </p>
           </div>
 
           {!editingGoalId && (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-vb-text-muted">
               After you create this goal we&apos;ll automatically build a training plan
               that peaks on race day.
             </p>
@@ -460,7 +462,7 @@ function GoalsPageInner() {
                 saveGoal.isPending ||
                 planGenerating
               }
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
+              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
               {saveGoal.isPending
                 ? "Saving..."
@@ -475,7 +477,7 @@ function GoalsPageInner() {
                 setShowForm(false);
                 setEditingGoalId(null);
               }}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+              className="rounded-sm border border-vb-border px-4 py-2 text-sm text-vb-forest hover:bg-vb-surface"
             >
               Cancel
             </button>
@@ -500,11 +502,15 @@ function GoalsPageInner() {
 
       {/* Empty state */}
       {goalsData?.goals.length === 0 && !showForm && (
-        <div className="rounded-xl border border-dashed border-slate-700 py-16 text-center">
-          <Target className="mx-auto h-12 w-12 text-slate-600" />
-          <h3 className="mt-4 text-lg font-medium text-white">No goals yet</h3>
-          <p className="mt-1 max-w-md mx-auto text-sm text-slate-400">
-            Add your target events to get AI coaching tailored to your race
+        <div className="rounded-md border border-vb-border-subtle px-6 py-16 text-center">
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
+            Empty calendar
+          </p>
+          <h3 className="font-display text-4xl font-light leading-tight tracking-[-0.01em]">
+            No goals yet.
+          </h3>
+          <p className="mx-auto mt-4 max-w-md text-sm text-vb-text-dim">
+            Add your target events and Marco tailors training to your race
             calendar. Share route URLs and GPX files for detailed analysis.
           </p>
           <button
@@ -513,9 +519,9 @@ function GoalsPageInner() {
               setGoalForm(emptyGoalForm);
               setShowForm(true);
             }}
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            className="mt-8 inline-flex items-center gap-2 rounded-sm bg-vb-forest px-5 py-3 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft"
           >
-            <Plus className="h-4 w-4" /> Add Your First Goal
+            <Plus className="h-3.5 w-3.5" /> Add your first goal
           </button>
         </div>
       )}
@@ -523,7 +529,7 @@ function GoalsPageInner() {
       {/* Upcoming Goals */}
       {upcomingGoals.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-400">
+          <h2 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
             Upcoming ({upcomingGoals.length})
           </h2>
           <div className="space-y-3">
@@ -555,7 +561,7 @@ function GoalsPageInner() {
       {/* Needs Assessment */}
       {needsAssessmentGoals.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-amber-400">
+          <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-clay">
             Needs Assessment ({needsAssessmentGoals.length})
           </h2>
           <div className="space-y-3">
@@ -589,7 +595,7 @@ function GoalsPageInner() {
       {/* Completed Goals */}
       {completedGoals.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-400">
+          <h2 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
             Completed ({completedGoals.length})
           </h2>
           <div className="space-y-3">
@@ -626,7 +632,7 @@ export default function GoalsPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-forest" />
         </div>
       }
     >
@@ -651,10 +657,10 @@ function GoalCard({
   assessmentBanner?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border p-5 transition-colors ${
+    <div className={`rounded-md border p-5 transition-colors ${
       assessmentBanner
-        ? "border-amber-500/30 bg-amber-900/5 hover:border-amber-500/50"
-        : "border-slate-800 bg-slate-800/50 hover:border-slate-700"
+        ? "border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface hover:bg-vb-surface-raised"
+        : "border-vb-border-subtle bg-vb-surface hover:bg-vb-surface-raised"
     }`}>
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
@@ -662,7 +668,7 @@ function GoalCard({
           <div className="flex items-center gap-2">
             <Link
               href={`/dashboard/goals/${goal.id}`}
-              className="text-base font-semibold text-white hover:text-blue-400"
+              className="font-display text-lg font-light tracking-[-0.01em] text-vb-text hover:text-vb-forest"
             >
               {goal.event_name}
             </Link>
@@ -679,20 +685,20 @@ function GoalCard({
 
           {/* Meta row */}
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+            <span className="inline-flex items-center gap-1 text-xs text-vb-text-dim">
               <Calendar className="h-3 w-3" />
               {formatDate(goal.event_date)}
             </span>
-            <span className="inline-flex items-center rounded border px-2 py-0.5 text-xs capitalize">
+            <span className="inline-flex items-center rounded-full border border-vb-border px-2 py-0.5 text-xs capitalize text-vb-text-dim">
               {goal.event_type.replace(/_/g, " ")}
             </span>
             <span
-              className={`inline-flex items-center rounded border px-2 py-0.5 text-xs capitalize ${priorityColor(goal.priority)}`}
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs capitalize ${priorityColor(goal.priority)}`}
             >
               {goal.priority.replace(/_/g, " ")}
             </span>
             {goal.target_duration_minutes && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-vb-text-dim">
                 Target: {formatDurationMinutes(goal.target_duration_minutes)}
               </span>
             )}
@@ -700,7 +706,7 @@ function GoalCard({
 
           {/* Route data */}
           {goal.route_data && !goal.route_data.error && (
-            <div className="mt-2 flex items-center gap-3 text-xs text-blue-400">
+            <div className="mt-2 flex items-center gap-3 text-xs text-vb-forest">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               {goal.route_data.total_distance_km && (
                 <span>{goal.route_data.total_distance_km}km</span>
@@ -712,7 +718,7 @@ function GoalCard({
                 </span>
               )}
               {(goal.route_data.title || goal.route_data.name) && (
-                <span className="truncate text-slate-400">
+                <span className="truncate text-vb-text-dim">
                   {goal.route_data.title || goal.route_data.name}
                 </span>
               )}
@@ -721,7 +727,7 @@ function GoalCard({
 
           {/* Notes */}
           {goal.notes && (
-            <p className="mt-2 text-xs text-slate-500 line-clamp-2">
+            <p className="mt-2 text-xs text-vb-text-muted line-clamp-2">
               {goal.notes}
             </p>
           )}
@@ -730,7 +736,7 @@ function GoalCard({
           {assessmentBanner && (
             <Link
               href={`/dashboard/goals/${goal.id}/assess`}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-sm border border-vb-clay px-3 py-1.5 text-xs font-medium text-vb-clay hover:bg-vb-clay/5"
             >
               <ClipboardCheck className="h-3.5 w-3.5" />
               Complete Race Report
@@ -740,21 +746,21 @@ function GoalCard({
             <div className="mt-2 flex items-center gap-3 text-xs">
               <span className={`rounded-full px-2 py-0.5 font-medium ${
                 goal.status === "completed"
-                  ? "bg-green-500/15 text-green-400"
+                  ? "bg-vb-sage-tint text-vb-forest"
                   : goal.status === "dnf"
-                    ? "bg-amber-500/15 text-amber-400"
-                    : "bg-red-500/15 text-red-400"
+                    ? "bg-vb-clay/15 text-vb-clay"
+                    : "bg-vb-clay/15 text-vb-clay"
               }`}>
                 {goal.status === "dns" ? "DNS" : goal.status === "dnf" ? "DNF" : "Completed"}
               </span>
               {goal.finish_time_seconds && (
-                <span className="text-slate-400">
+                <span className="tabular-nums text-vb-text-dim">
                   {Math.floor(goal.finish_time_seconds / 3600)}h{" "}
                   {Math.floor((goal.finish_time_seconds % 3600) / 60)}m
                 </span>
               )}
               {goal.overall_satisfaction && (
-                <span className="flex items-center gap-0.5 text-amber-400">
+                <span className="flex items-center gap-0.5 text-vb-forest">
                   <Star className="h-3 w-3" />
                   {goal.overall_satisfaction}/10
                 </span>
@@ -769,14 +775,14 @@ function GoalCard({
                 href={goal.route_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-blue-400"
+                className="inline-flex items-center gap-1 text-xs text-vb-text-muted hover:text-vb-forest"
               >
                 <ExternalLink className="h-3 w-3" />
                 Event link
               </a>
             )}
             {goal.gpx_file_path && (
-              <span className="inline-flex items-center gap-1 text-xs text-green-400">
+              <span className="inline-flex items-center gap-1 text-xs text-vb-forest">
                 <Mountain className="h-3 w-3" />
                 GPX
               </span>
@@ -788,7 +794,7 @@ function GoalCard({
         <div className="ml-4 flex shrink-0 flex-col gap-1">
           <Link
             href={`/dashboard/goals/${goal.id}`}
-            className="rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-blue-400"
+            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-forest"
             title="View details"
           >
             <Target className="h-4 w-4" />
@@ -796,21 +802,21 @@ function GoalCard({
           <button
             onClick={onUploadGpx}
             disabled={gpxUploading}
-            className="rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-blue-400"
+            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-forest"
             title="Upload GPX"
           >
             <Upload className="h-4 w-4" />
           </button>
           <button
             onClick={onEdit}
-            className="rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-white"
+            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-text"
             title="Edit"
           >
             <Pencil className="h-4 w-4" />
           </button>
           <button
             onClick={onDelete}
-            className="rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-red-400"
+            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-clay"
             title="Delete"
           >
             <Trash2 className="h-4 w-4" />

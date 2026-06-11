@@ -22,12 +22,12 @@ interface RiderProfileRadarProps {
 }
 
 const RIDER_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  sprinter: { label: "Sprinter", color: "text-purple-400" },
-  pursuiter: { label: "Pursuiter", color: "text-orange-400" },
-  time_trialist: { label: "Time Trialist", color: "text-blue-400" },
-  climber: { label: "Climber", color: "text-emerald-400" },
-  all_rounder: { label: "All-Rounder", color: "text-amber-400" },
-  unknown: { label: "Unknown", color: "text-slate-400" },
+  sprinter: { label: "Sprinter", color: "text-[#7E3A28]" },
+  pursuiter: { label: "Pursuiter", color: "text-[#C06A48]" },
+  time_trialist: { label: "Time Trialist", color: "text-vb-dusty" },
+  climber: { label: "Climber", color: "text-vb-forest" },
+  all_rounder: { label: "All-Rounder", color: "text-vb-clay" },
+  unknown: { label: "Unknown", color: "text-vb-text-dim" },
 };
 
 function RadarTooltipContent({
@@ -40,11 +40,11 @@ function RadarTooltipContent({
   if (!active || !payload?.length) return null;
   const data = payload[0].payload;
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 shadow-xl">
-      <p className="text-xs font-medium text-slate-300">{data.label}</p>
-      <p className="text-sm font-mono font-bold text-amber-400">
+    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+      <p className="text-xs font-medium text-vb-text-dim">{data.label}</p>
+      <p className="text-sm font-mono font-medium text-vb-forest">
         {data.score.toFixed(0)}
-        <span className="ml-0.5 text-xs font-normal text-slate-500">/100</span>
+        <span className="ml-0.5 text-xs font-normal text-vb-text-muted">/100</span>
       </p>
     </div>
   );
@@ -74,14 +74,14 @@ export function RiderProfileRadar({
   const dotRadius = compact ? 3 : 4;
 
   return (
-    <div className={cn(compact ? "" : "rounded-xl bg-slate-900 p-4", className)}>
+    <div className={cn(compact ? "" : "rounded-md border border-vb-border-subtle bg-vb-surface p-4", className)}>
       {/* Header — hidden in compact mode */}
       {!compact && (
         <div className="mb-2 text-center">
-          <h3 className="text-sm font-semibold text-slate-200">Rider Profile</h3>
+          <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">Rider Profile</h3>
           <span
             className={cn(
-              "mt-1 inline-block rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold",
+              "mt-1 inline-block rounded-full bg-vb-sunken px-3 py-1 text-xs font-semibold",
               typeInfo.color
             )}
           >
@@ -94,14 +94,14 @@ export function RiderProfileRadar({
       {hasData ? (
         <ResponsiveContainer width="100%" height={chartHeight}>
           <RadarChart data={radarData} cx="50%" cy="50%" outerRadius={outerRadius}>
-            <PolarGrid stroke="#334155" strokeDasharray="3 3" />
+            <PolarGrid stroke="#E4DCCE" strokeDasharray="3 3" />
             <PolarAngleAxis
               dataKey="label"
-              tick={{ fontSize: tickFontSize, fill: "#e2e8f0" }}
+              tick={{ fontSize: tickFontSize, fill: "#211E1A" }}
             />
             <PolarRadiusAxis
               domain={[0, 100]}
-              tick={{ fontSize: 9, fill: "#64748b" }}
+              tick={{ fontSize: 9, fill: "#948D80" }}
               tickCount={compact ? 3 : 5}
               axisLine={false}
             />
@@ -116,7 +116,7 @@ export function RiderProfileRadar({
             <Radar
               name="Average"
               dataKey={() => 50}
-              stroke="#475569"
+              stroke="#D6CFC1"
               strokeWidth={1}
               strokeDasharray="4 4"
               fill="none"
@@ -125,18 +125,18 @@ export function RiderProfileRadar({
             <Radar
               name="You"
               dataKey="score"
-              stroke="#f59e0b"
+              stroke="#36513F"
               strokeWidth={2}
-              fill="#f59e0b"
+              fill="#36513F"
               fillOpacity={0.25}
-              dot={{ r: dotRadius, fill: "#f59e0b", stroke: "#fbbf24" }}
+              dot={{ r: dotRadius, fill: "#36513F", stroke: "#36513F" }}
             />
             <Tooltip content={<RadarTooltipContent />} />
           </RadarChart>
         </ResponsiveContainer>
       ) : (
         <div className={cn("flex items-center justify-center", compact ? "h-[200px]" : "h-[280px]")}>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-vb-text-muted">
             Complete some rides with power data to see your profile
           </p>
         </div>
@@ -150,7 +150,7 @@ export function RiderProfileRadar({
               {strengths.map((s) => (
                 <span
                   key={s}
-                  className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400"
+                  className="rounded-full bg-vb-forest/15 px-2.5 py-0.5 text-[11px] font-medium text-vb-forest"
                 >
                   {s}
                 </span>
@@ -162,7 +162,7 @@ export function RiderProfileRadar({
               {weaknesses.map((w) => (
                 <span
                   key={w}
-                  className="rounded-full bg-orange-500/15 px-2.5 py-0.5 text-[11px] font-medium text-orange-400"
+                  className="rounded-full bg-vb-clay/15 px-2.5 py-0.5 text-[11px] font-medium text-vb-clay"
                 >
                   {w}
                 </span>

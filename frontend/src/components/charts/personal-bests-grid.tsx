@@ -30,33 +30,33 @@ function durationBand(seconds: number): {
 } {
   if (seconds <= 30) {
     return {
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/10",
-      borderColor: "border-purple-500/30",
-      icon: <Zap className="h-3.5 w-3.5 text-purple-400" />,
+      color: "text-[#7E3A28]",
+      bgColor: "bg-[#7E3A28]/10",
+      borderColor: "border-vb-border-subtle",
+      icon: <Zap className="h-3.5 w-3.5 text-[#7E3A28]" />,
     };
   }
   if (seconds <= 300) {
     return {
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/10",
-      borderColor: "border-orange-500/30",
-      icon: <Flame className="h-3.5 w-3.5 text-orange-400" />,
+      color: "text-[#C06A48]",
+      bgColor: "bg-[#C06A48]/10",
+      borderColor: "border-vb-border-subtle",
+      icon: <Flame className="h-3.5 w-3.5 text-[#C06A48]" />,
     };
   }
   if (seconds <= 1800) {
     return {
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/10",
-      borderColor: "border-blue-500/30",
-      icon: <Wind className="h-3.5 w-3.5 text-blue-400" />,
+      color: "text-[#7C95A3]",
+      bgColor: "bg-[#7C95A3]/10",
+      borderColor: "border-vb-border-subtle",
+      icon: <Wind className="h-3.5 w-3.5 text-[#7C95A3]" />,
     };
   }
   return {
-    color: "text-emerald-400",
-    bgColor: "bg-emerald-500/10",
-    borderColor: "border-emerald-500/30",
-    icon: <Mountain className="h-3.5 w-3.5 text-emerald-400" />,
+    color: "text-vb-forest",
+    bgColor: "bg-vb-forest/10",
+    borderColor: "border-vb-border-subtle",
+    icon: <Mountain className="h-3.5 w-3.5 text-vb-forest" />,
   };
 }
 
@@ -82,12 +82,12 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
   const label = days ? `Last ${days} Days` : "All Time";
 
   return (
-    <div className={cn("rounded-xl bg-slate-900 p-4", className)}>
+    <div className={cn("rounded-md border border-vb-border-subtle bg-vb-surface p-4", className)}>
       <div className="mb-4 flex items-center gap-2">
-        <Trophy className="h-4 w-4 text-amber-400" />
-        <h3 className="text-sm font-semibold text-slate-200">Personal Bests</h3>
+        <Trophy className="h-4 w-4 text-vb-clay" />
+        <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">Personal Bests</h3>
         {days && (
-          <span className="rounded-full bg-blue-500/15 px-2 py-0.5 text-[10px] font-medium text-blue-400">
+          <span className="rounded-full bg-vb-forest/15 px-2 py-0.5 text-[10px] font-medium text-vb-forest">
             Current Form ({label})
           </span>
         )}
@@ -113,15 +113,15 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
                 "rounded-lg border p-3 transition-colors",
                 band.borderColor,
                 band.bgColor,
-                point.ride_id && "hover:border-slate-500 cursor-pointer"
+                point.ride_id && "hover:border-vb-border cursor-pointer"
               )}
             >
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
+                <span className="text-[11px] font-medium uppercase tracking-wider text-vb-text-dim">
                   {point.duration_label}
                 </span>
                 {isAtPB ? (
-                  <Trophy className="h-3.5 w-3.5 text-amber-400" />
+                  <Trophy className="h-3.5 w-3.5 text-vb-clay" />
                 ) : (
                   band.icon
                 )}
@@ -129,17 +129,17 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
               {/* Current form power */}
               <div className={cn("text-xl font-bold tabular-nums", band.color)}>
                 {point.best_power > 0 ? Math.round(point.best_power) : "—"}
-                <span className="ml-0.5 text-xs font-normal text-slate-500">W</span>
+                <span className="ml-0.5 text-xs font-normal text-vb-text-muted">W</span>
               </div>
               {point.watts_per_kg !== null && point.best_power > 0 && (
-                <div className="mt-0.5 text-xs tabular-nums text-slate-400">
+                <div className="mt-0.5 text-xs tabular-nums text-vb-text-dim">
                   {point.watts_per_kg.toFixed(2)} W/kg
                 </div>
               )}
               {/* All-time PB comparison */}
               {hasAllTime && !isAtPB && (
-                <div className="mt-1.5 border-t border-slate-700/50 pt-1.5">
-                  <div className="text-[10px] text-slate-500">
+                <div className="mt-1.5 border-t border-vb-border-subtle pt-1.5">
+                  <div className="text-[10px] text-vb-text-muted">
                     All-time: {Math.round(point.all_time_power!)}W
                     {point.all_time_watts_per_kg != null && (
                       <span className="ml-1">
@@ -150,8 +150,8 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
                   {pctOfPB !== null && (
                     <div className={cn(
                       "text-[10px] font-medium",
-                      pctOfPB >= 95 ? "text-green-400" :
-                      pctOfPB >= 85 ? "text-yellow-400" : "text-slate-500"
+                      pctOfPB >= 95 ? "text-vb-success" :
+                      pctOfPB >= 85 ? "text-vb-ochre" : "text-vb-text-muted"
                     )}>
                       {pctOfPB}% of PB
                     </div>
@@ -159,12 +159,12 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
                 </div>
               )}
               {isAtPB && (
-                <div className="mt-1.5 text-[10px] font-medium text-amber-400">
+                <div className="mt-1.5 text-[10px] font-medium text-vb-clay">
                   All-time PB!
                 </div>
               )}
               {point.ride_date && (
-                <div className="mt-1 text-[10px] text-slate-500">
+                <div className="mt-1 text-[10px] text-vb-text-muted">
                   {formatPBDate(point.ride_date)}
                 </div>
               )}
@@ -186,26 +186,26 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
       </div>
 
       {/* Legend */}
-      <div className="mt-3 flex flex-wrap items-center gap-4 text-[10px] text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center gap-4 text-[10px] text-vb-text-muted">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-purple-500" />
+          <span className="inline-block h-2 w-2 rounded-full bg-[#7E3A28]" />
           Neuromuscular
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-orange-500" />
+          <span className="inline-block h-2 w-2 rounded-full bg-[#C06A48]" />
           Anaerobic / VO2max
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
+          <span className="inline-block h-2 w-2 rounded-full bg-[#7C95A3]" />
           Threshold
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="inline-block h-2 w-2 rounded-full bg-vb-forest" />
           Endurance
         </span>
         {days && (
           <span className="ml-auto flex items-center gap-1">
-            <Trophy className="h-2.5 w-2.5 text-amber-400" />
+            <Trophy className="h-2.5 w-2.5 text-vb-clay" />
             = matches all-time PB
           </span>
         )}

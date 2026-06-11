@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Marco — QuestUI mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gold: #CA8A04;
+    --gold-bright: #DAA520;
+    --red: #991B1B;
+    --purple: #581C87;
+    --bg: #1A0F0A;
+    --surface: #2C1A10;
+    --surface-raised: #3D2517;
+    --border: #5C3D2E;
+    --parchment: #F5E6D3;
+    --parchment-dim: #BFA98A;
+    --success: #22C55E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Spectral', Georgia, serif;
+    background: var(--bg);
+    color: var(--parchment);
+    min-height: 100vh;
+    padding: 32px;
+    line-height: 1.7;
+  }
+
+  /* ====== HEADER ====== */
+  header.masthead {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 0 24px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .brand {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    text-shadow: 0 0 12px rgba(202, 138, 4, 0.4);
+  }
+  nav.primary { display: flex; gap: 32px; }
+  nav.primary a {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--parchment-dim);
+    text-decoration: none;
+    padding-bottom: 4px;
+  }
+  nav.primary a.active {
+    color: var(--gold);
+    border-bottom: 2px solid var(--gold);
+  }
+
+  /* ====== HERO QUEST CARD ====== */
+  .quest-hero {
+    background: var(--surface-raised);
+    border: 1px solid rgba(202, 138, 4, 0.4);
+    border-top: 2px solid var(--gold);
+    padding: 32px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 16px rgba(202, 138, 4, 0.2);
+    position: relative;
+  }
+  .quest-hero::before {
+    content: '⚔';
+    position: absolute;
+    top: -1px;
+    left: 24px;
+    background: var(--surface-raised);
+    color: var(--gold);
+    padding: 0 8px;
+    font-size: 18px;
+    transform: translateY(-50%);
+  }
+  .quest-rubric {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  .quest-hero h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--parchment);
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .quest-hero p {
+    font-size: 16px;
+    color: var(--parchment-dim);
+    font-style: italic;
+    max-width: 640px;
+  }
+  .quest-meta {
+    display: flex; gap: 24px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .quest-meta-item {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--parchment-dim);
+  }
+  .quest-meta-item strong {
+    display: block;
+    color: var(--gold);
+    font-size: 18px;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+  .quest-actions { margin-top: 24px; display: flex; gap: 12px; }
+  .btn-primary {
+    background: var(--gold);
+    color: var(--bg);
+    border: 1px solid var(--gold-bright);
+    padding: 12px 30px;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(202, 138, 4, 0.4);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 12px 30px;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+
+  /* ====== METRIC GRID ====== */
+  .grid-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+  }
+  .stat-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--parchment-dim);
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: 'Cinzel', serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .stat-sub {
+    font-size: 12px;
+    color: var(--parchment-dim);
+    font-style: italic;
+    margin-top: 6px;
+  }
+  .stat-card.rare { border-color: var(--purple); }
+  .stat-card.rare .stat-value { color: var(--purple); }
+  .stat-card.rare::before {
+    content: '✦';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    color: var(--purple);
+  }
+
+  /* ====== MARCO MESSAGE (scroll) ====== */
+  .scroll {
+    background: var(--surface);
+    border: 1px solid rgba(202, 138, 4, 0.4);
+    padding: 28px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .scroll-banner {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    display: inline-block;
+    background: var(--bg);
+    padding: 4px 12px;
+    border: 1px solid var(--gold);
+    margin-bottom: 16px;
+  }
+  .scroll-body {
+    font-family: 'Spectral', serif;
+    font-size: 17px;
+    font-style: italic;
+    color: var(--parchment);
+    line-height: 1.7;
+    max-width: 700px;
+  }
+  .scroll-body::first-letter {
+    font-family: 'Cinzel', serif;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--gold);
+    float: left;
+    line-height: 1;
+    margin-right: 8px;
+    margin-top: 4px;
+  }
+  .scroll-sign {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin-top: 16px;
+  }
+
+  /* ====== QUESTS / RIDES LIST ====== */
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--parchment);
+    margin: 32px 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before { content: '◆'; color: var(--gold); font-size: 12px; }
+  ul.quests { list-style: none; }
+  ul.quests li {
+    display: grid;
+    grid-template-columns: 32px 1fr auto auto auto;
+    gap: 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .quest-icon {
+    width: 28px; height: 28px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .quest-title { color: var(--parchment); }
+  .quest-date {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--parchment-dim);
+    text-transform: uppercase;
+  }
+  .quest-stat {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--gold);
+  }
+  .quest-tag {
+    background: rgba(202, 138, 4, 0.08);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    padding: 4px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .quest-tag.legendary {
+    background: rgba(88, 28, 135, 0.15);
+    border-color: var(--purple);
+    color: #a78bfa;
+  }
+
+  /* ====== FOOTER NOTE ====== */
+  .note {
+    margin-top: 48px;
+    padding: 20px;
+    background: rgba(153, 27, 27, 0.08);
+    border-left: 4px solid var(--red);
+    font-style: italic;
+    color: var(--parchment-dim);
+  }
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand">⚜ MARCO ⚜</div>
+    <nav class="primary">
+      <a href="#" class="active">Quest Log</a>
+      <a href="#">Chronicles</a>
+      <a href="#">Trials</a>
+      <a href="#">Pacts</a>
+      <a href="#">The Mentor</a>
+    </nav>
+  </header>
+
+  <section class="quest-hero">
+    <div class="quest-rubric">Today's Quest · 5 May 2026</div>
+    <h1>The Threshold Trial</h1>
+    <p>"Verily, the road to Manchester rises before thee, brave rider. Today's labour shall forge thy chronic fitness — 4×8 minutes at the gates of thy threshold. Mind thy cadence, hold the watts true."</p>
+
+    <div class="quest-meta">
+      <div class="quest-meta-item">Duration<strong>1h 12m</strong></div>
+      <div class="quest-meta-item">TSS<strong>87</strong></div>
+      <div class="quest-meta-item">Target Power<strong>290 W</strong></div>
+      <div class="quest-meta-item">Difficulty<strong>★★★★☆</strong></div>
+    </div>
+
+    <div class="quest-actions">
+      <button class="btn-primary">⚔ Embark on Quest</button>
+      <button class="btn-secondary">Postpone</button>
+    </div>
+  </section>
+
+  <div class="grid-stats">
+    <div class="stat-card">
+      <div class="stat-label">Chronic Vigour</div>
+      <div class="stat-value">62</div>
+      <div class="stat-sub">Steady ascent these 6 weeks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Acute Burden</div>
+      <div class="stat-value">70</div>
+      <div class="stat-sub">Heavy from yesterday's foray</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Stress Balance</div>
+      <div class="stat-value">−8</div>
+      <div class="stat-sub">Productive fatigue</div>
+    </div>
+    <div class="stat-card rare">
+      <div class="stat-label">Threshold Power</div>
+      <div class="stat-value">290</div>
+      <div class="stat-sub">Legendary class — top 7%</div>
+    </div>
+  </div>
+
+  <section class="scroll">
+    <span class="scroll-banner">A Message from Marco</span>
+    <p class="scroll-body">Good recovery yesterday — thy sleep score speaks well of thee. The threshold gates await this morn. Mind well: 30 seconds afore each interval, ease thy breath. Hold the watts true. The Manchester campaign draws near, and thy form rises with the spring.</p>
+    <div class="scroll-sign">— Marco, thy Mentor of the Wheel</div>
+  </section>
+
+  <h2 class="section-title">Recent Chronicles</h2>
+  <ul class="quests">
+    <li>
+      <div class="quest-icon">⚔</div>
+      <div class="quest-title">Morning Foray · Z2 Endurance</div>
+      <div class="quest-date">4 May</div>
+      <div class="quest-stat">158 W</div>
+      <span class="quest-tag">TSS 15</span>
+    </li>
+    <li>
+      <div class="quest-icon">⚔</div>
+      <div class="quest-title">Cicle Classic Hill Trial</div>
+      <div class="quest-date">25 Apr</div>
+      <div class="quest-stat">190 W</div>
+      <span class="quest-tag legendary">✦ Epic · TSS 215</span>
+    </li>
+    <li>
+      <div class="quest-icon">⚔</div>
+      <div class="quest-title">Richmond Park Paceline</div>
+      <div class="quest-date">24 Apr</div>
+      <div class="quest-stat">194 W</div>
+      <span class="quest-tag">TSS 90</span>
+    </li>
+    <li>
+      <div class="quest-icon">⚔</div>
+      <div class="quest-title">Lunch Ride · Threshold Skirmish</div>
+      <div class="quest-date">23 Apr</div>
+      <div class="quest-stat">264 W</div>
+      <span class="quest-tag">TSS 127</span>
+    </li>
+  </ul>
+
+  <div class="note">
+    <strong>Reviewer note (not part of mockup):</strong> This is QuestUI applied
+    literally to Marco. Cinzel headlines, gold glows, "thee/thy" phrasing.
+    Notice how the gravitas of training data is consumed by the fantasy frame —
+    the numbers fight the styling for attention. For a serious amateur racer
+    obsessing over CTL trends, this feels like cosplay.
+  </div>
+</body>
+</html>

@@ -31,10 +31,10 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800 p-3 text-sm shadow-lg">
-      <p className="text-slate-400">{formatDate(d.date)}</p>
-      <p className="text-lg font-bold text-blue-400">{d.ftp}W</p>
-      <p className="text-xs text-slate-500 capitalize">{d.source}</p>
+    <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-3 text-sm shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+      <p className="text-vb-text-dim">{formatDate(d.date)}</p>
+      <p className="text-lg font-display font-light tracking-[-0.01em] text-vb-forest">{d.ftp}W</p>
+      <p className="text-xs text-vb-text-muted capitalize">{d.source}</p>
     </div>
   );
 }
@@ -42,7 +42,7 @@ function CustomTooltip({ active, payload }: any) {
 export function FTPHistoryChart({ data, currentFTP }: FTPHistoryChartProps) {
   if (!data.length) {
     return (
-      <p className="py-8 text-center text-sm text-slate-500">
+      <p className="py-8 text-center text-sm text-vb-text-muted">
         No FTP history available
       </p>
     );
@@ -73,43 +73,43 @@ export function FTPHistoryChart({ data, currentFTP }: FTPHistoryChartProps) {
       >
         <defs>
           <linearGradient id="ftpGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+            <stop offset="5%" stopColor="#36513F" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#36513F" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#E4DCCE" />
         <XAxis
           dataKey="date"
           tickFormatter={formatDate}
-          tick={{ fill: "#94a3b8", fontSize: 11 }}
-          stroke="#475569"
+          tick={{ fill: "#948D80", fontSize: 11 }}
+          stroke="#D6CFC1"
         />
         <YAxis
           domain={[minFTP, maxFTP]}
-          tick={{ fill: "#94a3b8", fontSize: 11 }}
-          stroke="#475569"
+          tick={{ fill: "#948D80", fontSize: 11 }}
+          stroke="#D6CFC1"
           tickFormatter={(v) => `${v}W`}
         />
         <Tooltip content={<CustomTooltip />} />
         {currentFTP && (
           <ReferenceLine
             y={currentFTP}
-            stroke="#6366f1"
+            stroke="#7C95A3"
             strokeDasharray="3 3"
             label={{
               value: `Current: ${currentFTP}W`,
               position: "right",
-              style: { fill: "#6366f1", fontSize: 10 },
+              style: { fill: "#7C95A3", fontSize: 10 },
             }}
           />
         )}
         <Area
           type="stepAfter"
           dataKey="ftp"
-          stroke="#3b82f6"
+          stroke="#36513F"
           strokeWidth={2}
           fill="url(#ftpGradient)"
-          dot={{ r: 4, fill: "#3b82f6", stroke: "#1e3a5f" }}
+          dot={{ r: 4, fill: "#36513F", stroke: "#FBF7F0" }}
         />
       </AreaChart>
     </ResponsiveContainer>

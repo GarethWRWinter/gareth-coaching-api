@@ -19,9 +19,9 @@ import { formatDate, formatDuration, cn } from "@/lib/utils";
 import type { CandidateRide, GoalAssessmentSubmit } from "@/lib/api";
 
 const STATUS_OPTIONS = [
-  { value: "completed", label: "Completed", icon: Trophy, color: "border-green-500 bg-green-900/20 text-green-400" },
-  { value: "dnf", label: "DNF", icon: Frown, color: "border-amber-500 bg-amber-900/20 text-amber-400" },
-  { value: "dns", label: "DNS", icon: Ban, color: "border-red-500 bg-red-900/20 text-red-400" },
+  { value: "completed", label: "Completed", icon: Trophy, color: "border-vb-forest bg-vb-sage-tint text-vb-forest" },
+  { value: "dnf", label: "DNF", icon: Frown, color: "border-vb-clay bg-vb-clay/10 text-vb-clay" },
+  { value: "dns", label: "DNS", icon: Ban, color: "border-vb-clay bg-vb-clay/10 text-vb-clay" },
 ];
 
 export default function AssessPage() {
@@ -104,13 +104,13 @@ export default function AssessPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-forest" />
       </div>
     );
   }
 
   if (!goal) {
-    return <div className="py-20 text-center text-slate-400">Goal not found</div>;
+    return <div className="py-20 text-center text-vb-text-dim">Goal not found</div>;
   }
 
   // Success screen
@@ -118,21 +118,21 @@ export default function AssessPage() {
     return (
       <div className="mx-auto max-w-lg space-y-6 py-8">
         <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-600/20">
-            <Check className="h-8 w-8 text-green-400" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-vb-sage-tint">
+            <Check className="h-8 w-8 text-vb-forest" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-white">
+          <h1 className="mt-4 font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
             Assessment Complete
           </h1>
-          <p className="mt-1 text-slate-400">
+          <p className="mt-1 text-vb-text-dim">
             Your race report for{" "}
-            <span className="font-medium text-white">{goal.event_name}</span>{" "}
+            <span className="font-medium text-vb-text">{goal.event_name}</span>{" "}
             has been saved.
           </p>
           <div className="mt-5 flex flex-col items-center gap-2">
             <Link
               href={`/dashboard/coach?goal_id=${goalId}&debrief=true`}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-500"
+              className="flex items-center gap-2 rounded-sm bg-vb-forest px-6 py-3 text-sm font-medium text-white hover:bg-vb-forest-soft"
             >
               <MessageCircle className="h-4 w-4" />
               Debrief with Coach Marco
@@ -141,41 +141,41 @@ export default function AssessPage() {
         </div>
 
         {/* What's next — invite user to plan their next block */}
-        <div className="rounded-xl border border-blue-500/40 bg-blue-900/10 p-5">
-          <h2 className="text-base font-semibold text-white">What&apos;s next?</h2>
-          <p className="mt-1 text-xs text-slate-400">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+          <h2 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">What&apos;s next?</h2>
+          <p className="mt-1 text-xs text-vb-text-dim">
             Keep momentum going — pick your next target and we&apos;ll build a plan
             around it, or start a fresh training block to keep building fitness.
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <Link
               href="/dashboard/goals?new=1"
-              className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-800/60 p-3 hover:border-blue-500/60 hover:bg-slate-800"
+              className="flex items-center gap-3 rounded-sm border border-vb-border-subtle bg-vb-bg p-3 hover:bg-vb-surface-raised"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
-                <Target className="h-4 w-4 text-blue-400" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-sage-tint">
+                <Target className="h-4 w-4 text-vb-forest" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Add a new goal</p>
-                <p className="text-[11px] text-slate-400">Plan peaks for your next race</p>
+                <p className="text-sm font-medium text-vb-text">Add a new goal</p>
+                <p className="text-[11px] text-vb-text-muted">Plan peaks for your next race</p>
               </div>
             </Link>
             <Link
               href="/dashboard/training"
-              className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-800/60 p-3 hover:border-blue-500/60 hover:bg-slate-800"
+              className="flex items-center gap-3 rounded-sm border border-vb-border-subtle bg-vb-bg p-3 hover:bg-vb-surface-raised"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
-                <Calendar className="h-4 w-4 text-blue-400" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-sage-tint">
+                <Calendar className="h-4 w-4 text-vb-forest" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">New training block</p>
-                <p className="text-[11px] text-slate-400">Generate a 12-week plan</p>
+                <p className="text-sm font-medium text-vb-text">New training block</p>
+                <p className="text-[11px] text-vb-text-muted">Generate a 12-week plan</p>
               </div>
             </Link>
           </div>
           <Link
             href={`/dashboard/goals/${goalId}`}
-            className="mt-4 block text-center text-xs text-slate-500 hover:text-slate-300"
+            className="mt-4 block text-center text-xs text-vb-text-muted hover:text-vb-forest"
           >
             Or view goal details
           </Link>
@@ -185,7 +185,7 @@ export default function AssessPage() {
   }
 
   const inputClasses =
-    "w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none";
+    "w-full rounded-sm border border-vb-border-subtle bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none";
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -193,22 +193,22 @@ export default function AssessPage() {
       <div>
         <Link
           href={`/dashboard/goals/${goalId}`}
-          className="mb-2 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-vb-text-dim hover:text-vb-forest"
         >
           <ArrowLeft className="h-4 w-4" /> Back to goal
         </Link>
-        <h1 className="text-2xl font-bold text-white">
+        <h1 className="font-display text-3xl font-light tracking-[-0.01em] text-vb-text">
           How did {goal.event_name} go?
         </h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-vb-text-dim">
           {formatDate(goal.event_date)} &middot;{" "}
           {goal.event_type.replace(/_/g, " ")}
         </p>
       </div>
 
       {/* Section 1: Result Status */}
-      <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-        <h2 className="mb-4 text-lg font-semibold text-white">Result</h2>
+      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">Result</h2>
         <div className="grid grid-cols-3 gap-3">
           {STATUS_OPTIONS.map((opt) => {
             const Icon = opt.icon;
@@ -218,8 +218,8 @@ export default function AssessPage() {
                 key={opt.value}
                 onClick={() => setStatus(opt.value)}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all",
-                  isSelected ? opt.color : "border-slate-700 bg-slate-800/50 text-slate-400 hover:border-slate-600"
+                  "flex flex-col items-center gap-2 rounded-sm border p-4 transition-all",
+                  isSelected ? opt.color : "border-vb-border-subtle bg-vb-bg text-vb-text-dim hover:border-vb-border"
                 )}
               >
                 <Icon className="h-6 w-6" />
@@ -233,7 +233,7 @@ export default function AssessPage() {
         {status === "completed" && (
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">
+              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
                 Finish Time
               </label>
               <div className="flex items-center gap-1.5">
@@ -245,7 +245,7 @@ export default function AssessPage() {
                   min="0"
                   className={`${inputClasses} w-16 text-center`}
                 />
-                <span className="text-slate-500">:</span>
+                <span className="text-vb-text-muted">:</span>
                 <input
                   type="number"
                   value={finishMinutes}
@@ -255,7 +255,7 @@ export default function AssessPage() {
                   max="59"
                   className={`${inputClasses} w-16 text-center`}
                 />
-                <span className="text-slate-500">:</span>
+                <span className="text-vb-text-muted">:</span>
                 <input
                   type="number"
                   value={finishSeconds}
@@ -268,7 +268,7 @@ export default function AssessPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">
+              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
                 Position (optional)
               </label>
               <div className="flex items-center gap-2">
@@ -280,7 +280,7 @@ export default function AssessPage() {
                   min="1"
                   className={`${inputClasses} w-20`}
                 />
-                <span className="text-slate-500">/</span>
+                <span className="text-vb-text-muted">/</span>
                 <input
                   type="number"
                   value={finishPositionTotal}
@@ -297,11 +297,11 @@ export default function AssessPage() {
 
       {/* Section 2: Link Ride */}
       {candidateRidesData && candidateRidesData.rides.length > 0 && (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <h2 className="mb-1 text-lg font-semibold text-white">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+          <h2 className="mb-1 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
             Link Your Ride
           </h2>
-          <p className="mb-4 text-xs text-slate-400">
+          <p className="mb-4 text-xs text-vb-text-dim">
             Select the ride file from race day for detailed analysis
           </p>
           <div className="space-y-2">
@@ -312,15 +312,15 @@ export default function AssessPage() {
                   setSelectedRideId(selectedRideId === ride.id ? null : ride.id)
                 }
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg border-2 p-3 text-left transition-all",
+                  "flex w-full items-center justify-between rounded-sm border p-3 text-left transition-all",
                   selectedRideId === ride.id
-                    ? "border-green-500 bg-green-900/10"
-                    : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                    ? "border-vb-forest bg-vb-sage-tint"
+                    : "border-vb-border-subtle bg-vb-bg hover:border-vb-border"
                 )}
               >
                 <div>
-                  <p className="text-sm font-medium text-white">{ride.title}</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-sm font-medium text-vb-text">{ride.title}</p>
+                  <p className="text-xs text-vb-text-dim">
                     {ride.ride_date}
                     {ride.duration_seconds && ` · ${formatDuration(ride.duration_seconds)}`}
                   </p>
@@ -328,18 +328,18 @@ export default function AssessPage() {
                 <div className="flex items-center gap-3 text-right">
                   {ride.normalized_power && (
                     <div>
-                      <p className="text-sm font-medium text-white">{Math.round(ride.normalized_power)}W</p>
-                      <p className="text-[10px] text-slate-500">NP</p>
+                      <p className="text-sm font-medium tabular-nums text-vb-text">{Math.round(ride.normalized_power)}W</p>
+                      <p className="text-[10px] text-vb-text-muted">NP</p>
                     </div>
                   )}
                   {ride.tss && (
                     <div>
-                      <p className="text-sm font-medium text-white">{ride.tss}</p>
-                      <p className="text-[10px] text-slate-500">TSS</p>
+                      <p className="text-sm font-medium tabular-nums text-vb-text">{ride.tss}</p>
+                      <p className="text-[10px] text-vb-text-muted">TSS</p>
                     </div>
                   )}
                   {selectedRideId === ride.id && (
-                    <Check className="h-5 w-5 text-green-400" />
+                    <Check className="h-5 w-5 text-vb-forest" />
                   )}
                 </div>
               </button>
@@ -349,18 +349,18 @@ export default function AssessPage() {
       )}
 
       {/* Section 3: Ratings */}
-      <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-        <h2 className="mb-4 text-lg font-semibold text-white">
+      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
           How Did It Go?
         </h2>
         <div className="space-y-5">
           {/* Satisfaction */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-vb-text-dim">
                 Overall Satisfaction
               </label>
-              <span className="text-lg font-bold text-white">{satisfaction}/10</span>
+              <span className="font-display text-lg font-light tabular-nums text-vb-text">{satisfaction}/10</span>
             </div>
             <input
               type="range"
@@ -368,9 +368,9 @@ export default function AssessPage() {
               max="10"
               value={satisfaction}
               onChange={(e) => setSatisfaction(parseInt(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-vb-forest"
             />
-            <div className="mt-1 flex justify-between text-[10px] text-slate-600">
+            <div className="mt-1 flex justify-between text-[10px] text-vb-text-muted">
               <span>Disappointed</span>
               <span>Delighted</span>
             </div>
@@ -379,10 +379,10 @@ export default function AssessPage() {
           {/* RPE */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-vb-text-dim">
                 Perceived Exertion (RPE)
               </label>
-              <span className="text-lg font-bold text-white">{exertion}/10</span>
+              <span className="font-display text-lg font-light tabular-nums text-vb-text">{exertion}/10</span>
             </div>
             <input
               type="range"
@@ -390,9 +390,9 @@ export default function AssessPage() {
               max="10"
               value={exertion}
               onChange={(e) => setExertion(parseInt(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-vb-forest"
             />
-            <div className="mt-1 flex justify-between text-[10px] text-slate-600">
+            <div className="mt-1 flex justify-between text-[10px] text-vb-text-muted">
               <span>Very easy</span>
               <span>Maximal</span>
             </div>
@@ -401,15 +401,15 @@ export default function AssessPage() {
       </div>
 
       {/* Section 4: Self-Assessment */}
-      <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-        <h2 className="mb-4 text-lg font-semibold text-white">
+      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
           Self-Assessment
         </h2>
         <div className="space-y-5">
           {/* Physical */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">
+              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
                 Legs Rating (1-10)
               </label>
               <input
@@ -418,16 +418,16 @@ export default function AssessPage() {
                 max="10"
                 value={legsRating}
                 onChange={(e) => setLegsRating(parseInt(e.target.value))}
-                className="w-full accent-blue-500"
+                className="w-full accent-vb-forest"
               />
-              <div className="mt-0.5 flex justify-between text-[10px] text-slate-600">
+              <div className="mt-0.5 flex justify-between text-[10px] text-vb-text-muted">
                 <span>Heavy</span>
-                <span className="font-medium text-slate-400">{legsRating}</span>
+                <span className="font-medium tabular-nums text-vb-text-dim">{legsRating}</span>
                 <span>Flying</span>
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">
+              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
                 Fatigue Onset
               </label>
               <select
@@ -446,7 +446,7 @@ export default function AssessPage() {
           {/* Pacing + Nutrition */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">
+              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
                 Followed Pacing Plan?
               </label>
               <select
@@ -461,7 +461,7 @@ export default function AssessPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-400">
+              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
                 Fueling / Nutrition
               </label>
               <select
@@ -478,7 +478,7 @@ export default function AssessPage() {
 
           {/* Mental */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">
+            <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
               Pre-Race Confidence
             </label>
             <input
@@ -487,11 +487,11 @@ export default function AssessPage() {
               max="10"
               value={preRaceConfidence}
               onChange={(e) => setPreRaceConfidence(parseInt(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-vb-forest"
             />
-            <div className="mt-0.5 flex justify-between text-[10px] text-slate-600">
+            <div className="mt-0.5 flex justify-between text-[10px] text-vb-text-muted">
               <span>Very nervous</span>
-              <span className="font-medium text-slate-400">{preRaceConfidence}</span>
+              <span className="font-medium tabular-nums text-vb-text-dim">{preRaceConfidence}</span>
               <span>Very confident</span>
             </div>
           </div>
@@ -499,11 +499,11 @@ export default function AssessPage() {
       </div>
 
       {/* Section 5: Takeaways */}
-      <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-        <h2 className="mb-4 text-lg font-semibold text-white">Takeaways</h2>
+      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">Takeaways</h2>
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-green-400">
+            <label className="mb-1.5 block text-xs font-medium text-vb-forest">
               What went well?
             </label>
             <textarea
@@ -515,7 +515,7 @@ export default function AssessPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-amber-400">
+            <label className="mb-1.5 block text-xs font-medium text-vb-clay">
               What would you improve?
             </label>
             <textarea
@@ -534,13 +534,13 @@ export default function AssessPage() {
         <button
           onClick={handleSubmit}
           disabled={submitMutation.isPending}
-          className="flex-1 rounded-xl bg-green-600 px-6 py-3.5 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+          className="flex-1 rounded-sm bg-vb-forest px-6 py-3.5 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
         >
           {submitMutation.isPending ? "Saving..." : "Submit Race Report"}
         </button>
         <Link
           href={`/dashboard/goals/${goalId}`}
-          className="rounded-xl border border-slate-700 px-6 py-3.5 text-sm text-slate-300 hover:bg-slate-800"
+          className="rounded-sm border border-vb-border px-6 py-3.5 text-sm text-vb-forest hover:bg-vb-surface"
         >
           Cancel
         </Link>

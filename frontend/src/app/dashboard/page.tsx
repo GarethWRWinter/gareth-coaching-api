@@ -11,14 +11,11 @@ import { formatDuration, formatDate } from "@/lib/utils";
 import { RiderProfileRadar } from "@/components/charts/rider-profile-radar";
 
 /**
- * VoiceBox-styled dashboard.
+ * ALMANAC-styled dashboard.
  *
- * Layout philosophy:
- *  - Top section is the masthead "Today" — overline rubric + huge display headline.
- *  - Marco's nudge lives as a pull-quote with a 4px red left border.
- *  - Fitness stats live as one continuous strip (no card gaps), 4 columns,
- *    Archivo Black numerals, single red accent on FTP.
- *  - Rides + Goals as editorial lists with rubrics over each title.
+ * Editorial-but-warm: a quiet premium cycling journal. Light humanist sans,
+ * generous air, forest accent, a single clay highlight, and Marco's notes
+ * signed by hand. VoiceBox's editorial bones, Arket's Scandinavian skin.
  */
 
 export default function DashboardPage() {
@@ -69,54 +66,55 @@ export default function DashboardPage() {
   });
 
   const tsb = Math.round(fitness?.current_tsb ?? 0);
-  const tsbLabel = tsb > 10 ? "Fresh" : tsb < -20 ? "Fatigued" : "Productive";
+  const tsbLabel = tsb > 10 ? "Fresh" : tsb < -20 ? "Fatigued" : "Productive strain";
 
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
     month: "long",
-    year: "numeric",
   });
 
   const firstName = user?.full_name?.split(" ")[0] || "Rider";
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-14">
       {/* ============ MASTHEAD ============ */}
-      <header className="border-b-2 border-vb-border-subtle pb-8">
-        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
-          Today · {today}
+      <header>
+        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
+          {today}
         </p>
-        <h1 className="font-display text-5xl leading-[0.95] tracking-tight md:text-6xl">
-          Welcome back,<br />
-          {firstName}.
+        <h1 className="mt-3 font-display text-5xl font-light leading-[1.04] tracking-[-0.02em] md:text-6xl">
+          Good morning, {firstName}.
         </h1>
       </header>
 
-      {/* ============ COACH MARCO NUDGE (pull-quote) ============ */}
+      {/* ============ A NOTE FROM MARCO ============ */}
       {nudge && (
-        <section className="border-l-4 border-vb-red bg-vb-surface px-6 py-6 md:px-8 md:py-7">
+        <section className="max-w-3xl border-b border-vb-border-subtle pb-10">
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
               A note from Marco
             </p>
             <Link
               href="/dashboard/coach"
-              className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+              className="text-[11px] font-medium uppercase tracking-[0.10em] text-vb-text-muted transition-colors hover:text-vb-forest"
             >
               Reply →
             </Link>
           </div>
-          <blockquote className="font-sans text-xl italic leading-relaxed text-vb-text md:text-2xl">
-            &ldquo;{nudge.nudge}&rdquo;
-          </blockquote>
+          <p className="mt-3 font-light text-2xl leading-[1.55] tracking-[-0.01em] text-vb-text md:text-[26px]">
+            {nudge.nudge}
+          </p>
+          <div className="mt-5 flex items-baseline gap-3">
+            <span className="font-script text-3xl leading-none text-vb-forest">Marco</span>
+            <span className="text-xs tracking-[0.04em] text-vb-text-muted">your coach</span>
+          </div>
         </section>
       )}
 
       {/* ============ FITNESS STAT STRIP ============ */}
-      <section className="border-y-2 border-vb-text">
-        <div className="grid grid-cols-2 md:grid-cols-4">
-          {/* CTL */}
+      <section className="overflow-hidden rounded-md border border-vb-border-subtle bg-vb-border-subtle">
+        <div className="grid grid-cols-2 gap-px md:grid-cols-4">
           <StatCell
             label="Fitness · CTL"
             value={Math.round(fitness?.current_ctl ?? 0)}
@@ -128,26 +126,21 @@ export default function DashboardPage() {
                 : "steady"
             }
           />
-          {/* ATL */}
           <StatCell
             label="Fatigue · ATL"
             value={Math.round(fitness?.current_atl ?? 0)}
             sub="rolling 7-day"
           />
-          {/* TSB */}
-          <StatCell
-            label="Form · TSB"
-            value={tsb}
-            sub={tsbLabel}
-            tone={tsb > 10 ? "good" : tsb < -20 ? "warn" : "neutral"}
-          />
-          {/* FTP */}
+          <StatCell label="Form · TSB" value={tsb} sub={tsbLabel} featured />
           <StatCell
             label="FTP"
             value={user?.ftp ?? 0}
-            sub={user?.weight_kg ? `${((user.ftp ?? 0) / user.weight_kg).toFixed(2)} W/kg` : "watts"}
-            featured
-            isLast
+            unit="w"
+            sub={
+              user?.weight_kg
+                ? `${((user.ftp ?? 0) / user.weight_kg).toFixed(2)} W/kg`
+                : "watts"
+            }
           />
         </div>
       </section>
@@ -159,16 +152,16 @@ export default function DashboardPage() {
           <Link
             key={goal.id}
             href={`/dashboard/goals/${goal.id}/assess`}
-            className="block border-2 border-vb-red bg-vb-surface px-6 py-5 transition-colors hover:bg-vb-surface-raised"
+            className="block rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface px-6 py-5 transition-colors hover:bg-vb-surface-raised"
           >
             <div className="flex items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <ClipboardCheck className="h-5 w-5 shrink-0 text-vb-red" />
+                <ClipboardCheck className="h-5 w-5 shrink-0 text-vb-clay" />
                 <div>
-                  <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
-                    Race Report Pending
+                  <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-clay">
+                    Race report pending
                   </p>
-                  <p className="font-display text-2xl leading-none tracking-tight">
+                  <p className="font-display text-xl leading-tight tracking-[-0.01em]">
                     {goal.event_name}
                   </p>
                   <p className="mt-1 text-sm text-vb-text-dim">
@@ -176,7 +169,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <span className="border-2 border-vb-text px-4 py-2 text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text">
+              <span className="shrink-0 rounded-sm border border-vb-border px-4 py-2 text-[11px] font-medium uppercase tracking-[0.10em] text-vb-forest">
                 Write report →
               </span>
             </div>
@@ -186,23 +179,21 @@ export default function DashboardPage() {
       {/* ============ LATEST DEBRIEF (editorial article) ============ */}
       {latestDebrief && latestRide && (
         <section>
+          <AlmanacRule />
           <SectionHead
-            rubric={`Yesterday · ${formatDate(latestRide.ride_date)}`}
-            title="Marco's debrief"
+            rubric={`Marco's debrief · ${formatDate(latestRide.ride_date)}`}
+            title={latestRide.title}
             meta={
               <Link
                 href={`/dashboard/rides/${latestRide.id}`}
-                className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+                className="text-[11px] font-medium uppercase tracking-[0.10em] text-vb-text-muted hover:text-vb-forest"
               >
                 Full ride →
               </Link>
             }
           />
-          <article className="bg-vb-surface px-6 py-6 md:px-8 md:py-8">
-            <p className="mb-3 font-display text-2xl leading-tight tracking-tight text-vb-text">
-              {latestRide.title}
-            </p>
-            <div className="prose prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-p:text-vb-text-dim prose-strong:text-vb-text prose-strong:font-bold prose-em:text-vb-text">
+          <article className="max-w-3xl">
+            <div className="prose max-w-none font-light text-vb-text-dim prose-p:my-3 prose-p:text-[19px] prose-p:leading-[1.7] prose-strong:font-medium prose-strong:text-vb-text prose-em:text-vb-clay prose-em:not-italic">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {latestDebrief.debrief}
               </ReactMarkdown>
@@ -223,19 +214,19 @@ export default function DashboardPage() {
               meta={
                 <Link
                   href="/dashboard/performance"
-                  className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+                  className="text-[11px] font-medium uppercase tracking-[0.10em] text-vb-text-muted hover:text-vb-forest"
                 >
                   Full performance →
                 </Link>
               }
             />
-            <div className="bg-vb-surface px-6 py-6 md:px-8 md:py-8">
+            <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-6 py-7 md:px-8">
               <div className="mb-6 flex flex-wrap items-baseline gap-3">
-                <span className="font-display text-3xl leading-none tracking-tight capitalize">
+                <span className="font-display text-2xl font-light capitalize leading-none tracking-[-0.01em]">
                   {fitness.rider_type.replace("_", " ")}
                 </span>
                 {fitness.w_per_kg && (
-                  <span className="font-mono text-sm text-vb-text-dim">
+                  <span className="text-sm text-vb-text-dim">
                     {fitness.w_per_kg.toFixed(2)} W/kg
                   </span>
                 )}
@@ -253,14 +244,14 @@ export default function DashboardPage() {
                 <div className="flex flex-1 flex-col gap-4">
                   {fitness.strengths.length > 0 && (
                     <div>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                         Strengths
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {fitness.strengths.map((s) => (
                           <span
                             key={s}
-                            className="border-2 border-vb-text px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-text"
+                            className="rounded-full bg-vb-sage-tint px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-vb-forest"
                           >
                             {s}
                           </span>
@@ -270,14 +261,14 @@ export default function DashboardPage() {
                   )}
                   {fitness.weaknesses.length > 0 && (
                     <div>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                      <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                         To work on
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {fitness.weaknesses.map((w) => (
                           <span
                             key={w}
-                            className="border-2 border-vb-red px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-red"
+                            className="rounded-full border border-vb-clay/40 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-vb-clay"
                           >
                             {w}
                           </span>
@@ -292,7 +283,7 @@ export default function DashboardPage() {
         )}
 
       {/* ============ TWO-COLUMN: RECENT RIDES + GOALS / PLAN ============ */}
-      <div className="grid gap-10 md:grid-cols-2">
+      <div className="grid gap-12 md:grid-cols-2">
         {/* Recent rides */}
         <section>
           <SectionHead
@@ -301,19 +292,16 @@ export default function DashboardPage() {
             meta={
               <Link
                 href="/dashboard/rides"
-                className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+                className="text-[11px] font-medium uppercase tracking-[0.10em] text-vb-text-muted hover:text-vb-forest"
               >
                 All →
               </Link>
             }
           />
           {recentRides?.rides.length === 0 ? (
-            <div className="border-2 border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
+            <div className="rounded-md border border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
               No rides yet.{" "}
-              <Link
-                href="/dashboard/rides"
-                className="text-vb-text hover:text-vb-red"
-              >
+              <Link href="/dashboard/rides" className="text-vb-forest hover:underline">
                 Upload your first FIT file →
               </Link>
             </div>
@@ -322,35 +310,31 @@ export default function DashboardPage() {
               {recentRides?.rides.map((ride, idx) => (
                 <li
                   key={ride.id}
-                  className={
-                    idx > 0 ? "border-t border-vb-border-subtle" : undefined
-                  }
+                  className={idx > 0 ? "border-t border-vb-border-subtle" : undefined}
                 >
                   <Link
                     href={`/dashboard/rides/${ride.id}`}
-                    className="flex items-baseline justify-between gap-4 py-4 transition-colors hover:bg-vb-surface hover:px-3 hover:-mx-3"
+                    className="-mx-3 flex items-baseline justify-between gap-4 rounded-sm px-3 py-4 transition-colors hover:bg-vb-surface"
                   >
                     <div className="min-w-0">
-                      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                      <p className="mb-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                         {formatDate(ride.ride_date)}
                         {ride.duration_seconds &&
                           ` · ${formatDuration(ride.duration_seconds)}`}
                       </p>
-                      <p className="truncate font-sans font-bold text-vb-text">
-                        {ride.title}
-                      </p>
+                      <p className="truncate font-medium text-vb-text">{ride.title}</p>
                     </div>
-                    <div className="flex shrink-0 items-baseline gap-6 font-mono text-vb-text">
+                    <div className="flex shrink-0 items-baseline gap-6 tabular-nums text-vb-text">
                       {ride.normalized_power != null && (
                         <span className="text-sm">
                           {Math.round(ride.normalized_power)}
-                          <span className="ml-0.5 text-[10px] text-vb-text-dim">W</span>
+                          <span className="ml-0.5 text-[10px] text-vb-text-muted">W</span>
                         </span>
                       )}
                       {ride.tss != null && (
                         <span className="text-sm">
                           {Math.round(ride.tss)}
-                          <span className="ml-0.5 text-[10px] text-vb-text-dim">TSS</span>
+                          <span className="ml-0.5 text-[10px] text-vb-text-muted">TSS</span>
                         </span>
                       )}
                     </div>
@@ -362,8 +346,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Goals + Plan */}
-        <div className="space-y-10">
-          {/* Goals */}
+        <div className="space-y-12">
           <section>
             <SectionHead
               rubric="Calendar"
@@ -371,7 +354,7 @@ export default function DashboardPage() {
               meta={
                 <Link
                   href="/dashboard/goals"
-                  className="text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+                  className="text-[11px] font-medium uppercase tracking-[0.10em] text-vb-text-muted hover:text-vb-forest"
                 >
                   All →
                 </Link>
@@ -379,12 +362,9 @@ export default function DashboardPage() {
             />
             {!goalsData ||
             goalsData.goals.filter((g) => g.status === "upcoming").length === 0 ? (
-              <div className="border-2 border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
+              <div className="rounded-md border border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
                 No upcoming goals.{" "}
-                <Link
-                  href="/dashboard/goals"
-                  className="text-vb-text hover:text-vb-red"
-                >
+                <Link href="/dashboard/goals" className="text-vb-forest hover:underline">
                   Add one →
                 </Link>
               </div>
@@ -402,16 +382,16 @@ export default function DashboardPage() {
                       )}
                     >
                       <div className="min-w-0">
-                        <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+                        <p className="mb-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                           {formatDate(goal.event_date)} ·{" "}
                           <span>{goal.priority.replace("_", "-")}</span>
                         </p>
-                        <p className="truncate font-sans font-bold text-vb-text">
+                        <p className="truncate font-medium text-vb-text">
                           {goal.event_name}
                         </p>
                       </div>
                       {goal.days_until != null && goal.days_until > 0 && (
-                        <span className="shrink-0 border-2 border-vb-text px-3 py-1 font-mono text-xs text-vb-text">
+                        <span className="shrink-0 rounded-full bg-vb-sage-tint px-3 py-1 text-xs tabular-nums text-vb-forest">
                           {goal.days_until}d
                         </span>
                       )}
@@ -421,7 +401,6 @@ export default function DashboardPage() {
             )}
           </section>
 
-          {/* Active plan */}
           {plans && plans.plans.length > 0 && (
             <section>
               <SectionHead rubric="In flight" title="Active plan" />
@@ -431,19 +410,19 @@ export default function DashboardPage() {
                 .map((plan) => (
                   <div
                     key={plan.id}
-                    className="border-l-4 border-vb-text bg-vb-surface px-5 py-5"
+                    className="rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-forest bg-vb-surface px-5 py-5"
                   >
-                    <p className="mb-2 font-display text-2xl leading-tight tracking-tight">
+                    <p className="mb-2 font-display text-xl font-light leading-tight tracking-[-0.01em]">
                       {plan.name}
                     </p>
-                    <p className="font-mono text-xs text-vb-text-dim">
+                    <p className="text-xs leading-relaxed text-vb-text-dim">
                       {formatDate(plan.start_date)} – {formatDate(plan.end_date)}
                       <br />
                       {plan.total_weeks} weeks · {plan.phase_count} phases
                     </p>
                     <Link
                       href="/dashboard/training"
-                      className="mt-4 inline-block text-[11px] font-bold uppercase tracking-[0.10em] text-vb-text hover:text-vb-red"
+                      className="mt-4 inline-block text-[11px] font-medium uppercase tracking-[0.10em] text-vb-forest hover:text-vb-forest-soft"
                     >
                       View calendar →
                     </Link>
@@ -463,47 +442,52 @@ function StatCell({
   label,
   value,
   sub,
-  tone,
+  unit,
   featured,
-  isLast,
 }: {
   label: string;
   value: number | string;
   sub?: string;
-  tone?: "good" | "warn" | "neutral";
+  unit?: string;
   featured?: boolean;
-  isLast?: boolean;
 }) {
-  const valueColor = featured
-    ? "text-vb-red"
-    : tone === "warn"
-    ? "text-vb-red"
-    : tone === "good"
-    ? "text-vb-text"
-    : "text-vb-text";
-
   return (
-    <div
-      className={cn(
-        "px-5 py-5 md:px-6 md:py-7",
-        !isLast && "border-r-0 md:border-r-2 md:border-vb-border-subtle",
-        "border-b-2 border-vb-border-subtle md:border-b-0",
-        "[&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r-2"
-      )}
-    >
-      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+    <div className={cn("px-6 py-7", featured ? "bg-vb-forest" : "bg-vb-surface")}>
+      <p
+        className={cn(
+          "text-[11px] font-medium uppercase tracking-[0.16em]",
+          featured ? "text-white/70" : "text-vb-text-muted"
+        )}
+      >
         {label}
       </p>
       <p
         className={cn(
-          "font-display text-5xl leading-none tracking-tight tabular-nums md:text-6xl",
-          valueColor
+          "mt-4 font-display text-[44px] font-light leading-none tracking-[-0.03em] tabular-nums",
+          featured ? "text-white" : "text-vb-text"
         )}
       >
         {value}
+        {unit && (
+          <span
+            className={cn(
+              "ml-1 text-base font-light tracking-normal",
+              featured ? "text-white/60" : "text-vb-text-muted"
+            )}
+          >
+            {unit}
+          </span>
+        )}
       </p>
       {sub && (
-        <p className="mt-3 font-mono text-[11px] text-vb-text-dim">{sub}</p>
+        <p
+          className={cn(
+            "mt-3.5 text-[13px]",
+            featured ? "text-white/70" : "text-vb-text-dim"
+          )}
+        >
+          {sub}
+        </p>
       )}
     </div>
   );
@@ -521,17 +505,38 @@ function SectionHead({
   meta?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-baseline justify-between gap-4 border-b-2 border-vb-text pb-3">
+    <div className="mb-6 flex items-end justify-between gap-4">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
           {rubric}
         </p>
-        <h2 className="mt-1 font-display text-2xl leading-none tracking-tight md:text-3xl">
+        <h2 className="mt-1.5 font-display text-2xl font-light leading-none tracking-[-0.01em] md:text-[28px]">
           {title}
         </h2>
       </div>
-      {meta && <div className="shrink-0">{meta}</div>}
+      {meta && <div className="shrink-0 pb-1">{meta}</div>}
     </div>
+  );
+}
+
+// ============ COMPONENT: ALMANAC route-contour divider ============
+
+function AlmanacRule() {
+  return (
+    <svg
+      className="almanac-rule mb-10"
+      viewBox="0 0 1000 22"
+      preserveAspectRatio="none"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M0,15 C60,15 90,7 150,9 C210,11 240,18 300,16 C360,14 390,4 450,7 C510,10 540,17 600,14 C660,11 690,5 750,8 C810,11 840,15 900,12 C950,10 975,13 1000,12"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
   );
 }
 

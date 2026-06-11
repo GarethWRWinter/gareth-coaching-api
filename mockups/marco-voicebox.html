@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Marco — VoiceBox (dark-adapted) mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;700;900&family=Space+Mono&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0A0A0A;
+    --surface: #141414;
+    --surface-raised: #1F1F1F;
+    --text: #FAFAFA;
+    --text-dim: #A3A3A3;
+    --text-muted: #525252;
+    --border-subtle: #262626;
+    --border: #404040;
+    --red: #EF4444;
+    --red-bright: #F87171;
+    --success: #22C55E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Work Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px;
+    line-height: 1.7;
+  }
+
+  /* ====== HEADER (magazine masthead) ====== */
+  header.masthead {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    border-bottom: 3px solid var(--text);
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+  }
+  .brand {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 42px;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .brand-rubric {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    margin-top: 6px;
+    display: block;
+  }
+  nav.primary { display: flex; gap: 32px; align-items: flex-end; }
+  nav.primary a {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-decoration: none;
+  }
+  nav.primary a.active {
+    color: var(--text);
+    border-bottom: 3px solid var(--red);
+    padding-bottom: 6px;
+  }
+
+  /* ====== TODAY · HERO ====== */
+  .today {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+    margin-bottom: 48px;
+    padding-bottom: 48px;
+    border-bottom: 2px solid var(--border-subtle);
+  }
+  .overline {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--red);
+    margin-bottom: 12px;
+  }
+  .today h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 72px;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+  .today h1 .accent { color: var(--red); }
+  .today p {
+    font-size: 18px;
+    color: var(--text-dim);
+    max-width: 540px;
+    line-height: 1.6;
+  }
+  .today-meta {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .today-meta-item {
+    border-top: 2px solid var(--text);
+    padding-top: 10px;
+  }
+  .today-meta-label {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+  }
+  .today-meta-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    margin-top: 2px;
+    color: var(--text);
+  }
+  .today-cta { margin-top: 28px; display: flex; gap: 12px; }
+  .btn-primary, .btn-secondary {
+    border: 2px solid var(--text);
+    padding: 14px 32px;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: 80ms;
+  }
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+  }
+  .btn-primary:hover { background: var(--red); border-color: var(--red); color: var(--text); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+  }
+  .btn-secondary:hover { background: var(--text); color: var(--bg); }
+
+  .pull-quote {
+    border-left: 4px solid var(--red);
+    padding: 24px 28px;
+    background: var(--surface);
+  }
+  .pull-quote .overline { margin-bottom: 8px; }
+  .pull-quote blockquote {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 22px;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .pull-quote cite {
+    display: block;
+    margin-top: 18px;
+    font-style: normal;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+  }
+
+  /* ====== METRIC STRIP ====== */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-bottom: 56px;
+    border-top: 2px solid var(--text);
+    border-bottom: 2px solid var(--text);
+  }
+  .stat {
+    padding: 28px 24px;
+    border-right: 2px solid var(--border-subtle);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-label {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .stat-value {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .stat-sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 10px;
+  }
+  .stat.featured .stat-value { color: var(--red); }
+  .stat.featured .stat-label { color: var(--text); }
+
+  /* ====== SECTION HEADER ====== */
+  .section-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 32px 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--text);
+  }
+  .section-head h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+  }
+  .section-head .meta {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+  }
+
+  /* ====== RIDES LIST (editorial) ====== */
+  ul.rides { list-style: none; }
+  ul.rides li {
+    display: grid;
+    grid-template-columns: 1fr 90px 100px 100px 80px;
+    gap: 28px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: baseline;
+  }
+  ul.rides li:hover { background: var(--surface); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+  .ride-title {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+  }
+  .ride-rubric {
+    display: block;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .ride-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    color: var(--text);
+    text-align: right;
+  }
+  .ride-num-label {
+    display: block;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    text-align: right;
+  }
+  .ride-tag {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 5px 10px;
+    border: 2px solid var(--text);
+    text-align: center;
+  }
+  .ride-tag.feature {
+    background: var(--red);
+    border-color: var(--red);
+    color: var(--text);
+  }
+
+  /* ====== LIVE RIDE PREVIEW STRIP ====== */
+  .live-preview {
+    background: var(--bg);
+    border: 2px solid var(--text);
+    margin-top: 56px;
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .live-preview .overline { color: var(--red); margin-bottom: 8px; }
+  .live-preview h3 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 36px;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .live-preview p {
+    color: var(--text-dim);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .live-numbers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .live-num {
+    border-top: 2px solid var(--text);
+    padding-top: 8px;
+  }
+  .live-num-label {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+  }
+  .live-num-value {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin-top: 4px;
+  }
+  .live-num.target .live-num-value { color: var(--red); }
+
+  /* ====== FOOTER NOTE ====== */
+  .note {
+    margin-top: 64px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border-left: 4px solid var(--red);
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+  .note strong { color: var(--text); }
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div>
+      <div class="brand">MARCO</div>
+      <span class="brand-rubric">Issue 47 · Your Coach · 5 May 2026</span>
+    </div>
+    <nav class="primary">
+      <a href="#" class="active">Today</a>
+      <a href="#">Rides</a>
+      <a href="#">Training</a>
+      <a href="#">Goals</a>
+      <a href="#">Performance</a>
+      <a href="#">Coach</a>
+    </nav>
+  </header>
+
+  <section class="today">
+    <div>
+      <div class="overline">Today's Session · Threshold</div>
+      <h1>Hold <span class="accent">290</span><br/>for forty<br/>minutes.</h1>
+      <p>Four-by-eight at FTP, with two minutes recovery in between.
+        The Manchester sportive is eight weeks out — this is the workout
+        that decides whether you sit on the bunch up Constitution Hill or
+        watch it go. You've been here before. Hold the watts true.</p>
+
+      <div class="today-meta">
+        <div class="today-meta-item">
+          <div class="today-meta-label">Duration</div>
+          <div class="today-meta-value">1:12</div>
+        </div>
+        <div class="today-meta-item">
+          <div class="today-meta-label">TSS</div>
+          <div class="today-meta-value">87</div>
+        </div>
+        <div class="today-meta-item">
+          <div class="today-meta-label">Avg Target</div>
+          <div class="today-meta-value">238 W</div>
+        </div>
+        <div class="today-meta-item">
+          <div class="today-meta-label">Difficulty</div>
+          <div class="today-meta-value">4 / 5</div>
+        </div>
+      </div>
+
+      <div class="today-cta">
+        <button class="btn-primary">Start Session →</button>
+        <button class="btn-secondary">View Workout</button>
+      </div>
+    </div>
+
+    <aside class="pull-quote">
+      <div class="overline">A note from Marco</div>
+      <blockquote>"Good recovery yesterday — your TSB is back into the green.
+        Thirty seconds before each interval, drop a gear and breathe deep.
+        The form is there. Trust it."</blockquote>
+      <cite>— Marco · 06:42</cite>
+    </aside>
+  </section>
+
+  <div class="stat-strip">
+    <div class="stat">
+      <div class="stat-label">Fitness · CTL</div>
+      <div class="stat-value">62</div>
+      <div class="stat-sub">↑ 4 in 6 weeks</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Fatigue · ATL</div>
+      <div class="stat-value">70</div>
+      <div class="stat-sub">Heavy. Earned.</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Form · TSB</div>
+      <div class="stat-value">−8</div>
+      <div class="stat-sub">Productive band</div>
+    </div>
+    <div class="stat featured">
+      <div class="stat-label">FTP</div>
+      <div class="stat-value">290</div>
+      <div class="stat-sub">↑ 8W since Feb</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Recent Rides</h2>
+    <span class="meta">5,762 total · Last sync 06:38</span>
+  </div>
+
+  <ul class="rides">
+    <li>
+      <div>
+        <span class="ride-rubric">Endurance · 4 May 2026</span>
+        <div class="ride-title">Morning Z2 base ride</div>
+      </div>
+      <div>
+        <span class="ride-num-label">Avg</span>
+        <span class="ride-num">158 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">NP</span>
+        <span class="ride-num">162 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">TSS</span>
+        <span class="ride-num">15</span>
+      </div>
+      <span class="ride-tag">Zone 2</span>
+    </li>
+    <li>
+      <div>
+        <span class="ride-rubric">Race · 25 Apr 2026</span>
+        <div class="ride-title">Cicle Classic — Melton, Leicestershire</div>
+      </div>
+      <div>
+        <span class="ride-num-label">Avg</span>
+        <span class="ride-num">190 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">NP</span>
+        <span class="ride-num">241 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">TSS</span>
+        <span class="ride-num">215</span>
+      </div>
+      <span class="ride-tag feature">Race</span>
+    </li>
+    <li>
+      <div>
+        <span class="ride-rubric">Group ride · 24 Apr 2026</span>
+        <div class="ride-title">Richmond Park, paceline laps</div>
+      </div>
+      <div>
+        <span class="ride-num-label">Avg</span>
+        <span class="ride-num">159 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">NP</span>
+        <span class="ride-num">194 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">TSS</span>
+        <span class="ride-num">90</span>
+      </div>
+      <span class="ride-tag">Endurance</span>
+    </li>
+    <li>
+      <div>
+        <span class="ride-rubric">Threshold · 23 Apr 2026</span>
+        <div class="ride-title">Lunch ride — 3×10 at FTP</div>
+      </div>
+      <div>
+        <span class="ride-num-label">Avg</span>
+        <span class="ride-num">175 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">NP</span>
+        <span class="ride-num">264 W</span>
+      </div>
+      <div>
+        <span class="ride-num-label">TSS</span>
+        <span class="ride-num">127</span>
+      </div>
+      <span class="ride-tag">Threshold</span>
+    </li>
+  </ul>
+
+  <section class="live-preview">
+    <div>
+      <div class="overline">In Session · Mock</div>
+      <h3>The performance register.</h3>
+      <p>One bold red accent. Massive numbers. Nothing decorative on screen
+        when you're 6 minutes into an interval and need to read your power
+        through sweat. This is the same brand — just dialled up.</p>
+    </div>
+    <div class="live-numbers">
+      <div class="live-num target">
+        <div class="live-num-label">Target</div>
+        <div class="live-num-value">290</div>
+      </div>
+      <div class="live-num">
+        <div class="live-num-label">Live</div>
+        <div class="live-num-value">287</div>
+      </div>
+      <div class="live-num">
+        <div class="live-num-label">Cadence</div>
+        <div class="live-num-value">94</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="note">
+    <strong>Reviewer note (not part of mockup):</strong> VoiceBox adapted to
+    dark mode and cycling. Same magazine-editorial principles — Archivo Black
+    headlines, Work Sans body, Space Mono for numbers, single red accent used
+    as a scalpel. Two registers shown: the quiet mode (everywhere) and the
+    performance mode (in-session strip at the bottom). Brand reads as
+    Rouleur × Whoop — premium, opinionated, performance-coded.
+  </div>
+</body>
+</html>

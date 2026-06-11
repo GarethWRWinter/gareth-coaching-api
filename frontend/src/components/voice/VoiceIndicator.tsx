@@ -20,10 +20,10 @@ export function VoiceIndicator({
   return (
     <div
       className={cn(
-        "mb-3 flex h-10 items-center gap-3 rounded-lg px-4 transition-all",
-        mode === "listening" && "bg-red-500/10 border border-red-500/20",
-        mode === "processing" && "bg-blue-500/10 border border-blue-500/20",
-        mode === "speaking" && "bg-emerald-500/10 border border-emerald-500/20",
+        "mb-3 flex h-10 items-center gap-3 rounded-sm px-4 transition-all",
+        mode === "listening" && "bg-vb-sage-tint border border-vb-border-subtle",
+        mode === "processing" && "bg-vb-sage-tint border border-vb-border-subtle",
+        mode === "speaking" && "bg-vb-sage-tint border border-vb-border-subtle",
         className
       )}
     >
@@ -34,7 +34,7 @@ export function VoiceIndicator({
             {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="voice-bar w-1 rounded-full bg-red-400"
+                className="voice-bar w-1 rounded-full bg-vb-forest"
                 style={{
                   animationDelay: `${i * 0.1}s`,
                   height: "4px",
@@ -44,14 +44,14 @@ export function VoiceIndicator({
           </>
         )}
         {mode === "processing" && (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-vb-forest border-t-transparent" />
         )}
         {mode === "speaking" && (
           <>
             {[0, 1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="voice-bar w-1 rounded-full bg-emerald-400"
+                className="voice-bar w-1 rounded-full bg-vb-forest"
                 style={{
                   animationDelay: `${i * 0.12}s`,
                   height: "4px",
@@ -65,7 +65,7 @@ export function VoiceIndicator({
       {/* Status text */}
       <div className="min-w-0 flex-1">
         {mode === "listening" && (
-          <p className="text-xs text-red-300">
+          <p className="text-xs text-vb-text-dim">
             {interimTranscript ? (
               <span className="italic">{interimTranscript}</span>
             ) : (
@@ -74,10 +74,10 @@ export function VoiceIndicator({
           </p>
         )}
         {mode === "processing" && (
-          <p className="text-xs text-blue-300">Processing...</p>
+          <p className="text-xs text-vb-text-dim">Processing...</p>
         )}
         {mode === "speaking" && (
-          <p className="text-xs text-emerald-300">Coach Marco is speaking...</p>
+          <p className="text-xs text-vb-forest">Coach Marco is speaking...</p>
         )}
       </div>
     </div>

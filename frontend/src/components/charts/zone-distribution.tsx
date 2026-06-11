@@ -20,13 +20,13 @@ interface ZoneDistributionProps {
 }
 
 const ZONE_COLORS: Record<string, string> = {
-  Z1: "#94a3b8", // gray
-  Z2: "#3b82f6", // blue
-  Z3: "#22c55e", // green
-  Z4: "#eab308", // yellow
-  Z5: "#f97316", // orange
-  Z6: "#ef4444", // red
-  Z7: "#a855f7", // purple
+  Z1: "#8AA3B0",
+  Z2: "#9FB295",
+  Z3: "#C7A458",
+  Z4: "#D2855B",
+  Z5: "#C06A48",
+  Z6: "#A24E36",
+  Z7: "#7E3A28",
 };
 
 function getZoneBarColor(zoneName: string): string {
@@ -40,7 +40,7 @@ function getZoneBarColor(zoneName: string): string {
     return zoneColor(num);
   }
 
-  return "#6b7280";
+  return "#948D80";
 }
 
 interface ZoneBarData {
@@ -64,9 +64,9 @@ function ZoneTooltipContent({
   const data = payload[0].payload;
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 shadow-xl">
-      <p className="mb-1 text-xs font-medium text-slate-300">{data.zone}</p>
-      <p className="text-sm font-mono font-medium text-slate-100">
+    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+      <p className="mb-1 text-xs font-medium text-vb-text-dim">{data.zone}</p>
+      <p className="text-sm font-mono font-medium text-vb-text">
         {data.low} &ndash; {data.high === Infinity ? "max" : data.high}W
       </p>
     </div>
@@ -99,8 +99,8 @@ export function ZoneDistribution({ zones, className }: ZoneDistributionProps) {
   );
 
   return (
-    <div className={cn("rounded-xl bg-slate-900 p-4", className)}>
-      <h3 className="mb-4 text-sm font-semibold text-slate-200">
+    <div className={cn("rounded-md border border-vb-border-subtle bg-vb-surface p-4", className)}>
+      <h3 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
         Power Zones
       </h3>
       <ResponsiveContainer width="100%" height={chartData.length * 48 + 40}>
@@ -112,30 +112,30 @@ export function ZoneDistribution({ zones, className }: ZoneDistributionProps) {
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#334155"
+            stroke="#E4DCCE"
             horizontal={false}
           />
           <XAxis
             type="number"
-            stroke="#94a3b8"
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
-            tickLine={{ stroke: "#475569" }}
-            axisLine={{ stroke: "#475569" }}
+            stroke="#D6CFC1"
+            tick={{ fontSize: 11, fill: "#948D80" }}
+            tickLine={{ stroke: "#D6CFC1" }}
+            axisLine={{ stroke: "#D6CFC1" }}
             domain={[0, Math.ceil(maxWatt / 50) * 50]}
             tickFormatter={(v: number) => `${v}W`}
           />
           <YAxis
             type="category"
             dataKey="zone"
-            stroke="#94a3b8"
-            tick={{ fontSize: 12, fill: "#e2e8f0", fontWeight: 500 }}
+            stroke="#D6CFC1"
+            tick={{ fontSize: 12, fill: "#211E1A", fontWeight: 500 }}
             tickLine={false}
-            axisLine={{ stroke: "#475569" }}
+            axisLine={{ stroke: "#D6CFC1" }}
             width={40}
           />
           <Tooltip
             content={<ZoneTooltipContent />}
-            cursor={{ fill: "#1e293b" }}
+            cursor={{ fill: "#BCB3A3" }}
           />
 
           {/* Invisible base bar to offset from the low value */}
@@ -156,7 +156,7 @@ export function ZoneDistribution({ zones, className }: ZoneDistributionProps) {
             <LabelList
               dataKey="label"
               position="right"
-              fill="#94a3b8"
+              fill="#948D80"
               fontSize={11}
             />
             {chartData.map((entry) => (

@@ -262,36 +262,36 @@ export default function SettingsPage() {
   }
 
   const inputClasses =
-    "w-full border-2 border-vb-border bg-vb-bg px-2.5 py-1.5 text-sm text-vb-text focus:border-vb-text focus:outline-none";
+    "w-full rounded-sm border border-vb-border bg-vb-surface px-2.5 py-1.5 text-sm text-vb-text focus:border-vb-forest focus:outline-none";
 
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       {/* ============ MASTHEAD ============ */}
-      <header className="border-b-2 border-vb-text pb-5">
-        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
+      <header className="border-b border-vb-border-subtle pb-5">
+        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
           The desk
         </p>
-        <h1 className="font-display text-5xl leading-[0.95] tracking-tight md:text-6xl">
+        <h1 className="font-display text-5xl font-light leading-[1.04] tracking-[-0.02em] md:text-6xl">
           Settings.
         </h1>
       </header>
 
       {/* Profile */}
-      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="font-display text-2xl tracking-tight text-vb-text">Profile</h2>
+      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Profile</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Full Name
             </label>
             <input
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
+              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Weight (kg)
             </label>
             <input
@@ -299,44 +299,44 @@ export default function SettingsPage() {
               step="0.1"
               value={form.weight_kg}
               onChange={(e) => setForm({ ...form, weight_kg: e.target.value })}
-              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
+              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               FTP (watts)
             </label>
             <input
               type="number"
               value={form.ftp}
               onChange={(e) => setForm({ ...form, ftp: e.target.value })}
-              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
+              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Max HR (bpm)
             </label>
             <input
               type="number"
               value={form.max_hr}
               onChange={(e) => setForm({ ...form, max_hr: e.target.value })}
-              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
+              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Resting HR (bpm)
             </label>
             <input
               type="number"
               value={form.resting_hr}
               onChange={(e) => setForm({ ...form, resting_hr: e.target.value })}
-              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
+              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Weekly Hours Available
             </label>
             <input
@@ -346,15 +346,15 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setForm({ ...form, weekly_hours_available: e.target.value })
               }
-              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
+              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
         </div>
 
         {/* Training Schedule */}
         <div className="mt-6">
-          <h3 className="mb-3 text-sm font-semibold text-white">Training Schedule</h3>
-          <p className="mb-3 text-xs text-slate-400">
+          <h3 className="mb-3 text-sm font-medium text-vb-text">Training Schedule</h3>
+          <p className="mb-3 text-xs text-vb-text-dim">
             Select your hard training days (weekends, etc.) and rest days. Intensity sessions will be scheduled on hard days.
           </p>
           <div className="grid grid-cols-7 gap-2">
@@ -363,7 +363,7 @@ export default function SettingsPage() {
               const isRest = form.rest_days.includes(idx);
               return (
                 <div key={day} className="text-center">
-                  <p className="mb-1.5 text-[10px] font-medium text-slate-400">{day}</p>
+                  <p className="mb-1.5 text-[10px] font-medium text-vb-text-muted">{day}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -389,12 +389,12 @@ export default function SettingsPage() {
                       }
                     }}
                     className={cn(
-                      "w-full rounded-lg py-2 text-xs font-medium transition-colors",
+                      "w-full rounded-sm py-2 text-xs font-medium transition-colors",
                       isHard
-                        ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                        ? "bg-vb-clay/15 text-vb-clay border border-vb-clay/40"
                         : isRest
-                          ? "bg-slate-700/50 text-slate-500 border border-slate-600/30"
-                          : "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                          ? "bg-vb-sunken text-vb-text-muted border border-vb-border-subtle"
+                          : "bg-vb-sage-tint text-vb-forest border border-vb-border-subtle"
                     )}
                   >
                     {isHard ? "Hard" : isRest ? "Rest" : "Easy"}
@@ -403,7 +403,7 @@ export default function SettingsPage() {
               );
             })}
           </div>
-          <p className="mt-2 text-[10px] text-slate-500">
+          <p className="mt-2 text-[10px] text-vb-text-muted">
             Click to cycle: Easy → Rest → Hard. Hard days get intensity sessions (threshold, VO2max). Easy days get endurance/recovery.
           </p>
         </div>
@@ -412,26 +412,26 @@ export default function SettingsPage() {
           <button
             onClick={() => saveProfile.mutate()}
             disabled={saveProfile.isPending}
-            className="flex items-center gap-2 border-2 border-vb-text bg-vb-text px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex items-center gap-2 rounded-sm border border-vb-forest bg-vb-forest px-4 py-2 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Save className="h-4 w-4" />
             {saveProfile.isPending ? "Saving..." : "Save Profile"}
           </button>
           {saved && (
-            <span className="text-sm text-green-400">Saved!</span>
+            <span className="text-sm text-vb-forest">Saved!</span>
           )}
         </div>
       </section>
 
       {/* FTP Test */}
-      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="font-display text-2xl tracking-tight text-vb-text">FTP Test</h2>
+      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">FTP Test</h2>
         <p className="mt-2 text-sm text-vb-text-dim">
           Enter your 20-minute average power to calculate FTP (95% of 20-min avg)
         </p>
         <div className="mt-4 flex items-end gap-3">
           <div className="flex-1">
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               20-min Avg Power (W)
             </label>
             <input
@@ -439,38 +439,38 @@ export default function SettingsPage() {
               value={ftpTestPower}
               onChange={(e) => setFtpTestPower(e.target.value)}
               placeholder="e.g. 280"
-              className="w-full border-2 border-vb-border bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-text focus:outline-none"
+              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <button
             onClick={() => submitFTPTest.mutate()}
             disabled={!ftpTestPower || submitFTPTest.isPending}
-            className="border-2 border-vb-text bg-vb-text px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-sm border border-vb-forest bg-vb-forest px-4 py-2 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
           >
             Calculate
           </button>
         </div>
         {ftpResult && (
-          <p className="mt-2 text-sm font-medium text-green-400">
+          <p className="mt-2 text-sm font-medium text-vb-forest">
             {ftpResult}
           </p>
         )}
       </section>
 
       {/* Goals */}
-      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
+      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-display text-2xl tracking-tight text-vb-text">Goal Events</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              <Link href="/dashboard/goals" className="font-bold uppercase tracking-[0.08em] text-vb-text hover:text-vb-red">
+            <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Goal Events</h2>
+            <p className="mt-0.5 text-xs text-vb-text-muted">
+              <Link href="/dashboard/goals" className="font-medium uppercase tracking-[0.08em] text-vb-forest hover:text-vb-forest-soft">
                 View full goals page
               </Link>
             </p>
           </div>
           <button
             onClick={openAddGoal}
-            className="flex items-center gap-1.5 border-2 border-vb-text bg-vb-text px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text"
+            className="flex items-center gap-1.5 rounded-sm border border-vb-forest bg-vb-forest px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft"
           >
             <Plus className="h-3.5 w-3.5" /> Add Goal
           </button>
@@ -478,9 +478,9 @@ export default function SettingsPage() {
 
         {/* Goal Form (Add / Edit) */}
         {showGoalForm && (
-          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-700/50 p-4">
+          <div className="mt-4 rounded-md border border-vb-border-subtle bg-vb-bg p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-medium text-white">
+              <h3 className="text-sm font-medium text-vb-text">
                 {editingGoalId ? "Edit Goal" : "New Goal"}
               </h3>
               <button
@@ -488,7 +488,7 @@ export default function SettingsPage() {
                   setShowGoalForm(false);
                   setEditingGoalId(null);
                 }}
-                className="rounded p-1 text-slate-400 hover:text-white"
+                className="rounded-sm p-1 text-vb-text-muted hover:text-vb-text"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -497,7 +497,7 @@ export default function SettingsPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {/* Event Name */}
               <div>
-                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                   Event Name *
                 </label>
                 <input
@@ -512,7 +512,7 @@ export default function SettingsPage() {
 
               {/* Date */}
               <div>
-                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                   Event Date *
                 </label>
                 <input
@@ -527,7 +527,7 @@ export default function SettingsPage() {
 
               {/* Type */}
               <div>
-                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                   Event Type
                 </label>
                 <select
@@ -547,7 +547,7 @@ export default function SettingsPage() {
 
               {/* Priority */}
               <div>
-                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                   Priority
                 </label>
                 <select
@@ -567,7 +567,7 @@ export default function SettingsPage() {
 
               {/* Target Duration */}
               <div>
-                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                   Target Duration (minutes)
                 </label>
                 <input
@@ -586,7 +586,7 @@ export default function SettingsPage() {
 
               {/* Route URL */}
               <div>
-                <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                   Route / Event URL
                 </label>
                 <input
@@ -603,7 +603,7 @@ export default function SettingsPage() {
 
             {/* Notes - full width */}
             <div className="mt-3">
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text-dim">
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Notes
               </label>
               <textarea
@@ -625,7 +625,7 @@ export default function SettingsPage() {
                   !goalForm.event_date ||
                   saveGoal.isPending
                 }
-                className="rounded bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-500 disabled:opacity-50"
+                className="rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 {saveGoal.isPending
                   ? "Saving..."
@@ -638,7 +638,7 @@ export default function SettingsPage() {
                   setShowGoalForm(false);
                   setEditingGoalId(null);
                 }}
-                className="rounded border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                className="rounded-sm border border-vb-border px-3 py-1.5 text-xs text-vb-text-dim hover:bg-vb-surface-raised"
               >
                 Cancel
               </button>
@@ -662,9 +662,9 @@ export default function SettingsPage() {
         />
 
         {/* Goal List */}
-        <div className="mt-4 divide-y divide-slate-800">
+        <div className="mt-4 divide-y divide-vb-border-subtle">
           {goalsData?.goals.length === 0 && (
-            <p className="py-4 text-center text-sm text-slate-500">
+            <p className="py-4 text-center text-sm text-vb-text-muted">
               No goals set. Add an event to start training with purpose.
             </p>
           )}
@@ -674,11 +674,11 @@ export default function SettingsPage() {
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/dashboard/goals/${goal.id}`}
-                    className="text-sm font-medium text-white hover:text-blue-400"
+                    className="text-sm font-medium text-vb-text hover:text-vb-forest"
                   >
                     {goal.event_name}
                   </Link>
-                  <p className="mt-0.5 text-xs text-slate-400">
+                  <p className="mt-0.5 text-xs text-vb-text-dim">
                     {formatDate(goal.event_date)} &middot;{" "}
                     <span className="capitalize">
                       {goal.event_type.replace(/_/g, " ")}
@@ -697,7 +697,7 @@ export default function SettingsPage() {
 
                   {/* Route data */}
                   {goal.route_data && !goal.route_data.error && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-blue-400">
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-vb-forest">
                       <MapPin className="h-3 w-3" />
                       {goal.route_data.total_distance_km &&
                         `${goal.route_data.total_distance_km}km`}
@@ -714,7 +714,7 @@ export default function SettingsPage() {
                       href={goal.route_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-blue-400"
+                      className="mt-0.5 inline-flex items-center gap-1 text-xs text-vb-text-muted hover:text-vb-forest"
                     >
                       <ExternalLink className="h-3 w-3" />
                       Event link
@@ -723,7 +723,7 @@ export default function SettingsPage() {
 
                   {/* GPX badge */}
                   {goal.gpx_file_path && (
-                    <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-400">
+                    <span className="ml-2 inline-flex items-center gap-1 text-xs text-vb-forest">
                       <Mountain className="h-3 w-3" />
                       GPX uploaded
                     </span>
@@ -731,7 +731,7 @@ export default function SettingsPage() {
 
                   {/* Notes preview */}
                   {goal.notes && (
-                    <p className="mt-1 text-xs text-slate-500 line-clamp-2">
+                    <p className="mt-1 text-xs text-vb-text-muted line-clamp-2">
                       {goal.notes}
                     </p>
                   )}
@@ -739,7 +739,7 @@ export default function SettingsPage() {
 
                 <div className="ml-3 flex shrink-0 items-center gap-1.5">
                   {goal.days_until != null && goal.days_until > 0 && (
-                    <span className="rounded-full bg-blue-600/10 px-2 py-0.5 text-xs text-blue-400">
+                    <span className="rounded-full bg-vb-sage-tint px-2 py-0.5 text-xs text-vb-forest">
                       {goal.days_until}d
                     </span>
                   )}
@@ -750,7 +750,7 @@ export default function SettingsPage() {
                       gpxInputRef.current?.click();
                     }}
                     disabled={uploadGpx.isPending && gpxUploadingId === goal.id}
-                    className="rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-blue-400"
+                    className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-surface-raised hover:text-vb-forest"
                     title="Upload GPX file"
                   >
                     <Upload className="h-3.5 w-3.5" />
@@ -758,7 +758,7 @@ export default function SettingsPage() {
                   {/* Edit */}
                   <button
                     onClick={() => openEditGoal(goal)}
-                    className="rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-white"
+                    className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-surface-raised hover:text-vb-text"
                     title="Edit goal"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -770,7 +770,7 @@ export default function SettingsPage() {
                         deleteGoal.mutate(goal.id);
                       }
                     }}
-                    className="rounded p-1.5 text-slate-500 hover:bg-slate-700 hover:text-red-400"
+                    className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-surface-raised hover:text-vb-clay"
                     title="Delete goal"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -783,27 +783,27 @@ export default function SettingsPage() {
       </section>
 
       {/* Strava Integration */}
-      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="font-display text-2xl tracking-tight text-vb-text">Strava</h2>
+      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Strava</h2>
         {stravaStatus?.connected ? (
           <div className="mt-3 space-y-3">
-            <div className="flex items-center gap-2 text-sm text-green-400">
+            <div className="flex items-center gap-2 text-sm text-vb-forest">
               <Link2 className="h-4 w-4" /> Connected (Athlete #
               {stravaStatus.athlete_id})
             </div>
 
             {/* Backfill Progress */}
             {stravaStatus.backfill?.status === "running" && (
-              <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-orange-400">
+              <div className="rounded-md border border-vb-border-subtle bg-vb-sage-tint p-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-vb-forest">
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   Importing ride history...
                 </div>
                 {stravaStatus.backfill.total ? (
                   <>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-700">
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-vb-sunken">
                       <div
-                        className="h-full rounded-full bg-orange-500 transition-all duration-500"
+                        className="h-full rounded-full bg-vb-forest transition-all duration-500"
                         style={{
                           width: `${Math.round(
                             (stravaStatus.backfill.progress /
@@ -813,12 +813,12 @@ export default function SettingsPage() {
                         }}
                       />
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-vb-text-dim">
                       {stravaStatus.backfill.progress} / {stravaStatus.backfill.total} activities processed
                     </p>
                   </>
                 ) : (
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-vb-text-dim">
                     Scanning your Strava history...
                   </p>
                 )}
@@ -826,12 +826,12 @@ export default function SettingsPage() {
             )}
 
             {stravaStatus.backfill?.status === "completed" && (
-              <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3">
-                <p className="text-sm text-green-400">
+              <div className="rounded-md border border-vb-border-subtle bg-vb-sage-tint p-3">
+                <p className="text-sm text-vb-forest">
                   History import complete — {stravaStatus.backfill.total} activities processed
                 </p>
                 {stravaStatus.backfill.completed_at && (
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-vb-text-muted">
                     Completed {formatDate(stravaStatus.backfill.completed_at)}
                   </p>
                 )}
@@ -840,7 +840,7 @@ export default function SettingsPage() {
                     await strava.startBackfill(true);
                     queryClient.invalidateQueries({ queryKey: ["strava-status"] });
                   }}
-                  className="mt-2 rounded border border-green-500/40 bg-green-500/10 px-3 py-1 text-xs font-medium text-green-300 hover:bg-green-500/20"
+                  className="mt-2 rounded-sm border border-vb-border bg-vb-surface px-3 py-1 text-xs font-medium text-vb-forest hover:bg-vb-surface-raised"
                 >
                   Re-import from Strava
                 </button>
@@ -848,12 +848,12 @@ export default function SettingsPage() {
             )}
 
             {stravaStatus.backfill?.status === "paused" && (
-              <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-yellow-400">
+              <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-vb-clay">
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   Paused — waiting for Strava 15-min rate limit to reset
                 </div>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-vb-text-dim">
                   {stravaStatus.backfill.total
                     ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed — resuming in ~15 minutes`
                     : "Resuming in ~15 minutes"}
@@ -862,12 +862,12 @@ export default function SettingsPage() {
             )}
 
             {stravaStatus.backfill?.status === "paused_daily" && (
-              <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-orange-400">
+              <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-vb-clay">
                   <RefreshCw className="h-4 w-4 animate-spin" />
                   Paused — Strava daily limit reached
                 </div>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-vb-text-dim">
                   {stravaStatus.backfill.total
                     ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed. Strava allows 1,000 requests/day — your backfill will auto-resume at midnight UTC.`
                     : "Strava allows 1,000 requests/day — your backfill will auto-resume at midnight UTC."}
@@ -876,8 +876,8 @@ export default function SettingsPage() {
             )}
 
             {stravaStatus.backfill?.status === "failed" && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-                <p className="text-sm text-red-400">
+              <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
+                <p className="text-sm text-vb-clay">
                   History import failed — {stravaStatus.backfill.progress || 0} of{" "}
                   {stravaStatus.backfill.total || "?"} processed before error
                 </p>
@@ -886,7 +886,7 @@ export default function SettingsPage() {
                     await strava.startBackfill();
                     queryClient.invalidateQueries({ queryKey: ["strava-status"] });
                   }}
-                  className="mt-2 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500"
+                  className="mt-2 rounded-sm bg-vb-clay px-3 py-1 text-xs font-medium text-white hover:opacity-90"
                 >
                   Retry Import
                 </button>
@@ -894,8 +894,8 @@ export default function SettingsPage() {
             )}
 
             {!stravaStatus.backfill?.status && (
-              <div className="rounded-lg border border-slate-700 bg-slate-700/50 p-3">
-                <p className="text-sm text-slate-400">
+              <div className="rounded-md border border-vb-border-subtle bg-vb-bg p-3">
+                <p className="text-sm text-vb-text-dim">
                   Import your full Strava history to give the coach maximum context.
                 </p>
                 <button
@@ -903,7 +903,7 @@ export default function SettingsPage() {
                     await strava.startBackfill();
                     queryClient.invalidateQueries({ queryKey: ["strava-status"] });
                   }}
-                  className="mt-2 flex items-center gap-1.5 rounded bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-500"
+                  className="mt-2 flex items-center gap-1.5 rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   Import Full History
@@ -912,7 +912,7 @@ export default function SettingsPage() {
             )}
 
             {stravaStatus.last_sync_at && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-vb-text-muted">
                 Last synced: {formatDate(stravaStatus.last_sync_at)}
               </p>
             )}
@@ -921,7 +921,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => syncStrava.mutate()}
                 disabled={syncStrava.isPending}
-                className="flex items-center gap-1.5 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-500 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${syncStrava.isPending ? "animate-spin" : ""}`}
@@ -935,7 +935,7 @@ export default function SettingsPage() {
                     queryKey: ["strava-status"],
                   });
                 }}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                className="flex items-center gap-1.5 rounded-sm border border-vb-clay px-3 py-1.5 text-xs text-vb-clay hover:bg-vb-clay/10"
               >
                 <Unlink className="h-3.5 w-3.5" /> Disconnect
               </button>
@@ -943,7 +943,7 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="mt-3">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-vb-text-dim">
               Connect Strava to automatically sync your rides and import your full training history.
             </p>
             <button
@@ -951,7 +951,7 @@ export default function SettingsPage() {
                 const { auth_url } = await strava.getAuthUrl();
                 window.location.href = auth_url;
               }}
-              className="mt-3 flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-500"
+              className="mt-3 flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
             >
               <Link2 className="h-4 w-4" /> Connect Strava
             </button>
@@ -960,24 +960,24 @@ export default function SettingsPage() {
       </section>
 
       {/* Dropbox Integration */}
-      <section className="border-2 border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <HardDrive className="h-5 w-5 text-blue-400" />
+      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="flex items-center gap-2 font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
+          <HardDrive className="h-5 w-5 text-vb-forest" />
           Dropbox
         </h2>
         {dropboxStatus?.connected ? (
           <div className="mt-3 space-y-3">
-            <div className="flex items-center gap-2 text-sm text-green-400">
+            <div className="flex items-center gap-2 text-sm text-vb-forest">
               <Link2 className="h-4 w-4" /> Connected
               {dropboxStatus.account_id &&
                 ` (${dropboxStatus.account_id})`}
             </div>
 
             {/* Folder path */}
-            <div className="rounded-lg border border-slate-700 bg-slate-700/50 p-3">
+            <div className="rounded-md border border-vb-border-subtle bg-vb-bg p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-slate-400">
+                  <p className="text-xs font-medium text-vb-text-muted">
                     Sync Folder
                   </p>
                   {editingFolder ? (
@@ -986,26 +986,26 @@ export default function SettingsPage() {
                         value={folderPath}
                         onChange={(e) => setFolderPath(e.target.value)}
                         placeholder="/cycling"
-                        className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-sm text-white focus:border-blue-500 focus:outline-none"
+                        className="rounded-sm border border-vb-border bg-vb-surface px-2 py-1 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
                       />
                       <button
                         onClick={() =>
                           updateDropboxFolder.mutate(folderPath)
                         }
-                        className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-500"
+                        className="rounded-sm bg-vb-forest px-2 py-1 text-xs text-white hover:bg-vb-forest-soft"
                       >
                         Save
                       </button>
                       <button
                         onClick={() => setEditingFolder(false)}
-                        className="rounded border border-slate-600 px-2 py-1 text-xs text-slate-300"
+                        className="rounded-sm border border-vb-border px-2 py-1 text-xs text-vb-text-dim"
                       >
                         Cancel
                       </button>
                     </div>
                   ) : (
-                    <p className="mt-0.5 flex items-center gap-1 text-sm text-white">
-                      <FolderSync className="h-3.5 w-3.5 text-slate-400" />
+                    <p className="mt-0.5 flex items-center gap-1 text-sm text-vb-text">
+                      <FolderSync className="h-3.5 w-3.5 text-vb-text-muted" />
                       {dropboxStatus.folder_path || "/cycling"}
                       <button
                         onClick={() => {
@@ -1014,7 +1014,7 @@ export default function SettingsPage() {
                           );
                           setEditingFolder(true);
                         }}
-                        className="ml-2 text-xs text-blue-400 hover:text-blue-300"
+                        className="ml-2 text-xs text-vb-forest hover:text-vb-forest-soft"
                       >
                         Change
                       </button>
@@ -1023,7 +1023,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               {dropboxStatus.last_sync_at && (
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-vb-text-muted">
                   Last synced: {formatDate(dropboxStatus.last_sync_at)}
                 </p>
               )}
@@ -1033,7 +1033,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => syncDropbox.mutate()}
                 disabled={syncDropbox.isPending}
-                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${syncDropbox.isPending ? "animate-spin" : ""}`}
@@ -1049,7 +1049,7 @@ export default function SettingsPage() {
                     queryKey: ["dropbox-status"],
                   });
                 }}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                className="flex items-center gap-1.5 rounded-sm border border-vb-clay px-3 py-1.5 text-xs text-vb-clay hover:bg-vb-clay/10"
               >
                 <Unlink className="h-3.5 w-3.5" /> Disconnect
               </button>
@@ -1057,7 +1057,7 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="mt-3">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-vb-text-dim">
               Connect Dropbox to import FIT files from a folder. Drop your ride
               files into a Dropbox folder and sync them here.
             </p>
@@ -1066,7 +1066,7 @@ export default function SettingsPage() {
                 const { auth_url } = await dropbox.getAuthUrl();
                 window.location.href = auth_url;
               }}
-              className="mt-3 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+              className="mt-3 flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
             >
               <HardDrive className="h-4 w-4" /> Connect Dropbox
             </button>

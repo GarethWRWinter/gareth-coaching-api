@@ -42,12 +42,12 @@ export function VoiceButton({
             : "Voice input"
       }
       className={cn(
-        "flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl text-white transition-all",
+        "flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-sm text-white transition-all",
         isListening
-          ? "bg-red-600 pulse-ring hover:bg-red-500"
+          ? "bg-vb-forest pulse-ring hover:bg-vb-forest-soft"
           : isSpeaking
-            ? "bg-emerald-600 hover:bg-emerald-500"
-            : "bg-slate-600 hover:bg-slate-500",
+            ? "bg-vb-forest hover:bg-vb-forest-soft"
+            : "bg-vb-sunken text-vb-text hover:bg-vb-surface-raised",
         disabled && "cursor-not-allowed opacity-50",
         className
       )}

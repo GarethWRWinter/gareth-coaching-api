@@ -17,26 +17,26 @@ export default function LandingPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-vb-bg">
       {/* Hero */}
-      <header className="border-b border-slate-800">
+      <header className="border-b border-vb-border-subtle">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-vb-forest">
               <Bike className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-white">Cycling Coach</span>
+            <span className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">Cycling Coach</span>
           </div>
           <div className="flex gap-3">
             <Link
               href="/login"
-              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-300 hover:text-white"
+              className="rounded-sm px-4 py-2 text-sm font-medium text-vb-text-dim hover:text-vb-text"
             >
               Log in
             </Link>
             <Link
               href="/register"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
             >
               Get Started
             </Link>
@@ -47,11 +47,14 @@ export default function LandingPage() {
       <main>
         {/* Hero section */}
         <section className="mx-auto max-w-4xl px-6 py-24 text-center">
-          <h1 className="text-5xl font-bold tracking-tight text-white">
+          <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+            Issue 47
+          </p>
+          <h1 className="font-display text-5xl font-light tracking-[-0.02em] text-vb-text md:text-6xl">
             Train Smarter with{" "}
-            <span className="text-blue-400">AI-Powered Coaching</span>
+            <span className="text-vb-forest">AI-Powered Coaching</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-vb-text-dim">
             Upload your rides, track your fitness, generate periodized training
             plans, and get personalised advice from an AI coach that understands
             your data.
@@ -59,13 +62,13 @@ export default function LandingPage() {
           <div className="mt-10 flex justify-center gap-4">
             <Link
               href="/register"
-              className="rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white hover:bg-blue-500"
+              className="rounded-sm bg-vb-forest px-6 py-3 text-base font-medium text-white hover:bg-vb-forest-soft"
             >
               Start Free
             </Link>
             <Link
               href="/login"
-              className="rounded-lg border border-slate-700 px-6 py-3 text-base font-semibold text-slate-300 hover:border-slate-500 hover:text-white"
+              className="rounded-sm border border-vb-border px-6 py-3 text-base font-medium text-vb-forest hover:bg-vb-surface"
             >
               Log In
             </Link>
@@ -73,9 +76,9 @@ export default function LandingPage() {
         </section>
 
         {/* Features */}
-        <section className="border-t border-slate-800 bg-slate-900/50 py-20">
+        <section className="border-t border-vb-border-subtle bg-vb-surface py-20">
           <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-center text-3xl font-bold text-white">
+            <h2 className="text-center font-display text-3xl font-light tracking-[-0.02em] text-vb-text">
               Everything You Need to Level Up
             </h2>
             <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -113,15 +116,15 @@ export default function LandingPage() {
               ].map((f) => (
                 <div
                   key={f.title}
-                  className="rounded-xl border border-slate-800 bg-slate-900 p-6"
+                  className="rounded-md border border-vb-border-subtle bg-vb-surface p-6"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/10">
-                    <f.icon className="h-5 w-5 text-blue-400" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-vb-sage-tint">
+                    <f.icon className="h-5 w-5 text-vb-forest" />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold text-white">
+                  <h3 className="mt-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
                     {f.title}
                   </h3>
-                  <p className="mt-2 text-sm text-slate-400">{f.desc}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-vb-text-dim">{f.desc}</p>
                 </div>
               ))}
             </div>

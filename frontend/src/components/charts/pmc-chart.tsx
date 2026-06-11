@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -60,8 +59,8 @@ function PMCTooltipContent({
   });
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 shadow-xl">
-      <p className="mb-1.5 text-xs font-medium text-slate-300">
+    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+      <p className="mb-1.5 text-xs font-medium text-vb-text-dim">
         {formattedDate}
       </p>
       {payload.map((entry) => (
@@ -74,9 +73,9 @@ function PMCTooltipContent({
               className="inline-block h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-slate-400">{entry.name}</span>
+            <span className="text-vb-text-dim">{entry.name}</span>
           </span>
-          <span className="font-mono font-medium text-slate-100">
+          <span className="font-medium tabular-nums text-vb-text">
             {Math.round(entry.value)}
           </span>
         </div>
@@ -86,44 +85,9 @@ function PMCTooltipContent({
 }
 
 export function PMCChart({ data, dateRange, className }: PMCChartProps) {
-  // Calculate appropriate tick indices to avoid duplicate/overlapping labels
-  const ticks = useMemo(() => {
-    if (data.length === 0) return [];
-
-    let targetTicks: number;
-    switch (dateRange) {
-      case "1m":
-        targetTicks = 8; // roughly every ~4 days
-        break;
-      case "3m":
-        targetTicks = 10; // roughly every ~9 days
-        break;
-      case "6m":
-        targetTicks = 10; // roughly every ~18 days
-        break;
-      case "1y":
-        targetTicks = 12; // monthly
-        break;
-      default:
-        targetTicks = 12;
-    }
-
-    const step = Math.max(1, Math.floor(data.length / targetTicks));
-    const tickDates: string[] = [];
-    for (let i = 0; i < data.length; i += step) {
-      tickDates.push(data[i].date);
-    }
-    // Always include the last date
-    const lastDate = data[data.length - 1].date;
-    if (tickDates[tickDates.length - 1] !== lastDate) {
-      tickDates.push(lastDate);
-    }
-    return tickDates;
-  }, [data, dateRange]);
-
   return (
-    <div className={cn("rounded-xl bg-slate-900 p-4", className)}>
-      <h3 className="mb-4 text-sm font-semibold text-slate-200">
+    <div className={cn("rounded-md border border-vb-border-subtle bg-vb-surface p-5", className)}>
+      <h3 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
         Performance Management Chart
       </h3>
       <ResponsiveContainer width="100%" height={350}>
@@ -133,92 +97,89 @@ export function PMCChart({ data, dateRange, className }: PMCChartProps) {
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#334155"
+            stroke="#E4DCCE"
             vertical={false}
           />
           <XAxis
             dataKey="date"
             tickFormatter={(val: string) => formatXAxisDate(val, dateRange)}
-            ticks={ticks}
-            stroke="#94a3b8"
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
-            tickLine={{ stroke: "#475569" }}
-            axisLine={{ stroke: "#475569" }}
+            interval="preserveStartEnd"
+            minTickGap={48}
+            stroke="#D6CFC1"
+            tick={{ fontSize: 11, fill: "#948D80" }}
+            tickLine={{ stroke: "#D6CFC1" }}
+            axisLine={{ stroke: "#D6CFC1" }}
           />
           <YAxis
             yAxisId="metrics"
-            stroke="#94a3b8"
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
-            tickLine={{ stroke: "#475569" }}
-            axisLine={{ stroke: "#475569" }}
+            stroke="#D6CFC1"
+            tick={{ fontSize: 11, fill: "#948D80" }}
+            tickLine={{ stroke: "#D6CFC1" }}
+            axisLine={{ stroke: "#D6CFC1" }}
           />
           <YAxis
             yAxisId="tss"
             orientation="right"
-            stroke="#94a3b8"
-            tick={{ fontSize: 11, fill: "#94a3b8" }}
-            tickLine={{ stroke: "#475569" }}
-            axisLine={{ stroke: "#475569" }}
             domain={[0, "auto"]}
             hide
           />
           <Tooltip
             content={<PMCTooltipContent />}
-            cursor={{ stroke: "#64748b", strokeDasharray: "4 4" }}
+            cursor={{ stroke: "#BCB3A3", strokeDasharray: "4 4" }}
           />
           <Legend
-            wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
+            wrapperStyle={{ paddingTop: 12, fontSize: 12, color: "#615B50" }}
             iconType="circle"
             iconSize={8}
           />
 
-          {/* TSS bars at the bottom */}
+          {/* TSS bars at the bottom — sage */}
           <Bar
             yAxisId="tss"
             dataKey="tss"
             name="TSS"
-            fill="#475569"
-            opacity={0.5}
+            fill="#C3CDBC"
+            opacity={0.7}
             barSize={3}
             radius={[1, 1, 0, 0]}
           />
 
-          {/* TSB / Form as an area */}
+          {/* TSB / Form as an area — dusty blue */}
           <Area
             yAxisId="metrics"
             type="monotone"
             dataKey="tsb"
             name="Form"
-            stroke="#22c55e"
-            fill="#22c55e"
-            fillOpacity={0.1}
+            stroke="#7C95A3"
+            fill="#7C95A3"
+            fillOpacity={0.12}
             strokeWidth={1.5}
             dot={false}
-            activeDot={{ r: 3, fill: "#22c55e" }}
+            activeDot={{ r: 3, fill: "#7C95A3" }}
           />
 
-          {/* CTL / Fitness line */}
+          {/* CTL / Fitness line — forest */}
           <Line
             yAxisId="metrics"
             type="monotone"
             dataKey="ctl"
             name="Fitness"
-            stroke="#3b82f6"
+            stroke="#36513F"
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 4, fill: "#3b82f6" }}
+            activeDot={{ r: 4, fill: "#36513F" }}
           />
 
-          {/* ATL / Fatigue line */}
+          {/* ATL / Fatigue line — clay */}
           <Line
             yAxisId="metrics"
             type="monotone"
             dataKey="atl"
             name="Fatigue"
-            stroke="#ef4444"
+            stroke="#BB6647"
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 4, fill: "#ef4444" }}
+            activeDot={{ r: 4, fill: "#BB6647" }}
           />
         </ComposedChart>
       </ResponsiveContainer>

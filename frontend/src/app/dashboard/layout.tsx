@@ -31,8 +31,8 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+      <div className="flex h-screen items-center justify-center bg-vb-bg">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-vb-forest border-t-transparent" />
       </div>
     );
   }
@@ -40,39 +40,36 @@ export default function DashboardLayout({
   if (!user) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-vb-bg">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-slate-900 pt-14 md:pt-0">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+      <main className="flex-1 overflow-y-auto bg-vb-bg pt-14 md:pt-0">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10">
           {children}
         </div>
       </main>
 
-      {/* Subtle auto-sync toast — appears in the corner while syncing,
-          briefly after a successful sync that imported new rides, or
-          (persistently) when auto-sync is failing so the user knows
-          something is wrong. */}
+      {/* Auto-sync toast — editorial chip with red accent on errors. */}
       {(syncing || (lastSyncedCount != null && lastSyncedCount > 0) || lastError) && (
-        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/95 px-4 py-2 text-xs text-slate-200 shadow-lg backdrop-blur-sm">
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-vb-border bg-vb-surface px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-vb-text shadow-[0_1px_3px_rgba(33,30,26,0.08)]">
           {syncing ? (
             <>
-              <RefreshCw className="h-3.5 w-3.5 animate-spin text-blue-400" />
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
               <span>Syncing Strava…</span>
             </>
           ) : lastError ? (
             <Link
               href="/dashboard/settings"
-              className="flex items-center gap-2 text-amber-300 hover:text-amber-200"
+              className="flex items-center gap-2 text-vb-clay hover:opacity-80"
               title={lastError}
             >
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span>Strava sync failed — open settings</span>
+              <span>Strava sync failed → open settings</span>
             </Link>
           ) : (
             <>
-              <RefreshCw className="h-3.5 w-3.5 text-green-400" />
+              <RefreshCw className="h-3.5 w-3.5" />
               <span>
-                Imported {lastSyncedCount} new ride
+                +{lastSyncedCount} new ride
                 {lastSyncedCount === 1 ? "" : "s"}
               </span>
             </>

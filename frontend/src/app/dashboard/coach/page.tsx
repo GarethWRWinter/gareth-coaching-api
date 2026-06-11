@@ -320,26 +320,26 @@ function CoachPageInner() {
       {/* Sessions Sidebar - hidden on mobile, toggle with button */}
       <div
         className={cn(
-          "shrink-0 overflow-y-auto rounded-xl border border-slate-800 bg-slate-800/50",
+          "shrink-0 overflow-y-auto rounded-md border border-vb-border-subtle bg-vb-surface",
           showSessions
             ? "absolute inset-x-4 top-16 z-30 max-h-[60vh] md:static md:inset-auto md:z-auto md:max-h-none md:w-64"
             : "hidden md:block md:w-64"
         )}
       >
-        <div className="border-b border-slate-700 p-3">
+        <div className="border-b border-vb-border-subtle p-3">
           <button
             onClick={() => {
               createSession.mutate();
               setShowSessions(false);
             }}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            className="flex w-full items-center justify-center gap-2 rounded-sm bg-vb-forest px-3 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
           >
             <Plus className="h-4 w-4" /> New Chat
           </button>
         </div>
-        <div className="divide-y divide-slate-800">
+        <div className="divide-y divide-vb-border-subtle">
           {sessions?.length === 0 && (
-            <p className="px-4 py-6 text-center text-xs text-slate-500">
+            <p className="px-4 py-6 text-center text-xs text-vb-text-muted">
               Start a conversation with your AI coach
             </p>
           )}
@@ -353,8 +353,8 @@ function CoachPageInner() {
               className={cn(
                 "flex w-full items-center gap-2 px-4 py-3 text-left text-sm transition-colors",
                 session.id === activeSessionId
-                  ? "bg-blue-600/10 text-blue-400"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  ? "bg-vb-sage-tint text-vb-forest"
+                  : "text-vb-text-dim hover:bg-vb-surface-raised hover:text-vb-text"
               )}
             >
               <MessageCircle className="h-4 w-4 shrink-0" />
@@ -362,7 +362,7 @@ function CoachPageInner() {
                 <p className="truncate text-xs font-medium">
                   {session.title || "Chat"}
                 </p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[10px] text-vb-text-muted">
                   {session.message_count} messages
                 </p>
               </div>
@@ -380,16 +380,16 @@ function CoachPageInner() {
       )}
 
       {/* Chat Area */}
-      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-800/50">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-md border border-vb-border-subtle bg-vb-surface">
         {/* Mobile chat header */}
-        <div className="flex items-center gap-2 border-b border-slate-700 px-3 py-2 md:hidden">
+        <div className="flex items-center gap-2 border-b border-vb-border-subtle px-3 py-2 md:hidden">
           <button
             onClick={() => setShowSessions(!showSessions)}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"
+            className="rounded-sm p-1.5 text-vb-text-dim hover:bg-vb-surface-raised hover:text-vb-text"
           >
             <MessageCircle className="h-5 w-5" />
           </button>
-          <span className="text-sm font-medium text-slate-300">
+          <span className="text-sm font-medium text-vb-text-dim">
             {sessions?.find((s) => s.id === activeSessionId)?.title || "Coach Marco"}
           </span>
         </div>
@@ -399,11 +399,11 @@ function CoachPageInner() {
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <Bot className="mx-auto h-12 w-12 text-blue-400/50" />
-                <h3 className="mt-4 text-lg font-medium text-white">
+                <Bot className="mx-auto h-12 w-12 text-vb-forest/50" />
+                <h3 className="mt-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
                   Coach Marco
                 </h3>
-                <p className="mt-1 max-w-sm text-sm text-slate-400">
+                <p className="mt-1 max-w-sm text-sm text-vb-text-dim">
                   Your personal cycling performance partner. Ask me about
                   training, race preparation, mental performance, or how to
                   balance cycling with the rest of your life.
@@ -421,14 +421,14 @@ function CoachPageInner() {
                         setInput(q);
                         inputRef.current?.focus();
                       }}
-                      className="rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-blue-500 hover:text-blue-400"
+                      className="rounded-full border border-vb-border px-3 py-1.5 text-xs text-vb-text-dim hover:border-vb-forest hover:text-vb-forest"
                     >
                       {q}
                     </button>
                   ))}
                 </div>
                 {voiceSupported && (
-                  <p className="mt-4 text-xs text-slate-500">
+                  <p className="mt-4 text-xs text-vb-text-muted">
                     <Mic className="mr-1 inline h-3 w-3" />
                     Tap the mic to talk with your coach
                   </p>
@@ -447,23 +447,23 @@ function CoachPageInner() {
                 )}
               >
                 {msg.role === "assistant" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-vb-forest">
                     <Bot className="h-4 w-4 text-white" />
                   </div>
                 )}
                 <div
                   className={cn(
-                    "max-w-[90%] rounded-2xl px-3 py-2.5 text-sm sm:max-w-[80%] sm:px-4 sm:py-3",
+                    "max-w-[90%] rounded-md px-3 py-2.5 text-sm sm:max-w-[80%] sm:px-4 sm:py-3",
                     msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-700/50 text-slate-200"
+                      ? "bg-vb-forest text-white"
+                      : "bg-vb-sage-tint text-vb-text"
                   )}
                 >
                   {msg.role === "assistant" ? (
-                    <div className="prose prose-invert prose-sm max-w-none prose-headings:text-blue-300 prose-strong:text-white prose-em:text-slate-300 prose-li:marker:text-blue-400">
+                    <div className="prose prose-sm max-w-none prose-headings:text-vb-text prose-strong:text-vb-text prose-em:text-vb-clay prose-em:not-italic prose-li:marker:text-vb-forest prose-a:text-vb-forest">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                       {streaming && i === messages.length - 1 && (
-                        <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-blue-400" />
+                        <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-vb-forest" />
                       )}
                     </div>
                   ) : (
@@ -471,8 +471,8 @@ function CoachPageInner() {
                   )}
                 </div>
                 {msg.role === "user" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-600">
-                    <User className="h-4 w-4 text-white" />
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-vb-sunken">
+                    <User className="h-4 w-4 text-vb-text" />
                   </div>
                 )}
               </div>
@@ -482,7 +482,7 @@ function CoachPageInner() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-slate-700 p-4">
+        <div className="border-t border-vb-border-subtle p-4">
           {/* Voice indicator — shown during voice interactions */}
           {voiceMode && voiceIndicatorMode !== "idle" && (
             <VoiceIndicator
@@ -499,7 +499,7 @@ function CoachPageInner() {
               onKeyDown={handleKeyDown}
               placeholder="Ask your coach anything..."
               rows={1}
-              className="max-h-32 flex-1 resize-none rounded-xl border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+              className="max-h-32 flex-1 resize-none rounded-sm border border-vb-border bg-vb-surface px-4 py-2.5 text-sm text-vb-text placeholder-vb-text-muted focus:border-vb-forest focus:outline-none"
               style={{
                 height: "auto",
                 minHeight: "42px",
@@ -537,7 +537,7 @@ function CoachPageInner() {
             <button
               onClick={handleSend}
               disabled={!input.trim() || streaming}
-              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
+              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-sm bg-vb-forest text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -553,7 +553,7 @@ export default function CoachPage() {
     <Suspense
       fallback={
         <div className="flex h-[calc(100vh-3rem)] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-vb-forest border-t-transparent" />
         </div>
       }
     >

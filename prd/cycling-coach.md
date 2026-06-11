@@ -6,9 +6,9 @@ status: resolved
 parent: null
 children: ['cycling-coach/indoor-training-sessions.md', 'cycling-coach/memory-layer.md', 'cycling-coach/multi-user-auth.md', 'cycling-coach/conversational-onboarding.md']
 created: 2026-04-13
-updated: 2026-05-05
+updated: 2026-06-09
 resolution: 8/8
-version: 0.2
+version: 0.3
 prototype: 'https://frontend-iota-seven-6je7r6040e.vercel.app/dashboard'
 ---
 
@@ -33,7 +33,7 @@ Existing tools each solve one slice. Nobody solves the whole relationship.
 - **TrainerRoad / Adaptive Training** — strong workout library and AT plan adaptation, but the personalisation is statistical, not relational. It does not know your life, your race history, your psychology, or your context. There is no one to talk to.
 - **Join / Humango** — closer; AI plan generation exists. But the experience is "set the plan and follow it". There is no sustained companion. No memory of who you are across months. No mindset coaching.
 - **Strava** — a social feed and ride store. Not a coach.
-- **Strava's official MCP** (rolling out from 1 June 2026, included with Strava subscription) — an AI-native query tool that lets users slice their own Strava data conversationally. This is **analytics-as-a-service, not coaching.** It answers *"what was my best 20-min in June?"* It does not generate adaptive training plans, hold persistent memory across years of conversations, ride with you on the trainer, or coach the head as well as the legs. Strava is going down the data-analysis path; Marco is going up into the relationship layer. The two can coexist — Marco can in future consume Strava's MCP as a tool while remaining the coach. Strategically, Strava's move *validates* the AI-on-cycling thesis and trains users to expect AI on their data — which grows the addressable market for a real coach product.
+- **Strava's official MCP** — **LAUNCHED 1 June 2026 (confirmed live).** A remote, OAuth, **read-only** MCP connector, **Claude-only** at launch, **Strava-subscriber-only**, that lets users query their own activity data conversationally (per-second HR/pace/power streams, GPS, clubs/events). **Verified limitations (June 2026):** it *cannot* generate or adapt training plans, holds *no* persistent cross-session memory, and *cannot* control a trainer or guide a live workout. Strava's VP of Partnerships frames it as *"more ways to analyze their own training data"* — i.e. **analytics-as-a-service, not coaching.** Strava has publicly planted its flag in the *analysis* lane and stayed out of the *coaching/relationship* lane Marco occupies. **Strategic implications:** (1) it *validates* the AI-on-cycling thesis and educates millions of athletes to expect AI on their data — free top-of-funnel for a real coach product; (2) it **commoditises Marco's cheapest surface** (conversational metric explanation) — *do not compete there*; (3) it starts a **~12–18 month clock** — the death-warrant scenario is Strava (or TrainingPeaks / TrainerRoad) later adding write + plans + memory, so Marco's defensible moat (Pillar 2 memory) and loop (Pillar 3 execution) must be *real* before then. Marco keeps **free-Strava-account ingestion via direct API** (positioning advantage: *"Free Strava + Marco — that's all you need"*); adopting Strava's subscriber-gated MCP as an optional power-user data path is a *post-beta nice-to-have, not a now*. Positioning line to lead with: ***"Strava + Claude tells you what you did. Marco tells you what to do next, remembers it, and rides with you while you do it."***
 
 ## Vision
 
@@ -322,16 +322,22 @@ This is what exists today, walked from the live URL.
 | AI Coach | Marco persona, chat history sidebar, voice mic, suggested prompts |
 | Settings | profile, FTP test, weekly hours, hard/easy/rest day calendar, Strava status |
 
-### Broken / incomplete
+### Broken / incomplete — *reconciled against code audit, 9 June 2026*
 
-1. **In-app ride execution end-to-end** — Web Bluetooth pairs on desktop but ERG control + telemetry capture + ride save not wired. This is what Pillar 3 hangs on.
-2. **Marco inconsistency** — Marco appears on Dashboard and AI Coach, but not on Performance, Rides, Goals, Training pages as a coaching layer. He's a tab today; he should be the lens.
-3. **Persistent memory layer** — chats persist as discrete conversations but there is no unified memory store. Pillar 2 is not yet built.
-4. **Performance chart renders empty** — CTL/ATL/TSB tiles populate; chart axes draw but no series.
-5. **Rider Profile says "Complete some rides with power data"** despite 5,760 rides, most with power.
-6. **Multi-user** — single user (Gareth). No sign-up, no per-user data isolation, no per-user Strava OAuth, no email verification, no password reset.
-7. **In-ride coaching cues** — even if a session can be ridden, Marco does not yet *speak* during the ride.
-8. **Post-ride debrief** — completed rides do not yet trigger a Marco-authored debrief.
+> The original 5 May list was stale **in both directions** — it understated Pillar 3 progress and understated the architectural debt. Verified reality below.
+
+1. **In-app ride execution — ~90% WIRED, not broken.** FTMS pairing, live power/HR/cadence parsing, ERG target-power control, 1 Hz telemetry buffering (with localStorage crash-recovery), and ride save all work and are correctly connected. The loop breaks at two points only (#2, #3). *(The previous PRD claim that ERG/telemetry/save were unwired was incorrect.)*
+2. **Post-ride debrief never fires** — `_generate_debrief_bg` `await`s a *synchronous* `generate_ride_debrief()`; the resulting `TypeError` is swallowed by a bare `except`. Affects every in-app ride **and** every FIT upload. ~1-line fix. **This silently blocks the Milestone 1 exit gate.**
+3. **Planned workout never marked complete** after an in-app ride — the ride saves with `workout_id` but `update_workout_status` is never called, so the calendar + weekly compliance stay permanently wrong.
+4. **`marco-core` does not exist** — the *non-negotiable* single funnel for all Claude calls is unbuilt; 7 `anthropic.Anthropic()` call sites are scattered across 3 services with hardcoded models. Risk: an inconsistent Marco persona across surfaces (directly undermines Pillar 1).
+5. **Persistent memory (Pillar 2) is 0% built** — no `mem_*` tables, no `marco_calls` table, no pgvector, no embeddings, no `get_context()`. "Memory" is flat chat logs + cached debrief/nudge text rebuilt live each call. **The moat does not exist.**
+6. **No cost logging / no prompt caching / wrong model routing** — chat *and* ride debrief run on Sonnet where the cost model specifies Haiku; no `cache_control` anywhere (and the system prompt is structurally uncacheable). The ~92%-margin business case is currently **unmeasured**.
+7. **Marco presence (Pillar 1) ~45%** — strong on Dashboard, Ride detail, Workout detail, In-ride, and Coach; **absent on Performance and the Training calendar** (the two data hubs) and Rides-list; link-out/passive on Goals.
+8. **Performance PMC chart renders empty — FRONTEND only.** Recharts-3 plot-area collapse (double height-bounded container + manual `ticks`). Backend data verified healthy (5,117 PMC rows).
+9. **Rider Profile "complete some rides with power data" — FRONTEND only.** Quick-vs-full fitness query race feeds all-zero scores into the radar's `hasData` gate. Backend returns correct non-zero scores.
+10. **Multi-user / security NOT ready** — auth is ~40% of Epic D (no email verification, password reset, OAuth, refresh-token rotation, GDPR delete). **CRITICAL: `SECRET_KEY` is the literal default placeholder → anyone can forge any user's JWT.** IDOR via workout link-ride leaks cross-user ride data. No Postgres RLS. Hard gate before a second human logs in.
+11. **Voice** — TTS only; **no ASR** (voice *input* is unbuilt). Configured ElevenLabs voice ID does not match the OQ2-locked female ID `NbkKnEAZ7Bqw4EAkVEaz`.
+12. **Design system mid-migration** — the "VoiceBox" editorial theme is applied to ~4 surfaces while ~8 remain on the old slate theme; a *second*, divergent "questui" theme is also being explored. Visual fracture + scope-thrash risk.
 
 ## Appendix B — Non-functional requirements
 

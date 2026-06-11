@@ -40,43 +40,43 @@ import {
 } from "@/hooks/useTrainingSession";
 
 const STEP_COLORS: Record<string, string> = {
-  warmup: "bg-green-500",
-  steady_state: "bg-blue-500",
-  interval_on: "bg-red-500",
-  interval_off: "bg-slate-500",
-  cooldown: "bg-cyan-500",
-  free_ride: "bg-purple-500",
-  ramp: "bg-yellow-500",
+  warmup: "bg-vb-forest/50",
+  steady_state: "bg-vb-forest/70",
+  interval_on: "bg-vb-clay",
+  interval_off: "bg-vb-sunken",
+  cooldown: "bg-vb-forest/40",
+  free_ride: "bg-vb-forest/60",
+  ramp: "bg-vb-forest/80",
 };
 
 const STEP_BG_COLORS: Record<string, string> = {
-  warmup: "bg-green-500/20",
-  steady_state: "bg-blue-500/20",
-  interval_on: "bg-red-500/20",
-  interval_off: "bg-slate-500/20",
-  cooldown: "bg-cyan-500/20",
-  free_ride: "bg-purple-500/20",
-  ramp: "bg-yellow-500/20",
+  warmup: "bg-vb-sage-tint",
+  steady_state: "bg-vb-sage-tint",
+  interval_on: "bg-vb-clay/15",
+  interval_off: "bg-vb-sunken",
+  cooldown: "bg-vb-sage-tint",
+  free_ride: "bg-vb-sage-tint",
+  ramp: "bg-vb-sage-tint",
 };
 
 const STEP_TEXT_COLORS: Record<string, string> = {
-  warmup: "text-green-400",
-  steady_state: "text-blue-400",
-  interval_on: "text-red-400",
-  interval_off: "text-slate-400",
-  cooldown: "text-cyan-400",
-  free_ride: "text-purple-400",
-  ramp: "text-yellow-400",
+  warmup: "text-vb-forest",
+  steady_state: "text-vb-forest",
+  interval_on: "text-vb-clay",
+  interval_off: "text-vb-text-muted",
+  cooldown: "text-vb-forest",
+  free_ride: "text-vb-forest",
+  ramp: "text-vb-forest",
 };
 
 const STEP_BORDER_COLORS: Record<string, string> = {
-  warmup: "border-green-500/40",
-  steady_state: "border-blue-500/40",
-  interval_on: "border-red-500/40",
-  interval_off: "border-slate-500/40",
-  cooldown: "border-cyan-500/40",
-  free_ride: "border-purple-500/40",
-  ramp: "border-yellow-500/40",
+  warmup: "border-vb-forest/40",
+  steady_state: "border-vb-forest/40",
+  interval_on: "border-vb-clay/40",
+  interval_off: "border-vb-border-subtle",
+  cooldown: "border-vb-forest/40",
+  free_ride: "border-vb-forest/40",
+  ramp: "border-vb-forest/40",
 };
 
 function formatTime(seconds: number): string {
@@ -331,19 +331,19 @@ export default function TrainingSessionPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+      <div className="flex h-screen items-center justify-center bg-vb-bg">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-vb-forest border-t-transparent" />
       </div>
     );
   }
 
   if (!workout || !workout.steps || workout.steps.length === 0) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-slate-950 text-slate-400">
+      <div className="flex h-screen flex-col items-center justify-center bg-vb-bg text-vb-text-dim">
         <p>Workout not found or has no steps</p>
         <Link
           href={`/dashboard/training/${workoutId}`}
-          className="mt-4 text-blue-400"
+          className="mt-4 text-vb-forest"
         >
           Back to workout
         </Link>
@@ -386,21 +386,21 @@ export default function TrainingSessionPage() {
     session.status === "running" || session.status === "paused";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950">
+    <div className="fixed inset-0 z-50 flex flex-col bg-vb-bg">
       {/* Top Bar */}
-      <div className="flex items-center justify-between border-b border-slate-800 px-6 py-3">
+      <div className="flex items-center justify-between border-b border-vb-border-subtle px-6 py-3">
         <div className="flex items-center gap-4">
           {session.status === "idle" && (
             <Link
               href={`/dashboard/training/${workoutId}`}
-              className="text-slate-400 hover:text-white"
+              className="text-vb-text-dim hover:text-vb-forest"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
           )}
           <div>
-            <h1 className="text-lg font-bold text-white">{workout.title}</h1>
-            <p className="text-xs text-slate-400">{workout.description}</p>
+            <h1 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">{workout.title}</h1>
+            <p className="text-xs text-vb-text-dim">{workout.description}</p>
           </div>
         </div>
 
@@ -410,10 +410,10 @@ export default function TrainingSessionPage() {
             <button
               onClick={() => setShowStepList(!showStepList)}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+                "flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm transition-colors",
                 showStepList
-                  ? "bg-slate-700 text-white"
-                  : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                  ? "bg-vb-sunken text-vb-text"
+                  : "bg-vb-surface text-vb-text-dim hover:bg-vb-surface-raised"
               )}
             >
               <List className="h-4 w-4" />
@@ -426,10 +426,10 @@ export default function TrainingSessionPage() {
             <button
               onClick={() => coach.setMuted(!coach.muted)}
               className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+                "flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm transition-colors",
                 coach.muted
-                  ? "bg-slate-800 text-slate-500 hover:bg-slate-700"
-                  : "bg-blue-600/20 text-blue-400"
+                  ? "bg-vb-surface text-vb-text-muted hover:bg-vb-surface-raised"
+                  : "bg-vb-sage-tint text-vb-forest"
               )}
               title={coach.muted ? "Unmute Coach" : "Mute Coach"}
             >
@@ -446,10 +446,10 @@ export default function TrainingSessionPage() {
           <button
             onClick={() => setShowDevicePanel(!showDevicePanel)}
             className={cn(
-              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+              "flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm transition-colors",
               connectedDeviceCount > 0
-                ? "bg-blue-600/20 text-blue-400"
-                : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                ? "bg-vb-sage-tint text-vb-forest"
+                : "bg-vb-surface text-vb-text-dim hover:bg-vb-surface-raised"
             )}
           >
             {connectedDeviceCount > 0 ? (
@@ -465,14 +465,14 @@ export default function TrainingSessionPage() {
           {/* Elapsed / Remaining time */}
           <div className="flex items-center gap-4 text-sm">
             <div className="text-center">
-              <p className="text-[10px] uppercase text-slate-500">Elapsed</p>
-              <p className="font-mono text-white">
+              <p className="text-[10px] uppercase text-vb-text-muted">Elapsed</p>
+              <p className="font-display font-light tabular-nums text-vb-text">
                 {formatTime(session.totalElapsedSeconds)}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-[10px] uppercase text-slate-500">Remaining</p>
-              <p className="font-mono text-slate-400">
+              <p className="text-[10px] uppercase text-vb-text-muted">Remaining</p>
+              <p className="font-display font-light tabular-nums text-vb-text-dim">
                 {formatTime(totalRemaining)}
               </p>
             </div>
@@ -481,7 +481,7 @@ export default function TrainingSessionPage() {
       </div>
 
       {/* Workout Progress Bar */}
-      <div className="relative h-12 border-b border-slate-800 bg-slate-900">
+      <div className="relative h-12 border-b border-vb-border-subtle bg-vb-surface">
         <div className="flex h-full">
           {session.steps.map((step, idx) => {
             const widthPct =
@@ -493,12 +493,12 @@ export default function TrainingSessionPage() {
               <div
                 key={idx}
                 className={cn(
-                  "relative flex items-center justify-center border-r border-slate-800/50 transition-all",
+                  "relative flex items-center justify-center border-r border-vb-border-subtle transition-all",
                   isDone
                     ? `${getZoneColors(step.powerTargetPct).bgSolid} opacity-60`
                     : isActiveStep
                       ? `${getZoneColors(step.powerTargetPct).bg} ring-1 ring-inset ring-white/30`
-                      : "bg-slate-900/50"
+                      : "bg-vb-sunken"
                 )}
                 style={{ width: `${widthPct}%`, minWidth: "2px" }}
               >
@@ -506,7 +506,7 @@ export default function TrainingSessionPage() {
                   <span
                     className={cn(
                       "text-[9px] font-medium truncate px-0.5",
-                      isDone || isActiveStep ? "text-white" : "text-slate-600"
+                      isDone || isActiveStep ? "text-white" : "text-vb-text-muted"
                     )}
                   >
                     {step.stepType === "interval_on"
@@ -542,13 +542,13 @@ export default function TrainingSessionPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel: Step List (visible during session) */}
         {isActive && showStepList && (
-          <div className="w-72 border-r border-slate-800 bg-slate-900/30 overflow-y-auto">
-            <div className="px-4 py-3 border-b border-slate-800">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="w-72 border-r border-vb-border-subtle bg-vb-surface overflow-y-auto">
+            <div className="px-4 py-3 border-b border-vb-border-subtle">
+              <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
                 Workout Steps
               </h3>
             </div>
-            <div className="divide-y divide-slate-800/50">
+            <div className="divide-y divide-vb-border-subtle">
               {session.steps.map((step, idx) => {
                 const isCurrentStep = idx === session.currentStepIndex;
                 const isDone = idx < session.currentStepIndex;
@@ -584,16 +584,16 @@ export default function TrainingSessionPage() {
                           className={cn(
                             "text-xs font-medium capitalize",
                             isCurrentStep
-                              ? "text-white"
+                              ? "text-vb-text"
                               : isDone
-                                ? "text-slate-500"
-                                : "text-slate-300"
+                                ? "text-vb-text-muted"
+                                : "text-vb-text-dim"
                           )}
                         >
                           {step.stepType.replace("_", " ")}
                         </span>
                         {step.isInterval && (
-                          <span className="text-[9px] text-slate-500">
+                          <span className="text-[9px] text-vb-text-muted">
                             {step.repeatIndex}/{step.repeatTotal}
                           </span>
                         )}
@@ -608,7 +608,7 @@ export default function TrainingSessionPage() {
                         </span>
                       </div>
                       {step.notes && (
-                        <p className="text-[10px] text-slate-500 truncate">
+                        <p className="text-[10px] text-vb-text-muted truncate">
                           {step.notes}
                         </p>
                       )}
@@ -617,23 +617,23 @@ export default function TrainingSessionPage() {
                     <div className="text-right shrink-0">
                       <p
                         className={cn(
-                          "text-xs font-medium tabular-nums",
-                          isCurrentStep ? "text-white" : "text-slate-400"
+                          "font-display text-xs font-light tabular-nums",
+                          isCurrentStep ? "text-vb-text" : "text-vb-text-dim"
                         )}
                       >
                         {targetW}W
                       </p>
-                      <p className="text-[10px] text-slate-500 tabular-nums">
+                      <p className="text-[10px] text-vb-text-muted tabular-nums">
                         {formatTime(step.durationSeconds)}
                       </p>
                     </div>
 
                     {/* Current step indicator */}
                     {isCurrentStep && (
-                      <ChevronRight className="h-3 w-3 text-white shrink-0" />
+                      <ChevronRight className="h-3 w-3 text-vb-forest shrink-0" />
                     )}
                     {isDone && (
-                      <Check className="h-3 w-3 text-slate-600 shrink-0" />
+                      <Check className="h-3 w-3 text-vb-text-muted shrink-0" />
                     )}
                   </div>
                 );
@@ -646,13 +646,13 @@ export default function TrainingSessionPage() {
         <div className="flex flex-1 flex-col items-center justify-center gap-8 p-8">
           {/* Auto-pause banner */}
           {autoPaused && session.status === "paused" && (
-            <div className="flex items-center gap-3 rounded-lg bg-amber-900/20 border border-amber-500/30 px-5 py-3">
-              <Pause className="h-5 w-5 text-amber-400 shrink-0" />
+            <div className="flex items-center gap-3 rounded-sm bg-vb-clay/10 border border-vb-clay/30 px-5 py-3">
+              <Pause className="h-5 w-5 text-vb-clay shrink-0" />
               <div>
-                <p className="text-sm font-medium text-amber-400">
+                <p className="text-sm font-medium text-vb-clay">
                   Auto-paused — no power detected
                 </p>
-                <p className="text-xs text-amber-400/60">
+                <p className="text-xs text-vb-clay/70">
                   Start pedalling to resume automatically
                 </p>
               </div>
@@ -661,7 +661,7 @@ export default function TrainingSessionPage() {
 
           {/* Auto-pause countdown */}
           {autoPauseCountdown !== null && session.status === "running" && (
-            <div className="flex items-center gap-2 text-xs text-amber-400/60">
+            <div className="flex items-center gap-2 text-xs text-vb-clay/70">
               <AlertTriangle className="h-3 w-3" />
               <span>
                 No power — auto-pausing in {autoPauseCountdown}s
@@ -673,31 +673,31 @@ export default function TrainingSessionPage() {
           {session.status === "idle" && !deviceSetupDone ? (
             /* === Device Setup Screen === */
             <div className="w-full max-w-lg text-center">
-              <h2 className="text-2xl font-bold text-white mb-1">
+              <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text mb-1">
                 {workout.title}
               </h2>
-              <p className="text-slate-400 mb-8">
+              <p className="text-vb-text-dim mb-8">
                 {formatDuration(session.totalDurationSeconds)} &middot;{" "}
                 {session.steps.length} steps
               </p>
 
-              <div className="rounded-xl border border-slate-700 bg-slate-800/50 overflow-hidden mb-6">
-                <div className="border-b border-slate-700 px-5 py-3">
-                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <Bluetooth className="h-4 w-4 text-blue-400" />
+              <div className="rounded-md border border-vb-border-subtle bg-vb-surface overflow-hidden mb-6">
+                <div className="border-b border-vb-border-subtle px-5 py-3">
+                  <h3 className="text-sm font-medium text-vb-text flex items-center gap-2">
+                    <Bluetooth className="h-4 w-4 text-vb-forest" />
                     Connect Your Devices
                   </h3>
                 </div>
 
                 {!btState.isSupported ? (
                   <div className="p-5">
-                    <div className="flex items-center gap-3 rounded-lg bg-amber-900/20 border border-amber-500/30 p-4">
-                      <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
+                    <div className="flex items-center gap-3 rounded-sm bg-vb-clay/10 border border-vb-clay/30 p-4">
+                      <AlertTriangle className="h-5 w-5 text-vb-clay shrink-0" />
                       <div className="text-left">
-                        <p className="text-sm font-medium text-amber-400">
+                        <p className="text-sm font-medium text-vb-clay">
                           Bluetooth not available in this browser
                         </p>
-                        <p className="text-xs text-amber-400/70 mt-1">
+                        <p className="text-xs text-vb-clay/70 mt-1">
                           Use <strong>Chrome</strong>, <strong>Edge</strong>, or
                           <strong> Brave</strong> on a Mac, PC, or Android.{" "}
                           <strong>iPhone and iPad aren&apos;t supported</strong> —
@@ -709,9 +709,9 @@ export default function TrainingSessionPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-700">
+                  <div className="divide-y divide-vb-border-subtle">
                     <DeviceRow
-                      icon={<Zap className="h-5 w-5 text-yellow-400" />}
+                      icon={<Zap className="h-5 w-5 text-vb-forest" />}
                       label="Power Meter"
                       connected={btState.power.connected}
                       name={btState.power.name}
@@ -720,7 +720,7 @@ export default function TrainingSessionPage() {
                       onDisconnect={() => btActions.disconnectDevice("power")}
                     />
                     <DeviceRow
-                      icon={<Heart className="h-5 w-5 text-red-400" />}
+                      icon={<Heart className="h-5 w-5 text-vb-clay" />}
                       label="Heart Rate Monitor"
                       connected={btState.heartRate.connected}
                       name={btState.heartRate.name}
@@ -729,7 +729,7 @@ export default function TrainingSessionPage() {
                       onDisconnect={() => btActions.disconnectDevice("heartRate")}
                     />
                     <DeviceRow
-                      icon={<Gauge className="h-5 w-5 text-green-400" />}
+                      icon={<Gauge className="h-5 w-5 text-vb-forest" />}
                       label="Smart Trainer (ERG)"
                       description="Controls resistance automatically"
                       connected={btState.trainer.connected}
@@ -739,7 +739,7 @@ export default function TrainingSessionPage() {
                       onDisconnect={() => btActions.disconnectDevice("trainer")}
                     />
                     <DeviceRow
-                      icon={<Activity className="h-5 w-5 text-cyan-400" />}
+                      icon={<Activity className="h-5 w-5 text-vb-forest" />}
                       label="Cadence Sensor"
                       description={btState.trainer.connected ? "Available from trainer" : undefined}
                       connected={btState.cadence.connected}
@@ -755,30 +755,30 @@ export default function TrainingSessionPage() {
 
               <button
                 onClick={() => setDeviceSetupDone(true)}
-                className="flex items-center gap-2 rounded-full bg-blue-600 px-8 py-4 text-lg font-bold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/30 mx-auto"
+                className="flex items-center gap-2 rounded-full bg-vb-forest px-8 py-4 text-lg font-medium text-white hover:bg-vb-forest-soft transition-colors mx-auto"
               >
                 <Play className="h-6 w-6" />
                 {connectedDeviceCount > 0 ? "Continue to Start" : "Continue Without Devices"}
               </button>
 
               {connectedDeviceCount === 0 && btState.isSupported && (
-                <p className="mt-3 text-xs text-slate-500">
+                <p className="mt-3 text-xs text-vb-text-muted">
                   Connect at least a power meter for the best experience
                 </p>
               )}
             </div>
           ) : session.status === "idle" && deviceSetupDone ? (
             <div className="text-center">
-              <p className="text-lg text-slate-400 mb-2">Ready to start</p>
-              <h2 className="text-3xl font-bold text-white mb-1">
+              <p className="text-lg text-vb-text-dim mb-2">Ready to start</p>
+              <h2 className="font-display text-3xl font-light tracking-[-0.01em] text-vb-text mb-1">
                 {workout.title}
               </h2>
-              <p className="text-slate-400 mb-2">
+              <p className="text-vb-text-dim mb-2">
                 {formatDuration(session.totalDurationSeconds)} &middot;{" "}
                 {session.steps.length} steps
               </p>
               {connectedDeviceCount > 0 && (
-                <p className="text-sm text-blue-400 mb-4">
+                <p className="text-sm text-vb-forest mb-4">
                   <BluetoothConnected className="inline h-4 w-4 mr-1" />
                   {connectedDeviceCount} device{connectedDeviceCount > 1 ? "s" : ""} connected
                 </p>
@@ -786,25 +786,25 @@ export default function TrainingSessionPage() {
             </div>
           ) : session.status === "completed" ? (
             <div className="text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 mx-auto">
-                <Check className="h-8 w-8 text-green-400" />
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-vb-sage-tint mx-auto">
+                <Check className="h-8 w-8 text-vb-forest" />
               </div>
-              <h2 className="text-3xl font-bold text-white mb-2">
+              <h2 className="font-display text-3xl font-light tracking-[-0.01em] text-vb-text mb-2">
                 Workout Complete!
               </h2>
-              <p className="text-slate-400 mb-4">
+              <p className="text-vb-text-dim mb-4">
                 Total time: {formatTime(session.totalElapsedSeconds)}
               </p>
               {coach.currentMessage && (
                 <div className="max-w-md mx-auto mb-6">
-                  <div className="bg-slate-800/80 backdrop-blur rounded-xl px-6 py-3 border border-slate-700">
+                  <div className="bg-vb-surface backdrop-blur rounded-md px-6 py-3 border border-vb-border-subtle">
                     <div className="flex items-center justify-center gap-2 mb-1">
-                      <Radio className="h-3 w-3 text-blue-400" />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                      <Radio className="h-3 w-3 text-vb-forest" />
+                      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-forest">
                         Marco &mdash; Race Radio
                       </span>
                     </div>
-                    <p className="text-sm text-slate-200 italic">
+                    <p className="text-sm text-vb-text-dim italic">
                       &ldquo;{coach.currentMessage}&rdquo;
                     </p>
                   </div>
@@ -812,7 +812,7 @@ export default function TrainingSessionPage() {
               )}
               <Link
                 href={`/dashboard/training/${workoutId}`}
-                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-500 transition-colors"
+                className="mt-2 inline-flex items-center gap-2 rounded-sm bg-vb-forest px-6 py-3 text-white font-medium hover:bg-vb-forest-soft transition-colors"
               >
                 Back to Workout
               </Link>
@@ -839,7 +839,7 @@ export default function TrainingSessionPage() {
                       </span>
                       <span
                         className={cn(
-                          "rounded-full px-2.5 py-1 text-xs font-bold",
+                          "rounded-full px-2.5 py-1 text-xs font-semibold",
                           zc.bg,
                           zc.text
                         )}
@@ -850,22 +850,19 @@ export default function TrainingSessionPage() {
                   );
                 })()}
                 {currentStep.notes && (
-                  <p className="mt-2 text-sm text-slate-400">
+                  <p className="mt-2 text-sm text-vb-text-dim">
                     {currentStep.notes}
                   </p>
                 )}
               </div>
 
-              {/* Target Power - big display */}
+              {/* Target Power - big display (single clay highlight: the live target) */}
               <div className="text-center">
-                <p className="text-6xl font-bold text-white tabular-nums">
+                <p className="font-display text-6xl font-light text-vb-clay tabular-nums tracking-[-0.02em]">
                   {session.currentTargetWatts}
-                  <span className="text-2xl text-slate-400 ml-1">W</span>
+                  <span className="text-2xl text-vb-text-muted ml-1 font-light">W</span>
                 </p>
-                <p className={cn(
-                  "text-lg mt-1",
-                  getZoneColors(currentStep.powerTargetPct).text
-                )}>
+                <p className="text-lg mt-1 text-vb-text-dim tabular-nums">
                   {Math.round(session.currentTargetPct * 100)}% FTP
                 </p>
               </div>
@@ -945,14 +942,14 @@ export default function TrainingSessionPage() {
               {/* Coach Message Overlay */}
               {coach.currentMessage && (
                 <div className="animate-pulse w-full max-w-lg">
-                  <div className="bg-slate-800/80 backdrop-blur rounded-xl px-6 py-3 border border-slate-700 text-center">
+                  <div className="bg-vb-surface backdrop-blur rounded-md px-6 py-3 border border-vb-border-subtle text-center">
                     <div className="flex items-center justify-center gap-2 mb-1">
-                      <Radio className="h-3 w-3 text-blue-400" />
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400">
+                      <Radio className="h-3 w-3 text-vb-forest" />
+                      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-forest">
                         Marco &mdash; Race Radio
                       </span>
                     </div>
-                    <p className="text-sm text-slate-200 italic">
+                    <p className="text-sm text-vb-text-dim italic">
                       &ldquo;{coach.currentMessage}&rdquo;
                     </p>
                   </div>
@@ -961,7 +958,7 @@ export default function TrainingSessionPage() {
 
               {/* Next step preview */}
               {nextStep && (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex items-center gap-2 text-sm text-vb-text-muted">
                   <span>Next:</span>
                   {(() => {
                     const nz = getZoneFromPct(nextStep.powerTargetPct);
@@ -994,7 +991,7 @@ export default function TrainingSessionPage() {
             {session.status === "idle" && (
               <button
                 onClick={sessionActions.start}
-                className="flex items-center gap-2 rounded-full bg-blue-600 px-8 py-4 text-lg font-bold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/30"
+                className="flex items-center gap-2 rounded-full bg-vb-forest px-8 py-4 text-lg font-medium text-white hover:bg-vb-forest-soft transition-colors"
               >
                 <Play className="h-6 w-6" /> Start Workout
               </button>
@@ -1004,28 +1001,28 @@ export default function TrainingSessionPage() {
               <>
                 <button
                   onClick={sessionActions.prevStep}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-vb-sunken text-vb-text hover:bg-vb-border-subtle transition-colors"
                   title="Previous Step / Restart"
                 >
                   <SkipBack className="h-5 w-5" />
                 </button>
                 <button
                   onClick={sessionActions.pause}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-vb-sunken text-vb-text hover:bg-vb-border-subtle transition-colors"
                   title="Pause"
                 >
                   <Pause className="h-6 w-6" />
                 </button>
                 <button
                   onClick={sessionActions.skipStep}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-vb-sunken text-vb-text hover:bg-vb-border-subtle transition-colors"
                   title="Skip Step"
                 >
                   <SkipForward className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => setShowConfirmStop(true)}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-red-900/50 text-red-400 hover:bg-red-900 transition-colors"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-vb-clay/15 text-vb-clay hover:bg-vb-clay/25 transition-colors"
                   title="Stop"
                 >
                   <Square className="h-5 w-5" />
@@ -1037,7 +1034,7 @@ export default function TrainingSessionPage() {
               <>
                 <button
                   onClick={sessionActions.prevStep}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-vb-sunken text-vb-text hover:bg-vb-border-subtle transition-colors"
                   title="Previous Step / Restart"
                 >
                   <SkipBack className="h-5 w-5" />
@@ -1047,20 +1044,20 @@ export default function TrainingSessionPage() {
                     sessionActions.resume();
                     setAutoPaused(false);
                   }}
-                  className="flex items-center gap-2 rounded-full bg-blue-600 px-8 py-4 text-lg font-bold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/30"
+                  className="flex items-center gap-2 rounded-full bg-vb-forest px-8 py-4 text-lg font-medium text-white hover:bg-vb-forest-soft transition-colors"
                 >
                   <Play className="h-6 w-6" /> Resume
                 </button>
                 <button
                   onClick={sessionActions.skipStep}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-vb-sunken text-vb-text hover:bg-vb-border-subtle transition-colors"
                   title="Skip Step"
                 >
                   <SkipForward className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => setShowConfirmStop(true)}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-red-900/50 text-red-400 hover:bg-red-900 transition-colors"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-vb-clay/15 text-vb-clay hover:bg-vb-clay/25 transition-colors"
                   title="Stop"
                 >
                   <Square className="h-5 w-5" />
@@ -1072,14 +1069,14 @@ export default function TrainingSessionPage() {
 
         {/* Right Sidebar: Live Metrics */}
         {isActive && (
-          <div className="w-64 border-l border-slate-800 bg-slate-900/50 p-4 space-y-4 overflow-y-auto">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="w-64 border-l border-vb-border-subtle bg-vb-surface p-4 space-y-4 overflow-y-auto">
+            <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Live Metrics
             </h3>
 
             {/* Power */}
             <MetricCard
-              icon={<Zap className="h-5 w-5 text-yellow-400" />}
+              icon={<Zap className="h-5 w-5 text-vb-forest" />}
               label="Power"
               value={livePower}
               unit="W"
@@ -1087,75 +1084,75 @@ export default function TrainingSessionPage() {
               color={
                 livePower > 0
                   ? livePower > session.currentTargetWatts * 1.05
-                    ? "text-red-400"
+                    ? "text-vb-clay"
                     : livePower < session.currentTargetWatts * 0.95
-                      ? "text-blue-400"
-                      : "text-green-400"
-                  : "text-slate-500"
+                      ? "text-vb-text-dim"
+                      : "text-vb-forest"
+                  : "text-vb-text-muted"
               }
             />
 
             {/* Heart Rate */}
             <MetricCard
-              icon={<Heart className="h-5 w-5 text-red-400" />}
+              icon={<Heart className="h-5 w-5 text-vb-clay" />}
               label="Heart Rate"
               value={liveHR}
               unit="bpm"
-              color={liveHR > 0 ? "text-red-400" : "text-slate-500"}
+              color={liveHR > 0 ? "text-vb-clay" : "text-vb-text-muted"}
             />
 
             {/* Cadence */}
             <MetricCard
-              icon={<Activity className="h-5 w-5 text-cyan-400" />}
+              icon={<Activity className="h-5 w-5 text-vb-forest" />}
               label="Cadence"
               value={liveCadence}
               unit="rpm"
               target={session.currentCadenceTarget ?? undefined}
-              color={liveCadence > 0 ? "text-cyan-400" : "text-slate-500"}
+              color={liveCadence > 0 ? "text-vb-forest" : "text-vb-text-muted"}
             />
 
             {/* ERG Mode Status */}
             {btState.trainer.connected && (
-              <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+              <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-3">
                 <div className="flex items-center gap-2">
-                  <Gauge className="h-4 w-4 text-green-400" />
-                  <span className="text-xs font-medium text-green-400">
+                  <Gauge className="h-4 w-4 text-vb-forest" />
+                  <span className="text-xs font-medium text-vb-forest">
                     ERG Mode Active
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs tabular-nums text-vb-text-muted">
                   Target: {session.currentTargetWatts}W
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-vb-text-muted">
                   {btState.trainer.name}
                 </p>
               </div>
             )}
 
             {/* Timer */}
-            <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+            <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Timer className="h-4 w-4 text-slate-400" />
-                <span className="text-xs font-medium text-slate-400">
+                <Timer className="h-4 w-4 text-vb-text-dim" />
+                <span className="text-xs font-medium text-vb-text-dim">
                   Session Time
                 </span>
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Elapsed</span>
-                  <span className="font-mono text-white">
+                  <span className="text-vb-text-muted">Elapsed</span>
+                  <span className="font-display font-light tabular-nums text-vb-text">
                     {formatTime(session.totalElapsedSeconds)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Remaining</span>
-                  <span className="font-mono text-slate-400">
+                  <span className="text-vb-text-muted">Remaining</span>
+                  <span className="font-display font-light tabular-nums text-vb-text-dim">
                     {formatTime(totalRemaining)}
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full bg-slate-700 mt-2">
+                <div className="h-1.5 rounded-full bg-vb-sunken mt-2">
                   <div
-                    className="h-full rounded-full bg-blue-500 transition-all"
+                    className="h-full rounded-full bg-vb-forest transition-all"
                     style={{ width: `${Math.min(100, workoutProgress)}%` }}
                   />
                 </div>
@@ -1168,14 +1165,14 @@ export default function TrainingSessionPage() {
       {/* Device Panel Modal */}
       {showDevicePanel && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-800 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-700 px-5 py-4">
-              <h2 className="text-lg font-semibold text-white">
+          <div className="w-full max-w-md rounded-md border border-vb-border-subtle bg-vb-surface shadow-2xl">
+            <div className="flex items-center justify-between border-b border-vb-border-subtle px-5 py-4">
+              <h2 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">
                 Connect Devices
               </h2>
               <button
                 onClick={() => setShowDevicePanel(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-vb-text-dim hover:text-vb-forest"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1183,13 +1180,13 @@ export default function TrainingSessionPage() {
 
             {!btState.isSupported ? (
               <div className="p-5">
-                <div className="flex items-center gap-3 rounded-lg bg-amber-900/20 border border-amber-500/30 p-4">
-                  <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
+                <div className="flex items-center gap-3 rounded-sm bg-vb-clay/10 border border-vb-clay/30 p-4">
+                  <AlertTriangle className="h-5 w-5 text-vb-clay shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-amber-400">
+                    <p className="text-sm font-medium text-vb-clay">
                       Bluetooth not available in this browser
                     </p>
-                    <p className="text-xs text-amber-400/70 mt-1">
+                    <p className="text-xs text-vb-clay/70 mt-1">
                       Use <strong>Chrome</strong>, <strong>Edge</strong>, or
                       <strong> Brave</strong> on a Mac, PC, or Android.{" "}
                       <strong>iPhone and iPad aren&apos;t supported</strong> —
@@ -1201,9 +1198,9 @@ export default function TrainingSessionPage() {
                 </div>
               </div>
             ) : (
-              <div className="divide-y divide-slate-700">
+              <div className="divide-y divide-vb-border-subtle">
                 <DeviceRow
-                  icon={<Heart className="h-5 w-5 text-red-400" />}
+                  icon={<Heart className="h-5 w-5 text-vb-clay" />}
                   label="Heart Rate Monitor"
                   connected={btState.heartRate.connected}
                   name={btState.heartRate.name}
@@ -1216,7 +1213,7 @@ export default function TrainingSessionPage() {
                   onDisconnect={() => btActions.disconnectDevice("heartRate")}
                 />
                 <DeviceRow
-                  icon={<Zap className="h-5 w-5 text-yellow-400" />}
+                  icon={<Zap className="h-5 w-5 text-vb-forest" />}
                   label="Power Meter"
                   connected={btState.power.connected}
                   name={btState.power.name}
@@ -1233,7 +1230,7 @@ export default function TrainingSessionPage() {
                   }
                 />
                 <DeviceRow
-                  icon={<Activity className="h-5 w-5 text-cyan-400" />}
+                  icon={<Activity className="h-5 w-5 text-vb-forest" />}
                   label="Cadence Sensor"
                   description={
                     btState.trainer.connected &&
@@ -1256,7 +1253,7 @@ export default function TrainingSessionPage() {
                   }
                 />
                 <DeviceRow
-                  icon={<Gauge className="h-5 w-5 text-green-400" />}
+                  icon={<Gauge className="h-5 w-5 text-vb-forest" />}
                   label="Smart Trainer (ERG)"
                   description="Controls resistance automatically"
                   connected={btState.trainer.connected}
@@ -1274,10 +1271,10 @@ export default function TrainingSessionPage() {
               </div>
             )}
 
-            <div className="border-t border-slate-700 px-5 py-3">
+            <div className="border-t border-vb-border-subtle px-5 py-3">
               <button
                 onClick={() => setShowDevicePanel(false)}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+                className="w-full rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft transition-colors"
               >
                 Done
               </button>
@@ -1289,19 +1286,19 @@ export default function TrainingSessionPage() {
       {/* Confirm Stop Modal */}
       {showConfirmStop && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white mb-2">
+          <div className="w-full max-w-sm rounded-md border border-vb-border-subtle bg-vb-surface p-6 shadow-2xl">
+            <h3 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text mb-2">
               End Workout?
             </h3>
-            <p className="text-sm text-slate-400 mb-2">
+            <p className="text-sm text-vb-text-dim mb-2">
               You&apos;ve recorded {buffer.getBuffer().length} seconds of data
               so far.
             </p>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-vb-text-dim mb-6">
               Save the ride, or discard and exit?
             </p>
             {saveError && (
-              <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              <div className="mb-4 rounded-sm border border-vb-clay/40 bg-vb-clay/10 px-3 py-2 text-xs text-vb-clay">
                 Save failed: {saveError}. Your data is still buffered — try
                 again.
               </div>
@@ -1315,7 +1312,7 @@ export default function TrainingSessionPage() {
                   await saveSession();
                   setShowConfirmStop(false);
                 }}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+                className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft transition-colors disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save ride & end"}
               </button>
@@ -1328,14 +1325,14 @@ export default function TrainingSessionPage() {
                   buffer.clear();
                   router.push(`/dashboard/training/${workoutId}`);
                 }}
-                className="rounded-lg border border-red-500/40 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                className="rounded-sm border border-vb-clay/40 px-4 py-2 text-sm text-vb-clay hover:bg-vb-clay/10 transition-colors disabled:opacity-50"
               >
                 Discard & end
               </button>
               <button
                 disabled={saving}
                 onClick={() => setShowConfirmStop(false)}
-                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors disabled:opacity-50"
+                className="rounded-sm border border-vb-border px-4 py-2 text-sm text-vb-text-dim hover:bg-vb-surface-raised transition-colors disabled:opacity-50"
               >
                 Keep going
               </button>
@@ -1347,20 +1344,20 @@ export default function TrainingSessionPage() {
       {/* Resume previous session prompt */}
       {resumePrompt && session.status === "idle" && (
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl border border-slate-700 bg-slate-800 p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white mb-2">
+          <div className="w-full max-w-sm rounded-md border border-vb-border-subtle bg-vb-surface p-6 shadow-2xl">
+            <h3 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text mb-2">
               Unfinished session found
             </h3>
-            <p className="text-sm text-slate-400 mb-2">
+            <p className="text-sm text-vb-text-dim mb-2">
               You have a buffered session for this workout from{" "}
               {new Date(resumePrompt.startedAt).toLocaleString()} with{" "}
               {resumePrompt.dataPointCount} seconds of data.
             </p>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-vb-text-dim mb-6">
               Save what you recorded, or discard and start fresh?
             </p>
             {saveError && (
-              <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              <div className="mb-4 rounded-sm border border-vb-clay/40 bg-vb-clay/10 px-3 py-2 text-xs text-vb-clay">
                 Save failed: {saveError}
               </div>
             )}
@@ -1372,7 +1369,7 @@ export default function TrainingSessionPage() {
                   await saveSession();
                   setResumePrompt(null);
                 }}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+                className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft transition-colors disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save buffered ride"}
               </button>
@@ -1382,7 +1379,7 @@ export default function TrainingSessionPage() {
                   buffer.clear();
                   setResumePrompt(null);
                 }}
-                className="rounded-lg border border-red-500/40 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                className="rounded-sm border border-vb-clay/40 px-4 py-2 text-sm text-vb-clay hover:bg-vb-clay/10 transition-colors disabled:opacity-50"
               >
                 Discard & start fresh
               </button>
@@ -1412,21 +1409,21 @@ function MetricCard({
   color?: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+    <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-3">
       <div className="flex items-center gap-2 mb-1">
         {icon}
-        <span className="text-xs font-medium text-slate-400">{label}</span>
+        <span className="text-xs font-medium text-vb-text-dim">{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
         <span
-          className={cn("text-2xl font-bold tabular-nums", color || "text-white")}
+          className={cn("font-display text-2xl font-light tabular-nums", color || "text-vb-text")}
         >
           {value || "--"}
         </span>
-        <span className="text-xs text-slate-500">{unit}</span>
+        <span className="text-xs text-vb-text-muted">{unit}</span>
       </div>
       {target !== undefined && target > 0 && (
-        <p className="text-[10px] text-slate-500 mt-0.5">
+        <p className="text-[10px] tabular-nums text-vb-text-muted mt-0.5">
           Target: {target} {unit}
         </p>
       )}
@@ -1470,28 +1467,28 @@ function DeviceRow({
 
   return (
     <div className="flex items-center gap-4 px-5 py-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-700/50">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-vb-sunken">
         {icon}
       </div>
       <div className="flex-1">
-        <p className="text-sm font-medium text-white">{label}</p>
+        <p className="text-sm font-medium text-vb-text">{label}</p>
         {connected && name ? (
-          <p className="text-xs text-green-400">
+          <p className="text-xs text-vb-forest">
             {name} {value && `· ${value}`}
           </p>
         ) : description ? (
-          <p className="text-xs text-slate-500">{description}</p>
+          <p className="text-xs text-vb-text-muted">{description}</p>
         ) : null}
       </div>
       {connected ? (
         fromTrainer ? (
-          <span className="rounded-lg bg-green-600/20 px-3 py-1.5 text-xs font-medium text-green-400">
+          <span className="rounded-sm bg-vb-sage-tint px-3 py-1.5 text-xs font-medium text-vb-forest">
             Via Trainer
           </span>
         ) : (
           <button
             onClick={onDisconnect}
-            className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-700 transition-colors"
+            className="rounded-sm border border-vb-border px-3 py-1.5 text-xs text-vb-text-dim hover:bg-vb-surface-raised transition-colors"
           >
             Disconnect
           </button>
@@ -1500,7 +1497,7 @@ function DeviceRow({
         <button
           onClick={handleConnect}
           disabled={connecting}
-          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+          className="rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft transition-colors disabled:opacity-50"
         >
           {connecting ? "Scanning..." : "Connect"}
         </button>

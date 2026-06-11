@@ -23,13 +23,13 @@ import { useAuth } from "@/lib/auth-context";
 import { formatDuration, cn } from "@/lib/utils";
 
 const STEP_COLORS: Record<string, string> = {
-  warmup: "bg-green-600/60",
-  steady_state: "bg-blue-600/60",
-  interval_on: "bg-red-600/60",
-  interval_off: "bg-slate-600/60",
-  cooldown: "bg-cyan-600/60",
-  free_ride: "bg-purple-600/60",
-  ramp: "bg-yellow-600/60",
+  warmup: "bg-vb-forest/50",
+  steady_state: "bg-vb-forest/70",
+  interval_on: "bg-vb-clay",
+  interval_off: "bg-vb-sunken",
+  cooldown: "bg-vb-forest/40",
+  free_ride: "bg-vb-forest/60",
+  ramp: "bg-vb-forest/80",
 };
 
 const EXPORT_FORMATS = [
@@ -95,14 +95,14 @@ export default function WorkoutDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-vb-forest border-t-transparent" />
       </div>
     );
   }
 
   if (!workout) {
     return (
-      <div className="py-20 text-center text-slate-400">Workout not found</div>
+      <div className="py-20 text-center text-vb-text-dim">Workout not found</div>
     );
   }
 
@@ -119,17 +119,17 @@ export default function WorkoutDetailPage() {
       <div>
         <Link
           href="/dashboard/training"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-white"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-vb-text-dim hover:text-vb-forest"
         >
           <ArrowLeft className="h-4 w-4" /> Back to training
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">{workout.title}</h1>
-            <p className="mt-1 text-sm text-slate-400">
+            <h1 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">{workout.title}</h1>
+            <p className="mt-1 text-sm text-vb-text-dim">
               {workout.description}
             </p>
-            <div className="mt-2 flex items-center gap-4 text-sm text-slate-400">
+            <div className="mt-2 flex items-center gap-4 text-sm text-vb-text-dim">
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
                 {workout.planned_duration_seconds
@@ -146,10 +146,10 @@ export default function WorkoutDetailPage() {
                 className={cn(
                   "rounded-full px-2.5 py-0.5 text-xs font-medium capitalize",
                   workout.status === "completed"
-                    ? "bg-green-600/20 text-green-400"
+                    ? "bg-vb-sage-tint text-vb-forest"
                     : workout.status === "skipped"
-                      ? "bg-slate-600/20 text-slate-400"
-                      : "bg-blue-600/20 text-blue-400"
+                      ? "bg-vb-sunken text-vb-text-muted"
+                      : "border border-vb-border-subtle text-vb-text-dim"
                 )}
               >
                 {workout.status}
@@ -163,7 +163,7 @@ export default function WorkoutDetailPage() {
             {workout.status === "planned" && workout.steps && workout.steps.length > 0 && (
               <Link
                 href={`/dashboard/training/${workoutId}/session`}
-                className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+                className="flex items-center gap-1.5 rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft transition-colors"
               >
                 <Play className="h-4 w-4" /> Start Session
               </Link>
@@ -174,7 +174,7 @@ export default function WorkoutDetailPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-1.5 rounded-sm border border-vb-border px-3 py-2 text-sm text-vb-forest hover:bg-vb-surface-raised transition-colors"
                 >
                   <Download className="h-4 w-4" />
                   {downloading ? "..." : "Export"}
@@ -187,18 +187,18 @@ export default function WorkoutDetailPage() {
                       className="fixed inset-0 z-10"
                       onClick={() => setShowExportMenu(false)}
                     />
-                    <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-slate-700 bg-slate-800 py-1 shadow-xl">
+                    <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-md border border-vb-border-subtle bg-vb-surface py-1 shadow-xl">
                       {EXPORT_FORMATS.map((fmt) => (
                         <button
                           key={fmt.key}
                           onClick={() => handleDownload(fmt.key)}
                           disabled={!!downloading}
-                          className="flex w-full items-center justify-between px-4 py-2 text-left text-sm hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+                          className="flex w-full items-center justify-between px-4 py-2 text-left text-sm hover:bg-vb-surface-raised transition-colors disabled:opacity-50"
                         >
-                          <span className="font-medium text-white">
+                          <span className="font-medium text-vb-text">
                             .{fmt.label}
                           </span>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-vb-text-dim">
                             {fmt.desc}
                           </span>
                         </button>
@@ -214,21 +214,21 @@ export default function WorkoutDetailPage() {
 
       {/* Planned vs Actual — shown when a ride has been linked to this workout */}
       {hasActualRide && workout.actual_ride && (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Activity className="h-4 w-4 text-blue-400" />
+            <h2 className="flex items-center gap-2 text-sm font-medium text-vb-text">
+              <Activity className="h-4 w-4 text-vb-forest" />
               Planned vs. Actual
             </h2>
             {assessment?.score != null && (
               <div
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                  "flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold tabular-nums",
                   assessment.score >= 8
-                    ? "bg-green-500/15 text-green-400 border border-green-500/30"
+                    ? "bg-vb-sage-tint text-vb-forest border border-vb-forest/30"
                     : assessment.score >= 6
-                      ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
-                      : "bg-orange-500/15 text-orange-400 border border-orange-500/30"
+                      ? "bg-vb-sunken text-vb-text-dim border border-vb-border-subtle"
+                      : "bg-vb-clay/15 text-vb-clay border border-vb-clay/30"
                 )}
               >
                 <TrendingUp className="h-3.5 w-3.5" />
@@ -294,13 +294,13 @@ export default function WorkoutDetailPage() {
           </div>
 
           {/* Marco's feedback */}
-          <div className="mt-5 rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
+          <div className="mt-5 rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-forest bg-vb-sage-tint/30 p-4">
             <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600/80">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-vb-forest">
                   <Sparkles className="h-3 w-3 text-white" />
                 </div>
-                <p className="text-xs font-semibold text-blue-300">
+                <p className="text-xs font-medium text-vb-forest">
                   Coach Marco&apos;s debrief
                 </p>
               </div>
@@ -309,7 +309,7 @@ export default function WorkoutDetailPage() {
                 disabled={
                   regenerateAssessment.isPending || assessmentLoading
                 }
-                className="flex items-center gap-1 rounded text-[10px] text-slate-400 hover:text-blue-400 disabled:opacity-50"
+                className="flex items-center gap-1 rounded-sm text-[10px] text-vb-text-muted hover:text-vb-forest disabled:opacity-50"
                 title="Regenerate feedback"
               >
                 <RefreshCw
@@ -323,40 +323,40 @@ export default function WorkoutDetailPage() {
               </button>
             </div>
             {assessmentLoading && !assessment ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-vb-text-dim">
                 Marco is reviewing your ride…
               </p>
             ) : assessment?.feedback ? (
-              <div className="prose prose-invert prose-sm max-w-none prose-p:text-slate-200">
+              <div className="prose prose-sm max-w-none prose-p:text-vb-text-dim">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {assessment.feedback}
                 </ReactMarkdown>
               </div>
             ) : (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-vb-text-muted">
                 No feedback yet.
               </p>
             )}
 
             {assessment?.adjustments && assessment.adjustments.length > 0 && (
-              <div className="mt-4 border-t border-blue-500/20 pt-3">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-blue-300">
+              <div className="mt-4 border-t border-vb-border-subtle pt-3">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-vb-forest">
                   Suggested adjustments
                 </p>
                 <ul className="space-y-2">
                   {assessment.adjustments.map((adj, i) => (
                     <li
                       key={i}
-                      className="rounded-md border border-slate-700 bg-slate-800/60 p-2.5 text-xs text-slate-300"
+                      className="rounded-sm border border-vb-border-subtle bg-vb-surface p-2.5 text-xs text-vb-text-dim"
                     >
                       {adj.date && (
-                        <p className="mb-0.5 font-medium text-slate-200">
+                        <p className="mb-0.5 font-medium text-vb-text">
                           {adj.date}
                         </p>
                       )}
                       {adj.change && <p>{adj.change}</p>}
                       {adj.reason && (
-                        <p className="mt-1 text-[10px] text-slate-500">
+                        <p className="mt-1 text-[10px] text-vb-text-muted">
                           {adj.reason}
                         </p>
                       )}
@@ -371,8 +371,8 @@ export default function WorkoutDetailPage() {
 
       {/* Visual Workout Profile */}
       {workout.steps && workout.steps.length > 0 && (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50 p-5">
-          <h2 className="mb-4 text-sm font-semibold text-white">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+          <h2 className="mb-4 text-sm font-medium text-vb-text">
             Workout Profile
           </h2>
 
@@ -453,7 +453,7 @@ export default function WorkoutDetailPage() {
                     key={step.id}
                     className={cn(
                       "rounded-t-sm transition-all",
-                      STEP_COLORS[step.step_type] || "bg-slate-600/60"
+                      STEP_COLORS[step.step_type] || "bg-vb-sunken"
                     )}
                     style={{
                       height: `${heightPct}%`,
@@ -470,8 +470,8 @@ export default function WorkoutDetailPage() {
 
           {/* FTP line reference */}
           <div className="relative mt-1">
-            <div className="absolute -top-[calc(80%+4px)] left-0 w-full border-t border-dashed border-slate-500/30" />
-            <p className="text-right text-[10px] text-slate-500">
+            <div className="absolute -top-[calc(80%+4px)] left-0 w-full border-t border-dashed border-vb-border" />
+            <p className="text-right text-[10px] tabular-nums text-vb-text-muted">
               FTP ({ftp}W)
             </p>
           </div>
@@ -480,11 +480,11 @@ export default function WorkoutDetailPage() {
 
       {/* Step Details */}
       {workout.steps && workout.steps.length > 0 && (
-        <div className="rounded-xl border border-slate-800 bg-slate-800/50">
-          <div className="border-b border-slate-700 px-5 py-3">
-            <h2 className="text-sm font-semibold text-white">Workout Steps</h2>
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface">
+          <div className="border-b border-vb-border-subtle px-5 py-3">
+            <h2 className="text-sm font-medium text-vb-text">Workout Steps</h2>
           </div>
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-vb-border-subtle">
             {workout.steps.map((step) => {
               const powerW = step.power_target_pct
                 ? Math.round(step.power_target_pct * ftp)
@@ -501,29 +501,29 @@ export default function WorkoutDetailPage() {
                   <div
                     className={cn(
                       "h-8 w-1.5 rounded-full",
-                      STEP_COLORS[step.step_type] || "bg-slate-600"
+                      STEP_COLORS[step.step_type] || "bg-vb-sunken"
                     )}
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium capitalize text-white">
+                      <p className="text-sm font-medium capitalize text-vb-text">
                         {step.step_type.replace("_", " ")}
                       </p>
                       {step.repeat_count && step.repeat_count > 1 && (
-                        <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] text-slate-300">
+                        <span className="rounded-sm bg-vb-sunken px-1.5 py-0.5 text-[10px] text-vb-text-dim">
                           x{step.repeat_count}
                         </span>
                       )}
                     </div>
                     {step.notes && (
-                      <p className="text-xs text-slate-400">{step.notes}</p>
+                      <p className="text-xs text-vb-text-dim">{step.notes}</p>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-white">
+                    <p className="font-display text-sm font-light tabular-nums text-vb-text">
                       {formatDuration(step.duration_seconds)}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="font-display text-xs font-light tabular-nums text-vb-text-dim">
                       {lowW && highW
                         ? `${lowW}-${highW}W`
                         : powerW
@@ -533,7 +533,7 @@ export default function WorkoutDetailPage() {
                         ` (${Math.round(step.power_target_pct * 100)}%)`}
                     </p>
                     {step.cadence_target && (
-                      <p className="text-[10px] text-slate-500">
+                      <p className="text-[10px] tabular-nums text-vb-text-muted">
                         {step.cadence_target} rpm
                       </p>
                     )}
@@ -558,18 +558,18 @@ function StatCompare({
   actual: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800/60 p-3">
-      <p className="text-[10px] uppercase tracking-wide text-slate-500">
+    <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-3">
+      <p className="text-[10px] uppercase tracking-wide text-vb-text-muted">
         {label}
       </p>
       <div className="mt-1 space-y-0.5">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[9px] uppercase text-slate-600">Plan</span>
-          <span className="text-sm font-mono text-slate-300">{planned}</span>
+          <span className="text-[9px] uppercase text-vb-text-muted">Plan</span>
+          <span className="font-display text-sm font-light tabular-nums text-vb-text-dim">{planned}</span>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[9px] uppercase text-green-500/70">Did</span>
-          <span className="text-sm font-mono text-green-400">{actual}</span>
+          <span className="text-[9px] uppercase text-vb-forest/70">Did</span>
+          <span className="font-display text-sm font-light tabular-nums text-vb-forest">{actual}</span>
         </div>
       </div>
     </div>

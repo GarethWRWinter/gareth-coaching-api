@@ -33,23 +33,23 @@ function CustomTooltip({
   const point = payload[0].payload;
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 shadow-xl">
-      <p className="text-xs font-medium text-slate-300">
+    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+      <p className="text-xs font-medium text-vb-text-dim">
         {formatShortDate(point.date)}
         {point.label && (
-          <span className="ml-1.5 text-emerald-400">{point.label}</span>
+          <span className="ml-1.5 text-vb-forest">{point.label}</span>
         )}
       </p>
       <div className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-0.5">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-vb-text-dim">
           Fitness:{" "}
-          <span className="font-mono font-medium text-emerald-400">
+          <span className="font-mono font-medium text-vb-forest">
             {point.ctl.toFixed(0)}
           </span>
         </p>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-vb-text-dim">
           FTP:{" "}
-          <span className="font-mono font-medium text-amber-400">
+          <span className="font-mono font-medium text-vb-clay">
             {point.ftp}W
           </span>
         </p>
@@ -81,32 +81,32 @@ export function FitnessTrajectoryChart({
         >
           <defs>
             <linearGradient id="ctlGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="#36513F" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="#36513F" stopOpacity={0.02} />
             </linearGradient>
           </defs>
 
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#1e293b"
+            stroke="#E4DCCE"
             vertical={false}
           />
 
           <XAxis
             dataKey="date"
             tickFormatter={formatShortDate}
-            tick={{ fontSize: 10, fill: "#94a3b8" }}
-            tickLine={{ stroke: "#475569" }}
-            axisLine={{ stroke: "#475569" }}
+            tick={{ fontSize: 10, fill: "#948D80" }}
+            tickLine={{ stroke: "#D6CFC1" }}
+            axisLine={{ stroke: "#D6CFC1" }}
             interval="preserveStartEnd"
             minTickGap={40}
           />
 
           <YAxis
             domain={[minCtl, maxCtl]}
-            tick={{ fontSize: 10, fill: "#94a3b8" }}
-            tickLine={{ stroke: "#475569" }}
-            axisLine={{ stroke: "#475569" }}
+            tick={{ fontSize: 10, fill: "#948D80" }}
+            tickLine={{ stroke: "#D6CFC1" }}
+            axisLine={{ stroke: "#D6CFC1" }}
             width={35}
             tickFormatter={(v: number) => v.toFixed(0)}
           />
@@ -116,7 +116,7 @@ export function FitnessTrajectoryChart({
             <ReferenceLine
               key={m.date}
               x={m.date}
-              stroke={m.label === "Race Day" ? "#f59e0b" : "#475569"}
+              stroke={m.label === "Race Day" ? "#BB6647" : "#D6CFC1"}
               strokeDasharray={m.label === "Race Day" ? "0" : "4 4"}
               strokeWidth={m.label === "Race Day" ? 1.5 : 1}
               label={
@@ -124,7 +124,7 @@ export function FitnessTrajectoryChart({
                   ? {
                       value: m.label,
                       position: "top",
-                      fill: m.label === "Race Day" ? "#f59e0b" : "#94a3b8",
+                      fill: m.label === "Race Day" ? "#BB6647" : "#948D80",
                       fontSize: 10,
                       fontWeight: m.label === "Race Day" ? 600 : 400,
                     }
@@ -136,19 +136,19 @@ export function FitnessTrajectoryChart({
           <Area
             type="monotone"
             dataKey="ctl"
-            stroke="#10b981"
+            stroke="#36513F"
             strokeWidth={2}
             fill="url(#ctlGradient)"
             dot={false}
             activeDot={{
               r: 4,
-              fill: "#10b981",
-              stroke: "#0f172a",
+              fill: "#36513F",
+              stroke: "#FBF7F0",
               strokeWidth: 2,
             }}
           />
 
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#64748b", strokeDasharray: "4 4" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#BCB3A3", strokeDasharray: "4 4" }} />
         </AreaChart>
       </ResponsiveContainer>
 
@@ -156,15 +156,15 @@ export function FitnessTrajectoryChart({
       {trajectory.length >= 2 && (
         <div className="mt-2 flex items-center justify-between px-1">
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="text-[10px] text-slate-500">
+            <div className="h-2 w-2 rounded-full bg-vb-forest" />
+            <span className="text-[10px] text-vb-text-muted">
               CTL {trajectory[0].ctl.toFixed(0)} &rarr;{" "}
               {trajectory[trajectory.length - 1].ctl.toFixed(0)}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-amber-500" />
-            <span className="text-[10px] text-slate-500">
+            <div className="h-2 w-2 rounded-full bg-vb-clay" />
+            <span className="text-[10px] text-vb-text-muted">
               FTP {trajectory[0].ftp}W &rarr;{" "}
               {trajectory[trajectory.length - 1].ftp}W
             </span>

@@ -19,14 +19,14 @@ import { useAuth } from "@/lib/auth-context";
 import type { Workout, GoalEvent } from "@/lib/api";
 
 const WORKOUT_COLORS: Record<string, string> = {
-  recovery: "border-l-slate-400 bg-slate-800/30",
-  endurance: "border-l-blue-400 bg-blue-900/10",
-  tempo: "border-l-green-400 bg-green-900/10",
-  sweet_spot: "border-l-yellow-400 bg-yellow-900/10",
-  threshold: "border-l-orange-400 bg-orange-900/10",
-  vo2max: "border-l-red-400 bg-red-900/10",
-  sprint: "border-l-purple-400 bg-purple-900/10",
-  rest: "border-l-slate-600 bg-slate-800/20",
+  recovery: "border-l-vb-border bg-vb-surface",
+  endurance: "border-l-vb-forest bg-vb-sage-tint/40",
+  tempo: "border-l-vb-forest bg-vb-sage-tint/40",
+  sweet_spot: "border-l-vb-forest bg-vb-sage-tint/40",
+  threshold: "border-l-vb-clay bg-vb-surface",
+  vo2max: "border-l-vb-clay bg-vb-surface",
+  sprint: "border-l-vb-clay bg-vb-surface",
+  rest: "border-l-vb-border-subtle bg-vb-surface",
 };
 
 function getWeekDates(offset: number): { start: Date; dates: Date[] } {
@@ -131,19 +131,19 @@ export default function TrainingPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Training</h1>
+          <h1 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Training</h1>
           {hasActivePlan ? (
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-sm text-vb-text-dim">
               Active plan:{" "}
               {plans?.plans.find((p) => p.status === "active")?.name}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-slate-400">No active plan</p>
+            <p className="mt-1 text-sm text-vb-text-dim">No active plan</p>
           )}
         </div>
         <button
           onClick={() => setShowGenerate(!showGenerate)}
-          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-500"
+          className="flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2.5 text-sm font-medium text-white hover:bg-vb-forest-soft"
         >
           <Plus className="h-4 w-4" /> Generate Plan
         </button>
@@ -151,17 +151,17 @@ export default function TrainingPage() {
 
       {/* Prompt: user has an upcoming goal but no active plan */}
       {!hasActivePlan && nextUpcomingGoal && !showGenerate && (
-        <div className="rounded-xl border border-blue-500/40 bg-blue-900/10 p-4 sm:p-5">
+        <div className="rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-forest bg-vb-surface p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
-                <Trophy className="h-5 w-5 text-blue-400" />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-vb-sage-tint">
+                <Trophy className="h-5 w-5 text-vb-forest" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-medium text-vb-text">
                   Build a plan for {nextUpcomingGoal.event_name}
                 </p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-vb-text-dim">
                   {formatDate(nextUpcomingGoal.event_date)}
                   {nextUpcomingGoal.days_until != null && nextUpcomingGoal.days_until > 0 && (
                     <> &middot; {nextUpcomingGoal.days_until} days away</>
@@ -178,7 +178,7 @@ export default function TrainingPage() {
                 })
               }
               disabled={generateMutation.isPending}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
               {generateMutation.isPending ? "Generating..." : "Generate Plan"}
             </button>
@@ -188,24 +188,24 @@ export default function TrainingPage() {
 
       {/* Prompt: user has no active plan and no upcoming goal */}
       {!hasActivePlan && !nextUpcomingGoal && !showGenerate && (
-        <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4 sm:p-5">
-          <p className="text-sm font-semibold text-white">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-4 sm:p-5">
+          <p className="text-sm font-medium text-vb-text">
             Ready to start training?
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-vb-text-dim">
             Set a goal event first so your plan peaks on race day, or generate a
             generic 12-week plan to start building fitness now.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
               href="/dashboard/goals"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
             >
               Add a goal
             </Link>
             <button
               onClick={() => setShowGenerate(true)}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700"
+              className="rounded-sm border border-vb-border px-4 py-2 text-sm font-medium text-vb-forest hover:bg-vb-surface-raised"
             >
               Generate generic plan
             </button>
@@ -215,24 +215,24 @@ export default function TrainingPage() {
 
       {/* Generate Plan Dialog */}
       {showGenerate && (
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-5">
-          <h3 className="text-sm font-semibold text-white">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+          <h3 className="text-sm font-medium text-vb-text">
             Generate Training Plan
           </h3>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-vb-text-dim">
             {nextUpcomingGoal
               ? `Creates a periodised plan peaking on ${nextUpcomingGoal.event_name} (${formatDate(nextUpcomingGoal.event_date)}).`
               : "Creates a 12-week periodised plan based on your profile."}
           </p>
           <div className="mt-4 flex flex-wrap items-end gap-3 sm:gap-4">
             <div className="min-w-[180px] flex-1">
-              <label className="mb-1.5 block text-xs font-medium text-slate-300">
+              <label className="mb-1.5 block text-xs font-medium text-vb-text-dim">
                 Periodization Model
               </label>
               <select
                 value={genModel}
                 onChange={(e) => setGenModel(e.target.value)}
-                className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white"
+                className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text"
               >
                 <option value="traditional">Traditional</option>
                 <option value="polarized">Polarized</option>
@@ -247,13 +247,13 @@ export default function TrainingPage() {
                 })
               }
               disabled={generateMutation.isPending}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
+              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
               {generateMutation.isPending ? "Generating..." : "Generate"}
             </button>
             <button
               onClick={() => setShowGenerate(false)}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700"
+              className="rounded-sm border border-vb-border px-4 py-2 text-sm text-vb-forest hover:bg-vb-surface-raised"
             >
               Cancel
             </button>
@@ -265,14 +265,14 @@ export default function TrainingPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => setShowSchedule(!showSchedule)}
-          className="text-xs text-slate-400 hover:text-white transition-colors"
+          className="text-xs text-vb-text-dim hover:text-vb-forest transition-colors"
         >
           {showSchedule ? "Hide schedule" : "Adjust availability"}
         </button>
       </div>
       {showSchedule && (
-        <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
-          <p className="mb-3 text-xs text-slate-400">
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-4">
+          <p className="mb-3 text-xs text-vb-text-dim">
             Set your training schedule. Hard days get intensity sessions, rest days have no training. Click to cycle: Easy → Rest → Hard.
           </p>
           <div className="grid grid-cols-7 gap-2">
@@ -281,7 +281,7 @@ export default function TrainingPage() {
               const isRest = restDays.includes(idx);
               return (
                 <div key={day} className="text-center">
-                  <p className="mb-1 text-[10px] font-medium text-slate-500">{day}</p>
+                  <p className="mb-1 text-[10px] font-medium text-vb-text-muted">{day}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -295,12 +295,12 @@ export default function TrainingPage() {
                       }
                     }}
                     className={cn(
-                      "w-full rounded-lg py-2 text-xs font-medium transition-colors",
+                      "w-full rounded-sm py-2 text-xs font-medium transition-colors",
                       isHard
-                        ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                        ? "bg-vb-clay/15 text-vb-clay border border-vb-clay/40"
                         : isRest
-                          ? "bg-slate-700/50 text-slate-500 border border-slate-600/30"
-                          : "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                          ? "bg-vb-sunken text-vb-text-muted border border-vb-border-subtle"
+                          : "bg-vb-sage-tint text-vb-forest border border-vb-forest/30"
                     )}
                   >
                     {isHard ? "Hard" : isRest ? "Rest" : "Easy"}
@@ -325,11 +325,11 @@ export default function TrainingPage() {
                 }
               }}
               disabled={scheduleSaving}
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className="rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
               {scheduleSaving ? "Saving..." : "Save Schedule"}
             </button>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-vb-text-muted">
               Re-generate your plan after saving to apply changes
             </p>
           </div>
@@ -340,12 +340,12 @@ export default function TrainingPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => setWeekOffset((w) => w - 1)}
-          className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:bg-slate-800"
+          className="rounded-sm border border-vb-border-subtle p-2 text-vb-text-dim hover:bg-vb-surface"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="text-center">
-          <p className="text-sm font-medium text-white">
+          <p className="text-sm font-medium text-vb-text">
             {dates[0].toLocaleDateString("en-GB", {
               day: "numeric",
               month: "short",
@@ -360,7 +360,7 @@ export default function TrainingPage() {
           {weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="text-xs text-blue-400 hover:text-blue-300"
+              className="text-xs text-vb-forest hover:text-vb-forest-soft"
             >
               Back to this week
             </button>
@@ -368,7 +368,7 @@ export default function TrainingPage() {
         </div>
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
-          className="rounded-lg border border-slate-700 p-2 text-slate-300 hover:bg-slate-800"
+          className="rounded-sm border border-vb-border-subtle p-2 text-vb-text-dim hover:bg-vb-surface"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -388,25 +388,25 @@ export default function TrainingPage() {
             <div
               key={dateStr}
               className={cn(
-                "min-h-[180px] rounded-xl border p-3",
+                "min-h-[180px] rounded-md border p-3",
                 isToday
-                  ? "border-blue-500/50 bg-blue-900/10"
-                  : "border-slate-800 bg-slate-800/30"
+                  ? "border-vb-forest bg-vb-sage-tint/40"
+                  : "border-vb-border-subtle bg-vb-surface"
               )}
             >
               <div className="mb-2 flex items-center justify-between">
                 <span
                   className={cn(
                     "text-xs font-medium",
-                    isToday ? "text-blue-400" : "text-slate-400"
+                    isToday ? "text-vb-forest" : "text-vb-text-dim"
                   )}
                 >
                   {dayLabels[i]}
                 </span>
                 <span
                   className={cn(
-                    "text-xs",
-                    isToday ? "text-blue-400 font-semibold" : "text-slate-500"
+                    "text-xs tabular-nums",
+                    isToday ? "text-vb-forest font-semibold" : "text-vb-text-muted"
                   )}
                 >
                   {date.getDate()}
@@ -419,19 +419,19 @@ export default function TrainingPage() {
                   <Link
                     key={goal.id}
                     href={`/dashboard/goals/${goal.id}`}
-                    className="block rounded-lg border border-amber-500/50 bg-amber-900/20 p-2"
+                    className="block rounded-sm border border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface p-2"
                   >
                     <div className="flex items-center gap-1.5">
-                      <Trophy className="h-3 w-3 shrink-0 text-amber-400" />
-                      <p className="truncate text-xs font-semibold text-amber-300">
+                      <Trophy className="h-3 w-3 shrink-0 text-vb-clay" />
+                      <p className="truncate text-xs font-medium text-vb-clay">
                         {goal.event_name}
                       </p>
                     </div>
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="rounded bg-amber-700/40 px-1 py-0.5 text-[9px] font-medium text-amber-300">
+                      <span className="rounded-sm bg-vb-clay/15 px-1 py-0.5 text-[9px] font-medium text-vb-clay">
                         {goal.priority.replace(/_/g, " ").toUpperCase()}
                       </span>
-                      <span className="text-[10px] text-amber-400/70">
+                      <span className="text-[10px] text-vb-text-muted">
                         {goal.event_type.replace(/_/g, " ")}
                       </span>
                     </div>
@@ -448,9 +448,9 @@ export default function TrainingPage() {
                   <div
                     key={workout.id}
                     className={cn(
-                      "rounded-lg border-l-2 p-2",
+                      "rounded-sm border-l-2 p-2",
                       WORKOUT_COLORS[workout.workout_type] ||
-                        "border-l-slate-500 bg-slate-800/30"
+                        "border-l-vb-border bg-vb-surface"
                     )}
                   >
                     <Link
@@ -458,18 +458,18 @@ export default function TrainingPage() {
                       className="block"
                     >
                       <div className="flex items-start justify-between gap-1">
-                        <p className="truncate text-xs font-medium text-white hover:text-blue-400">
+                        <p className="truncate text-xs font-medium text-vb-text hover:text-vb-forest">
                           {workout.title}
                         </p>
                         {score != null && (
                           <span
                             className={cn(
-                              "shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold",
+                              "shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tabular-nums",
                               score >= 8
-                                ? "bg-green-500/20 text-green-400"
+                                ? "bg-vb-sage-tint text-vb-forest"
                                 : score >= 6
-                                  ? "bg-yellow-500/20 text-yellow-400"
-                                  : "bg-orange-500/20 text-orange-400"
+                                  ? "bg-vb-sunken text-vb-text-dim"
+                                  : "bg-vb-clay/15 text-vb-clay"
                             )}
                           >
                             {score.toFixed(1)}
@@ -478,22 +478,22 @@ export default function TrainingPage() {
                       </div>
                     </Link>
                     {workout.description && !hasActual && (
-                      <p className="mt-0.5 line-clamp-2 text-[10px] text-slate-500">
+                      <p className="mt-0.5 line-clamp-2 text-[10px] text-vb-text-muted">
                         {workout.description}
                       </p>
                     )}
                     {/* Planned stats */}
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-[9px] uppercase text-slate-600">
+                      <span className="text-[9px] uppercase text-vb-text-muted">
                         Plan
                       </span>
                       {workout.planned_duration_seconds && (
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] tabular-nums text-vb-text-dim">
                           {formatDuration(workout.planned_duration_seconds)}
                         </span>
                       )}
                       {workout.planned_tss && (
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] tabular-nums text-vb-text-dim">
                           {Math.round(workout.planned_tss)} TSS
                         </span>
                       )}
@@ -501,12 +501,12 @@ export default function TrainingPage() {
                     {/* Actual stats (shown when linked) */}
                     {hasActual && workout.actual_ride && (
                       <div className="mt-0.5 flex items-center gap-1.5">
-                        <span className="text-[9px] uppercase text-green-500/70">
+                        <span className="text-[9px] uppercase text-vb-forest/70">
                           Did
                         </span>
                         {(workout.actual_ride.moving_time_seconds ||
                           workout.actual_ride.duration_seconds) && (
-                          <span className="text-[10px] text-green-400">
+                          <span className="text-[10px] tabular-nums text-vb-forest">
                             {formatDuration(
                               workout.actual_ride.moving_time_seconds ??
                                 workout.actual_ride.duration_seconds ??
@@ -515,7 +515,7 @@ export default function TrainingPage() {
                           </span>
                         )}
                         {workout.actual_ride.tss != null && (
-                          <span className="text-[10px] text-green-400">
+                          <span className="text-[10px] tabular-nums text-vb-forest">
                             {Math.round(workout.actual_ride.tss)} TSS
                           </span>
                         )}
@@ -532,7 +532,7 @@ export default function TrainingPage() {
                                 status: "completed",
                               })
                             }
-                            className="rounded bg-green-700/30 p-0.5 text-green-400 hover:bg-green-700/50"
+                            className="rounded-sm bg-vb-sage-tint p-0.5 text-vb-forest hover:bg-vb-sage-tint/70"
                             title="Mark completed"
                           >
                             <Check className="h-3 w-3" />
@@ -544,7 +544,7 @@ export default function TrainingPage() {
                                 status: "skipped",
                               })
                             }
-                            className="rounded bg-slate-700/30 p-0.5 text-slate-400 hover:bg-slate-700/50"
+                            className="rounded-sm bg-vb-sunken p-0.5 text-vb-text-muted hover:bg-vb-border-subtle"
                             title="Skip"
                           >
                             <X className="h-3 w-3" />
@@ -552,7 +552,7 @@ export default function TrainingPage() {
                         </>
                       )}
                       {workout.status === "completed" && !hasActual && (
-                        <span className="text-[10px] text-green-400">
+                        <span className="text-[10px] text-vb-forest">
                           Done
                         </span>
                       )}
@@ -561,7 +561,7 @@ export default function TrainingPage() {
                     );
                   })}
                 {dayWorkouts.filter((w) => w.status !== "skipped").length === 0 && dayGoals.length === 0 && (
-                  <p className="py-2 text-center text-[10px] text-slate-600">
+                  <p className="py-2 text-center text-[10px] text-vb-text-muted">
                     Rest
                   </p>
                 )}
@@ -580,9 +580,9 @@ export default function TrainingPage() {
           .map((plan) => (
             <div
               key={plan.id}
-              className="rounded-xl border border-slate-800 bg-slate-800/50 p-5"
+              className="rounded-md border border-vb-border-subtle bg-vb-surface p-5"
             >
-              <h2 className="mb-3 text-lg font-semibold text-white">
+              <h2 className="mb-3 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
                 Plan Phases
               </h2>
               <div className="flex gap-1 overflow-x-auto">
@@ -593,25 +593,25 @@ export default function TrainingPage() {
                     <div
                       key={phase.id}
                       className={cn(
-                        "flex-1 rounded-lg border p-3",
+                        "flex-1 rounded-sm border p-3",
                         isCurrentPhase
-                          ? "border-blue-500 bg-blue-900/20"
-                          : "border-slate-700 bg-slate-800/50"
+                          ? "border-vb-forest bg-vb-sage-tint/40"
+                          : "border-vb-border-subtle bg-vb-surface"
                       )}
                     >
-                      <p className="text-xs font-semibold capitalize text-white">
+                      <p className="text-xs font-semibold capitalize text-vb-text">
                         {phase.phase_type.replace("_", " ")}
                       </p>
-                      <p className="mt-0.5 text-[10px] text-slate-400">
+                      <p className="mt-0.5 text-[10px] text-vb-text-dim">
                         {formatDate(phase.start_date)} &ndash;{" "}
                         {formatDate(phase.end_date)}
                       </p>
                       {phase.focus && (
-                        <p className="mt-1 text-[10px] text-slate-500">
+                        <p className="mt-1 text-[10px] text-vb-text-muted">
                           {phase.focus}
                         </p>
                       )}
-                      <p className="mt-1 text-[10px] text-slate-400">
+                      <p className="mt-1 text-[10px] tabular-nums text-vb-text-dim">
                         {phase.workout_count} workouts
                       </p>
                     </div>

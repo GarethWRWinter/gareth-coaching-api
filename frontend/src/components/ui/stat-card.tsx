@@ -45,9 +45,9 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         <div
           ref={ref}
           className={cn(
-            "rounded-lg border border-slate-700 bg-slate-800 p-4 shadow-sm",
-            explainable && value !== "-" && "cursor-pointer hover:border-blue-600/50 transition-colors",
-            showExplain && "border-blue-600/50",
+            "rounded-md border border-vb-border-subtle bg-vb-surface p-4",
+            explainable && value !== "-" && "cursor-pointer transition-colors hover:border-vb-forest/40",
+            showExplain && "border-vb-forest/40",
             className
           )}
           onClick={handleTap}
@@ -56,19 +56,23 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
           {...props}
         >
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-400">{label}</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+              {label}
+            </p>
             {explainable && value !== "-" && (
-              <Bot className="h-3.5 w-3.5 text-slate-600" />
+              <Bot className="h-3.5 w-3.5 text-vb-text-muted" />
             )}
           </div>
-          <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-white">{value}</span>
-            {unit && <span className="text-sm text-slate-400">{unit}</span>}
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="font-display text-2xl font-light tracking-[-0.02em] tabular-nums text-vb-text">
+              {value}
+            </span>
+            {unit && <span className="text-sm text-vb-text-muted">{unit}</span>}
             {trend && (
               <span
                 className={cn(
                   "ml-auto flex items-center text-sm font-medium",
-                  trend === "up" ? "text-green-400" : "text-red-400"
+                  trend === "up" ? "text-vb-forest" : "text-vb-clay"
                 )}
               >
                 {trend === "up" ? (
@@ -81,26 +85,26 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
           </div>
         </div>
         {showExplain && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-lg border border-blue-500/30 bg-slate-900 p-3 shadow-xl">
+          <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-vb-border-subtle bg-vb-surface p-3 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
             <div className="mb-1.5 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <Bot className="h-3.5 w-3.5 text-blue-400" />
-                <span className="text-xs font-semibold text-blue-400">Coach Marco</span>
+                <Bot className="h-3.5 w-3.5 text-vb-forest" />
+                <span className="text-xs font-medium text-vb-forest">Coach Marco</span>
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowExplain(false); }}
-                className="text-slate-500 hover:text-slate-300"
+                className="text-vb-text-muted hover:text-vb-text"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
             {loading ? (
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <div className="h-3 w-3 animate-spin rounded-full border border-blue-500 border-t-transparent" />
+              <div className="flex items-center gap-2 text-xs text-vb-text-dim">
+                <div className="h-3 w-3 animate-spin rounded-full border border-vb-forest border-t-transparent" />
                 Thinking...
               </div>
             ) : (
-              <p className="text-xs leading-relaxed text-slate-300">{explanation}</p>
+              <p className="text-xs leading-relaxed text-vb-text-dim">{explanation}</p>
             )}
           </div>
         )}

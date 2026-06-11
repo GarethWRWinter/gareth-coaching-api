@@ -222,7 +222,7 @@ export default function OnboardingPage() {
   })();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-vb-bg px-4">
       <div className="w-full max-w-lg">
         {/* Progress */}
         <div className="mb-8 flex items-center justify-center gap-2">
@@ -231,7 +231,7 @@ export default function OnboardingPage() {
               key={s}
               className={cn(
                 "h-1.5 w-16 rounded-full transition-colors",
-                s <= currentProgress ? "bg-blue-500" : "bg-slate-700"
+                s <= currentProgress ? "bg-vb-forest" : "bg-vb-sunken"
               )}
             />
           ))}
@@ -240,10 +240,10 @@ export default function OnboardingPage() {
         {/* Step 0: Goal Selection */}
         {step === 0 && (
           <div>
-            <h2 className="text-center text-2xl font-bold text-white">
+            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
               What&apos;s your main goal?
             </h2>
-            <p className="mt-2 text-center text-sm text-slate-400">
+            <p className="mt-2 text-center text-sm text-vb-text-dim">
               We&apos;ll tailor your experience around this
             </p>
 
@@ -253,18 +253,18 @@ export default function OnboardingPage() {
                   key={g.value}
                   onClick={() => setGoal(g.value)}
                   className={cn(
-                    "flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-colors",
+                    "flex w-full items-center gap-4 rounded-md border p-4 text-left transition-colors",
                     goal === g.value
-                      ? "border-blue-500 bg-blue-600/10"
-                      : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                      ? "border-vb-forest bg-vb-sage-tint"
+                      : "border-vb-border-subtle bg-vb-surface hover:border-vb-border"
                   )}
                 >
                   <div
                     className={cn(
                       "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
                       goal === g.value
-                        ? "border-blue-500 bg-blue-500"
-                        : "border-slate-600"
+                        ? "border-vb-forest bg-vb-forest"
+                        : "border-vb-border"
                     )}
                   >
                     {goal === g.value && (
@@ -272,8 +272,8 @@ export default function OnboardingPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-white">{g.label}</p>
-                    <p className="text-xs text-slate-400">{g.desc}</p>
+                    <p className="text-sm font-medium text-vb-text">{g.label}</p>
+                    <p className="text-xs text-vb-text-dim">{g.desc}</p>
                   </div>
                 </button>
               ))}
@@ -282,7 +282,7 @@ export default function OnboardingPage() {
             <button
               onClick={handleNext}
               disabled={!goal}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
               Continue <ChevronRight className="h-4 w-4" />
             </button>
@@ -292,18 +292,18 @@ export default function OnboardingPage() {
         {/* Step 1: Event Details (only when target_event selected) */}
         {step === 1 && isEventGoal && (
           <div>
-            <h2 className="text-center text-2xl font-bold text-white">
+            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
               Tell us about your event
             </h2>
-            <p className="mt-2 text-center text-sm text-slate-400">
+            <p className="mt-2 text-center text-sm text-vb-text-dim">
               The more detail you give, the better your AI coach can prepare you
             </p>
 
             <div className="mt-6 space-y-4">
               {/* Event Name */}
               <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
-                  <Trophy className="h-4 w-4 text-amber-400" />
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-vb-text-dim">
+                  <Trophy className="h-4 w-4 text-vb-clay" />
                   Event Name
                 </label>
                 <input
@@ -311,27 +311,27 @@ export default function OnboardingPage() {
                   value={eventName}
                   onChange={(e) => setEventName(e.target.value)}
                   placeholder="e.g. Etape du Tour, London to Brighton"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
 
               {/* Event Date */}
               <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-slate-300">
-                  <Calendar className="h-4 w-4 text-blue-400" />
+                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-vb-text-dim">
+                  <Calendar className="h-4 w-4 text-vb-forest" />
                   Event Date
                 </label>
                 <input
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
 
               {/* Event Type */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
                   Event Type
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -340,10 +340,10 @@ export default function OnboardingPage() {
                       key={t.value}
                       onClick={() => setEventType(t.value)}
                       className={cn(
-                        "rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
+                        "rounded-sm border px-3 py-2 text-xs font-medium transition-colors",
                         eventType === t.value
-                          ? "border-blue-500 bg-blue-600/10 text-blue-400"
-                          : "border-slate-700 text-slate-400 hover:border-slate-600"
+                          ? "border-vb-forest bg-vb-sage-tint text-vb-forest"
+                          : "border-vb-border-subtle text-vb-text-dim hover:border-vb-border"
                       )}
                     >
                       {t.label}
@@ -354,7 +354,7 @@ export default function OnboardingPage() {
 
               {/* Priority */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
                   Priority
                 </label>
                 <div className="flex gap-2">
@@ -363,10 +363,10 @@ export default function OnboardingPage() {
                       key={p.value}
                       onClick={() => setEventPriority(p.value)}
                       className={cn(
-                        "flex-1 rounded-lg border py-2 text-center text-xs font-medium transition-colors",
+                        "flex-1 rounded-sm border py-2 text-center text-xs font-medium transition-colors",
                         eventPriority === p.value
-                          ? "border-blue-500 bg-blue-600/10 text-blue-400"
-                          : "border-slate-700 text-slate-400 hover:border-slate-600"
+                          ? "border-vb-forest bg-vb-sage-tint text-vb-forest"
+                          : "border-vb-border-subtle text-vb-text-dim hover:border-vb-border"
                       )}
                       title={p.desc}
                     >
@@ -378,7 +378,7 @@ export default function OnboardingPage() {
 
               {/* Expected Duration */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
                   Expected Duration (minutes, optional)
                 </label>
                 <input
@@ -386,24 +386,24 @@ export default function OnboardingPage() {
                   value={eventDuration}
                   onChange={(e) => setEventDuration(e.target.value)}
                   placeholder="e.g. 180"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
 
               {/* Route / Challenge Info Section */}
-              <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-                  <MapPin className="h-4 w-4 text-green-400" />
+              <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-4">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-vb-text">
+                  <MapPin className="h-4 w-4 text-vb-forest" />
                   Route &amp; Challenge Details
                 </h3>
-                <p className="mb-3 text-xs text-slate-400">
+                <p className="mb-3 text-xs text-vb-text-dim">
                   Help your AI coach understand the challenge. Share a route URL
                   or upload a GPX file.
                 </p>
 
                 {/* Route URL */}
                 <div className="mb-3">
-                  <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-vb-text-dim">
                     <Link2 className="h-3.5 w-3.5" />
                     Strava Route / Segment / Race Website URL
                   </label>
@@ -412,13 +412,13 @@ export default function OnboardingPage() {
                     value={routeUrl}
                     onChange={(e) => setRouteUrl(e.target.value)}
                     placeholder="e.g. https://www.strava.com/routes/123456"
-                    className="w-full rounded-lg border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-sm border border-vb-border bg-vb-sunken px-3 py-2 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                   />
                 </div>
 
                 {/* GPX Upload */}
                 <div>
-                  <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-400">
+                  <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-vb-text-dim">
                     <Upload className="h-3.5 w-3.5" />
                     Upload GPX Route File
                   </label>
@@ -432,10 +432,10 @@ export default function OnboardingPage() {
                   <button
                     onClick={() => gpxInputRef.current?.click()}
                     className={cn(
-                      "w-full rounded-lg border border-dashed py-3 text-center text-xs transition-colors",
+                      "w-full rounded-sm border border-dashed py-3 text-center text-xs transition-colors",
                       gpxFile
-                        ? "border-green-500/50 bg-green-500/10 text-green-400"
-                        : "border-slate-600 text-slate-400 hover:border-slate-500 hover:text-slate-300"
+                        ? "border-vb-forest/50 bg-vb-sage-tint text-vb-forest"
+                        : "border-vb-border text-vb-text-dim hover:border-vb-border hover:text-vb-text"
                     )}
                   >
                     {gpxFile ? (
@@ -452,7 +452,7 @@ export default function OnboardingPage() {
 
               {/* Notes */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
                   Notes about the challenge (optional)
                 </label>
                 <textarea
@@ -460,7 +460,7 @@ export default function OnboardingPage() {
                   onChange={(e) => setEventNotes(e.target.value)}
                   placeholder="e.g. 3 big climbs in the last 50km, expect headwinds on the coast..."
                   rows={2}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
             </div>
@@ -468,14 +468,14 @@ export default function OnboardingPage() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={handleBack}
-                className="rounded-lg border border-slate-700 px-6 py-3 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
               >
                 Back
               </button>
               <button
                 onClick={() => setStep(2)}
                 disabled={!eventName || !eventDate || !eventType}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 Continue <ChevronRight className="h-4 w-4" />
               </button>
@@ -486,13 +486,13 @@ export default function OnboardingPage() {
         {/* Step 2: Experience */}
         {step === 2 && (
           <div>
-            <h2 className="text-center text-2xl font-bold text-white">
+            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
               Tell us about your cycling
             </h2>
 
             <div className="mt-8 space-y-5">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
+                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
                   How many hours per week can you train?
                 </label>
                 <div className="flex items-center gap-4">
@@ -503,16 +503,16 @@ export default function OnboardingPage() {
                     step="1"
                     value={weeklyHours}
                     onChange={(e) => setWeeklyHours(e.target.value)}
-                    className="flex-1 accent-blue-500"
+                    className="flex-1 accent-vb-forest"
                   />
-                  <span className="w-16 text-right text-lg font-bold text-white">
+                  <span className="w-16 text-right font-display text-lg font-light text-vb-text">
                     {weeklyHours}h
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
+                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
                   Years of cycling experience
                 </label>
                 <div className="flex items-center gap-4">
@@ -523,16 +523,16 @@ export default function OnboardingPage() {
                     step="1"
                     value={yearsCycling}
                     onChange={(e) => setYearsCycling(e.target.value)}
-                    className="flex-1 accent-blue-500"
+                    className="flex-1 accent-vb-forest"
                   />
-                  <span className="w-16 text-right text-lg font-bold text-white">
+                  <span className="w-16 text-right font-display text-lg font-light text-vb-text">
                     {yearsCycling}y
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
+                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
                   Where do you prefer to ride?
                 </label>
                 <div className="flex gap-3">
@@ -541,10 +541,10 @@ export default function OnboardingPage() {
                       key={p.value}
                       onClick={() => setPreference(p.value)}
                       className={cn(
-                        "flex-1 rounded-lg border py-2.5 text-sm font-medium transition-colors",
+                        "flex-1 rounded-sm border py-2.5 text-sm font-medium transition-colors",
                         preference === p.value
-                          ? "border-blue-500 bg-blue-600/10 text-blue-400"
-                          : "border-slate-700 text-slate-400 hover:border-slate-600"
+                          ? "border-vb-forest bg-vb-sage-tint text-vb-forest"
+                          : "border-vb-border-subtle text-vb-text-dim hover:border-vb-border"
                       )}
                     >
                       {p.label}
@@ -554,10 +554,10 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">
+                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
                   Your training schedule
                 </label>
-                <p className="mb-3 text-xs text-slate-400">
+                <p className="mb-3 text-xs text-vb-text-dim">
                   Tap to set each day. Hard days get intensity sessions, rest days have no training.
                 </p>
                 <div className="grid grid-cols-7 gap-2">
@@ -566,7 +566,7 @@ export default function OnboardingPage() {
                     const isRest = restDays.includes(idx);
                     return (
                       <div key={day} className="text-center">
-                        <p className="mb-1 text-[10px] font-medium text-slate-500">{day}</p>
+                        <p className="mb-1 text-[10px] font-medium text-vb-text-muted">{day}</p>
                         <button
                           type="button"
                           onClick={() => {
@@ -580,12 +580,12 @@ export default function OnboardingPage() {
                             }
                           }}
                           className={cn(
-                            "w-full rounded-lg py-2.5 text-xs font-medium transition-colors",
+                            "w-full rounded-sm py-2.5 text-xs font-medium transition-colors",
                             isHard
-                              ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                              ? "bg-vb-clay/15 text-vb-clay border border-vb-clay/40"
                               : isRest
-                                ? "bg-slate-800 text-slate-500 border border-slate-700"
-                                : "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                                ? "bg-vb-sunken text-vb-text-muted border border-vb-border-subtle"
+                                : "bg-vb-sage-tint text-vb-forest border border-vb-forest/30"
                           )}
                         >
                           {isHard ? "Hard" : isRest ? "Rest" : "Easy"}
@@ -600,13 +600,13 @@ export default function OnboardingPage() {
             <div className="mt-8 flex gap-3">
               <button
                 onClick={handleBack}
-                className="rounded-lg border border-slate-700 px-6 py-3 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
               >
                 Back
               </button>
               <button
                 onClick={() => setStep(3)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-500"
+                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft"
               >
                 Continue <ChevronRight className="h-4 w-4" />
               </button>
@@ -617,16 +617,16 @@ export default function OnboardingPage() {
         {/* Step 3: Physical stats */}
         {step === 3 && (
           <div>
-            <h2 className="text-center text-2xl font-bold text-white">
+            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
               Physical stats (optional)
             </h2>
-            <p className="mt-2 text-center text-sm text-slate-400">
+            <p className="mt-2 text-center text-sm text-vb-text-dim">
               These help us calculate your power-to-weight ratio and zones
             </p>
 
             <div className="mt-8 space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
                   FTP (Functional Threshold Power)
                 </label>
                 <input
@@ -634,14 +634,14 @@ export default function OnboardingPage() {
                   value={ftp}
                   onChange={(e) => setFtp(e.target.value)}
                   placeholder="e.g. 250"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-vb-text-muted">
                   Don&apos;t know? You can do an FTP test later.
                 </p>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-300">
+                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
                   Body Weight (kg)
                 </label>
                 <input
@@ -650,26 +650,26 @@ export default function OnboardingPage() {
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   placeholder="e.g. 75"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
             </div>
 
             {error && (
-              <p className="mt-4 text-center text-sm text-red-400">{error}</p>
+              <p className="mt-4 text-center text-sm text-vb-clay">{error}</p>
             )}
 
             <div className="mt-8 flex gap-3">
               <button
                 onClick={() => setStep(2)}
-                className="rounded-lg border border-slate-700 px-6 py-3 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
               >
                 Back
               </button>
               <button
                 onClick={handleFinish}
                 disabled={loading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 py-3 text-sm font-semibold text-white hover:bg-green-500 disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 {loading ? "Setting up..." : "Start Training"}
               </button>

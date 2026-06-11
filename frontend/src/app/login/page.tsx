@@ -35,21 +35,21 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-start justify-center bg-vb-bg px-6 pt-24">
       <div className="w-full max-w-md">
         {/* Masthead */}
-        <div className="mb-12 border-b-[3px] border-vb-text pb-6">
-          <h1 className="font-display text-6xl leading-none tracking-tight">
+        <div className="mb-12 border-b border-vb-border-subtle pb-6">
+          <h1 className="font-display text-6xl font-light leading-none tracking-[-0.02em]">
             MARCO
           </h1>
-          <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-vb-text-dim">
+          <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
             Issue 47 · Sign In
           </p>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-vb-red">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
             Welcome back
           </p>
-          <h2 className="font-display text-4xl leading-[0.95] tracking-tight">
+          <h2 className="font-display text-4xl font-light leading-[0.95] tracking-[-0.02em]">
             Log in to<br />
             your coach.
           </h2>
@@ -57,13 +57,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="border-l-4 border-vb-red bg-vb-surface px-4 py-3 text-sm text-vb-text">
+            <div className="border-l-[3px] border-vb-clay bg-vb-surface px-4 py-3 text-sm text-vb-text">
               {error}
             </div>
           )}
 
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-vb-text">
               Email
             </label>
             <input
@@ -72,13 +72,13 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="block h-11 w-full border-2 border-vb-border bg-vb-bg px-3 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-text focus:outline-none focus:ring-0"
+              className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-vb-text">
+            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-vb-text">
               Password
             </label>
             <div className="relative">
@@ -88,7 +88,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="block h-11 w-full border-2 border-vb-border bg-vb-bg px-3 pr-11 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-text focus:outline-none focus:ring-0"
+                className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 pr-11 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 placeholder="••••••••"
               />
               <button
@@ -109,7 +109,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="group block w-full border-2 border-vb-text bg-vb-text px-6 py-3.5 text-[13px] font-bold uppercase tracking-[0.08em] text-vb-bg transition-colors hover:border-vb-red hover:bg-vb-red hover:text-vb-text disabled:cursor-not-allowed disabled:opacity-40"
+            className="group block w-full rounded-sm bg-vb-forest px-6 py-3.5 text-[13px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? "Logging in…" : "Log in →"}
           </button>
@@ -119,7 +119,7 @@ export default function LoginPage() {
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="font-bold uppercase tracking-[0.08em] text-vb-text hover:text-vb-red"
+            className="font-medium uppercase tracking-[0.08em] text-vb-forest hover:text-vb-forest-soft"
           >
             Sign up →
           </Link>
