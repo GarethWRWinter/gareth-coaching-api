@@ -18,15 +18,20 @@ import { formatDuration, formatDate, cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import type { Workout, GoalEvent } from "@/lib/api";
 
-const WORKOUT_COLORS: Record<string, string> = {
-  recovery: "border-l-vb-border bg-vb-surface",
-  endurance: "border-l-vb-forest bg-vb-sage-tint/40",
-  tempo: "border-l-vb-forest bg-vb-sage-tint/40",
-  sweet_spot: "border-l-vb-forest bg-vb-sage-tint/40",
-  threshold: "border-l-vb-clay bg-vb-surface",
-  vo2max: "border-l-vb-clay bg-vb-surface",
-  sprint: "border-l-vb-clay bg-vb-surface",
-  rest: "border-l-vb-border-subtle bg-vb-surface",
+// Each workout renders as a full zone-colour block. The colour IS the intensity
+// (warm earth scale, low→high), with text auto-contrasted per block.
+const ZONE_STYLES: Record<
+  string,
+  { bg: string; fg: string; dark: boolean; label: string }
+> = {
+  recovery:   { bg: "#7C95A3", fg: "#FFFFFF", dark: true,  label: "Recovery · Z1" },
+  endurance:  { bg: "#9FB295", fg: "#1C2A1C", dark: false, label: "Endurance · Z2" },
+  tempo:      { bg: "#C7A458", fg: "#3A2E10", dark: false, label: "Tempo · Z3" },
+  sweet_spot: { bg: "#C28F4E", fg: "#3A2A10", dark: false, label: "Sweet spot" },
+  threshold:  { bg: "#C0714A", fg: "#FFFFFF", dark: true,  label: "Threshold · Z4" },
+  vo2max:     { bg: "#B0573A", fg: "#FFFFFF", dark: true,  label: "VO₂ · Z5" },
+  sprint:     { bg: "#95442E", fg: "#FFFFFF", dark: true,  label: "Sprint · Z6" },
+  rest:       { bg: "#ECE8DE", fg: "#615B50", dark: false, label: "Rest" },
 };
 
 function getWeekDates(offset: number): { start: Date; dates: Date[] } {
@@ -438,126 +443,127 @@ export default function TrainingPage() {
                   </Link>
                 ))}
 
-                {/* Workouts */}
+                {/* Workouts — full zone-colour blocks */}
                 {dayWorkouts
                   .filter((w) => w.status !== "skipped")
                   .map((workout) => {
                     const hasActual = !!workout.actual_ride;
                     const score = workout.execution_score;
+                    const z =
+                      ZONE_STYLES[workout.workout_type] ?? ZONE_STYLES.rest;
+                    const chipBg = z.dark
+                      ? "rgba(255,255,255,0.22)"
+                      : "rgba(0,0,0,0.08)";
                     return (
-                  <div
-                    key={workout.id}
-                    className={cn(
-                      "rounded-sm border-l-2 p-2",
-                      WORKOUT_COLORS[workout.workout_type] ||
-                        "border-l-vb-border bg-vb-surface"
-                    )}
-                  >
-                    <Link
-                      href={`/dashboard/training/${workout.id}`}
-                      className="block"
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <p className="truncate text-xs font-medium text-vb-text hover:text-vb-forest">
-                          {workout.title}
-                        </p>
-                        {score != null && (
-                          <span
-                            className={cn(
-                              "shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tabular-nums",
-                              score >= 8
-                                ? "bg-vb-sage-tint text-vb-forest"
-                                : score >= 6
-                                  ? "bg-vb-sunken text-vb-text-dim"
-                                  : "bg-vb-clay/15 text-vb-clay"
+                      <div
+                        key={workout.id}
+                        className="rounded-md p-2.5"
+                        style={{ backgroundColor: z.bg, color: z.fg }}
+                      >
+                        <Link
+                          href={`/dashboard/training/${workout.id}`}
+                          className="block"
+                        >
+                          <div className="flex items-start justify-between gap-1.5">
+                            <div className="min-w-0">
+                              <p
+                                className="text-[10px] font-semibold uppercase tracking-[0.10em]"
+                                style={{ opacity: 0.72 }}
+                              >
+                                {z.label}
+                              </p>
+                              <p className="mt-0.5 truncate text-[13px] font-medium leading-tight">
+                                {workout.title}
+                              </p>
+                            </div>
+                            {score != null && (
+                              <span
+                                className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tabular-nums"
+                                style={{ backgroundColor: chipBg }}
+                              >
+                                {score.toFixed(1)}
+                              </span>
                             )}
+                          </div>
+                        </Link>
+
+                        {/* Planned / actual stats */}
+                        {!hasActual ? (
+                          (workout.planned_duration_seconds ||
+                            workout.planned_tss) && (
+                            <p
+                              className="mt-1.5 text-[11px] font-medium tabular-nums"
+                              style={{ opacity: 0.85 }}
+                            >
+                              {workout.planned_duration_seconds
+                                ? formatDuration(workout.planned_duration_seconds)
+                                : ""}
+                              {workout.planned_duration_seconds &&
+                              workout.planned_tss
+                                ? " · "
+                                : ""}
+                              {workout.planned_tss
+                                ? `${Math.round(workout.planned_tss)} TSS`
+                                : ""}
+                            </p>
+                          )
+                        ) : (
+                          <p
+                            className="mt-1.5 text-[11px] font-medium tabular-nums"
+                            style={{ opacity: 0.95 }}
                           >
-                            {score.toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                    {workout.description && !hasActual && (
-                      <p className="mt-0.5 line-clamp-2 text-[10px] text-vb-text-muted">
-                        {workout.description}
-                      </p>
-                    )}
-                    {/* Planned stats */}
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-[9px] uppercase text-vb-text-muted">
-                        Plan
-                      </span>
-                      {workout.planned_duration_seconds && (
-                        <span className="text-[10px] tabular-nums text-vb-text-dim">
-                          {formatDuration(workout.planned_duration_seconds)}
-                        </span>
-                      )}
-                      {workout.planned_tss && (
-                        <span className="text-[10px] tabular-nums text-vb-text-dim">
-                          {Math.round(workout.planned_tss)} TSS
-                        </span>
-                      )}
-                    </div>
-                    {/* Actual stats (shown when linked) */}
-                    {hasActual && workout.actual_ride && (
-                      <div className="mt-0.5 flex items-center gap-1.5">
-                        <span className="text-[9px] uppercase text-vb-forest/70">
-                          Did
-                        </span>
-                        {(workout.actual_ride.moving_time_seconds ||
-                          workout.actual_ride.duration_seconds) && (
-                          <span className="text-[10px] tabular-nums text-vb-forest">
+                            ✓{" "}
                             {formatDuration(
-                              workout.actual_ride.moving_time_seconds ??
-                                workout.actual_ride.duration_seconds ??
+                              workout.actual_ride!.moving_time_seconds ??
+                                workout.actual_ride!.duration_seconds ??
                                 0
                             )}
-                          </span>
+                            {workout.actual_ride!.tss != null
+                              ? ` · ${Math.round(workout.actual_ride!.tss)} TSS`
+                              : ""}
+                          </p>
                         )}
-                        {workout.actual_ride.tss != null && (
-                          <span className="text-[10px] tabular-nums text-vb-forest">
-                            {Math.round(workout.actual_ride.tss)} TSS
-                          </span>
+
+                        {/* Status controls */}
+                        {workout.status === "planned" && (
+                          <div className="mt-2 flex gap-1.5">
+                            <button
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: workout.id,
+                                  status: "completed",
+                                })
+                              }
+                              title="Mark completed"
+                              className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
+                              style={{ backgroundColor: chipBg, color: z.fg }}
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                statusMutation.mutate({
+                                  id: workout.id,
+                                  status: "skipped",
+                                })
+                              }
+                              title="Skip"
+                              className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
+                              style={{ backgroundColor: chipBg, color: z.fg }}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )}
+                        {workout.status === "completed" && !hasActual && (
+                          <p
+                            className="mt-1.5 text-[10px] font-medium"
+                            style={{ opacity: 0.85 }}
+                          >
+                            Done ✓
+                          </p>
                         )}
                       </div>
-                    )}
-                    {/* Status buttons */}
-                    <div className="mt-1.5 flex gap-1">
-                      {workout.status === "planned" && (
-                        <>
-                          <button
-                            onClick={() =>
-                              statusMutation.mutate({
-                                id: workout.id,
-                                status: "completed",
-                              })
-                            }
-                            className="rounded-sm bg-vb-sage-tint p-0.5 text-vb-forest hover:bg-vb-sage-tint/70"
-                            title="Mark completed"
-                          >
-                            <Check className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              statusMutation.mutate({
-                                id: workout.id,
-                                status: "skipped",
-                              })
-                            }
-                            className="rounded-sm bg-vb-sunken p-0.5 text-vb-text-muted hover:bg-vb-border-subtle"
-                            title="Skip"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </>
-                      )}
-                      {workout.status === "completed" && !hasActual && (
-                        <span className="text-[10px] text-vb-forest">
-                          Done
-                        </span>
-                      )}
-                    </div>
-                  </div>
                     );
                   })}
                 {dayWorkouts.filter((w) => w.status !== "skipped").length === 0 && dayGoals.length === 0 && (
