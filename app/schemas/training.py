@@ -3,7 +3,9 @@
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.core.session_naming import session_display_name
 
 
 # --- Workout Steps ---
@@ -64,6 +66,15 @@ class WorkoutResponse(BaseModel):
     sort_order: int = 0
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="after")
+    def _apply_canonical_name(self) -> "WorkoutResponse":
+        # Single source of truth for the session name. The structural template
+        # name remains in `description`; this is the name shown everywhere and
+        # the one Marco refers to.
+        if self.workout_type != "rest":
+            self.title = session_display_name(self.workout_type, self.id)
+        return self
 
 
 class WorkoutAssessmentResponse(BaseModel):

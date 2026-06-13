@@ -34,20 +34,9 @@ const ZONE_STYLES: Record<
   rest:       { bg: "#ECE8DE", fg: "#615B50", dark: false, label: "Rest" },
 };
 
-// Creative, human session names keyed by zone, picked deterministically so a
-// given workout always shows the same name. The zone tag carries the "what";
-// these carry the character.
-const SESSION_NAMES: Record<string, string[]> = {
-  recovery: ["Spin the Legs Loose", "Easy Does It", "Coffee-Pace Spin", "Just Turning Pedals", "Keep It Gentle", "Shake Out the Legs"],
-  endurance: ["Time in the Saddle", "The Long Game", "Bank the Miles", "Money in the Bank", "Steady Wins", "Settle In", "Aerobic Patience", "Just Keep Pedalling"],
-  tempo: ["Comfortably Hard", "Find Your Rhythm", "Hold the Line", "The Sustained Push", "Tempo, No Drama"],
-  sweet_spot: ["The Sweet Spot", "Just Shy of the Red", "Productive Discomfort", "Threshold's Little Sibling"],
-  threshold: ["Right at the Edge", "FTP Territory", "The Honest Hour", "Toe the Line", "Hold Your Threshold"],
-  vo2max: ["Lungs on Fire", "Going Deep", "Maximum Effort", "Above the Red", "Embrace the Burn"],
-  sprint: ["Full Gas", "Empty the Tank", "All or Nothing", "Send It"],
-  rest: ["Rest"],
-};
-
+// Rest-day copy — cosmetic empty-state only (not AI-facing). Session names now
+// come from the backend (workout.title) so the calendar, the detail page, and
+// Marco all use one canonical name.
 const REST_LINES = [
   "Rest — you've earned it",
   "Rest day. Resist the urge.",
@@ -61,11 +50,6 @@ function stableIndex(seed: string, len: number): number {
   for (let i = 0; i < seed.length; i++)
     h = (Math.imul(h, 31) + seed.charCodeAt(i)) >>> 0;
   return len > 0 ? h % len : 0;
-}
-
-function sessionName(workout: Workout): string {
-  const pool = SESSION_NAMES[workout.workout_type] ?? SESSION_NAMES.rest;
-  return pool[stableIndex(workout.id, pool.length)];
 }
 
 function restLine(dateStr: string): string {
@@ -531,7 +515,7 @@ export default function TrainingPage() {
                           {z!.label}
                         </p>
                         <p className="mt-0.5 font-display text-[15px] font-normal leading-[1.12] tracking-[-0.01em]">
-                          {sessionName(primary)}
+                          {primary.title}
                         </p>
                       </div>
                       {primary.execution_score != null && (
@@ -629,7 +613,7 @@ export default function TrainingPage() {
                         className="mt-2 block truncate rounded-sm px-2 py-1.5 text-[11px] font-medium"
                         style={{ backgroundColor: wz.bg, color: wz.fg }}
                       >
-                        {wz.label.split(" · ")[0]} · {sessionName(w)}
+                        {wz.label.split(" · ")[0]} · {w.title}
                       </Link>
                     );
                   })}

@@ -14,6 +14,8 @@ import json
 import logging
 from datetime import date, datetime, timedelta
 
+from app.core.session_naming import session_display_name
+
 import anthropic
 from sqlalchemy.orm import Session
 
@@ -117,8 +119,12 @@ def _build_nudge_context(
 
     if today_workout:
         context["todays_workout"] = {
-            "title": today_workout.title,
+            "title": session_display_name(
+                today_workout.workout_type, today_workout.id
+            ),
             "type": today_workout.workout_type,
+            "structure": today_workout.title,
+            "description": today_workout.description,
             "planned_duration_minutes": (today_workout.planned_duration_seconds or 0) // 60,
             "planned_tss": today_workout.planned_tss,
             "status": today_workout.status,
@@ -276,8 +282,12 @@ def _build_debrief_context(
 
     if linked_workout:
         context["planned_workout"] = {
-            "title": linked_workout.title,
+            "title": session_display_name(
+                linked_workout.workout_type, linked_workout.id
+            ),
             "type": linked_workout.workout_type,
+            "structure": linked_workout.title,
+            "description": linked_workout.description,
             "planned_duration_minutes": (linked_workout.planned_duration_seconds or 0) // 60,
             "planned_tss": linked_workout.planned_tss,
             "planned_if": linked_workout.planned_if,
