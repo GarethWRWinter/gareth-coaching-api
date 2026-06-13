@@ -3,134 +3,98 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Training week · ALMANAC zone blocks</title>
+<title>Training week · ALMANAC full-block</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#F3F1EA; --surface:#FFFFFF; --sunken:#ECE8DE;
-    --line:#E7E2D7; --line-strong:#D6CFC1;
-    --ink:#23211C; --ink-2:#615B50; --ink-3:#948D80; --forest:#36513F;
+    --line:#E7E2D7; --line-strong:#D6CFC1; --ink:#23211C; --ink-2:#615B50; --ink-3:#948D80; --forest:#36513F;
     --sans:'Schibsted Grotesk',system-ui,sans-serif; --display:'Bricolage Grotesque',var(--sans);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:40px 48px}
-  h1{font-family:var(--display);font-weight:300;font-size:32px;letter-spacing:-.02em}
-  .sub{color:var(--ink-2);font-size:14px;margin-top:4px}
-  .weeknav{display:flex;align-items:center;justify-content:center;gap:16px;margin:28px 0 16px;color:var(--ink-2);font-size:14px;font-weight:500}
+  .weeknav{display:flex;align-items:center;justify-content:center;gap:16px;margin:0 0 18px;color:var(--ink-2);font-size:14px;font-weight:500}
   .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
-  .day{min-height:188px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px;display:flex;flex-direction:column;gap:8px}
-  .day.today{border-color:var(--forest);box-shadow:inset 0 0 0 1px var(--forest)}
-  .dayhead{display:flex;align-items:center;justify-content:between;justify-content:space-between}
-  .dayhead .d{font-size:12px;font-weight:500;color:var(--ink-2)}
-  .dayhead .n{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
-  .today .dayhead .d,.today .dayhead .n{color:var(--forest);font-weight:600}
 
-  /* Zone colour block */
-  .wk{border-radius:6px;padding:10px 11px;display:flex;flex-direction:column;gap:7px}
-  .wk .type{font-size:10px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;opacity:.75}
-  .wk .title{font-size:13px;font-weight:500;line-height:1.2}
-  .wk .meta{font-size:11px;font-variant-numeric:tabular-nums;opacity:.82;font-weight:500}
-  .wk .ctrls{display:flex;gap:5px;margin-top:1px}
-  .wk .ctrls button{width:22px;height:22px;border:none;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1}
-  /* dark blocks → light text + translucent-white controls */
-  .wk.dark{color:#fff}
-  .wk.dark .ctrls button{background:rgba(255,255,255,.22);color:#fff}
-  /* light blocks → ink text + translucent-black controls */
-  .wk.light{}
-  .wk.light .ctrls button{background:rgba(0,0,0,.08);color:inherit}
-  .wk .ctrls .done{background:rgba(255,255,255,.32)}
-
-  .rest{flex:1;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line-strong);border-radius:6px;color:var(--ink-3);font-size:12px}
-
-  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
-  .legend .item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2)}
-  .legend .sw{width:14px;height:14px;border-radius:4px}
+  /* The whole day card is the zone colour */
+  .day{min-height:172px;border-radius:9px;padding:12px 13px;display:flex;flex-direction:column;border:1px solid transparent}
+  .day .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:auto}
+  .day .head .d{font-size:12px;font-weight:500}
+  .day .head .n{font-size:12px;font-variant-numeric:tabular-nums}
+  .day .eyebrow{font-size:10px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;opacity:.72}
+  .day .name{font-family:var(--display);font-size:16px;font-weight:400;line-height:1.12;letter-spacing:-.01em;margin-top:3px}
+  .day .meta{font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums;opacity:.84;margin-top:7px}
+  .day .ctrls{display:flex;gap:6px;margin-top:11px}
+  .day .ctrls button{width:24px;height:24px;border:none;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px}
+  /* contrast variants */
+  .day.dark{color:#fff}
+  .day.dark .ctrls button{background:rgba(255,255,255,.22);color:#fff}
+  .day.dark .ctrls .done{background:rgba(255,255,255,.34)}
+  .day.light .ctrls button{background:rgba(0,0,0,.09);color:inherit}
+  .day.light .ctrls .done{background:rgba(0,0,0,.16)}
+  /* rest / empty */
+  .day.rest{background:var(--surface);border-color:var(--line);color:var(--ink-3)}
+  .day.rest .restlbl{margin:auto;font-size:12px;color:var(--ink-3)}
+  /* today */
+  .day.today{outline:2px solid var(--forest);outline-offset:2px}
 </style>
 </head>
 <body>
-  <h1>Training</h1>
-  <p class="sub">Active plan: Training Plan — Jun 2026</p>
-
   <div class="weeknav">‹ &nbsp; 8 Jun – 14 Jun 2026 &nbsp; ›</div>
-
   <div class="grid">
-    <!-- Mon — Endurance (Z2) -->
-    <div class="day">
-      <div class="dayhead"><span class="d">Mon</span><span class="n">8</span></div>
-      <div class="wk light" style="background:#9FB295;color:#1C2A1C">
-        <span class="type">Endurance · Z2</span>
-        <span class="title">Endurance Base</span>
-        <span class="meta">1h 00m · 42 TSS</span>
-        <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
-      </div>
-    </div>
-    <!-- Tue — Tempo (Z3) -->
-    <div class="day">
-      <div class="dayhead"><span class="d">Tue</span><span class="n">9</span></div>
-      <div class="wk light" style="background:#C7A458;color:#3A2E10">
-        <span class="type">Tempo · Z3</span>
-        <span class="title">Tempo Blocks</span>
-        <span class="meta">1h 15m · 80 TSS</span>
-        <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
-      </div>
-    </div>
-    <!-- Wed — Rest -->
-    <div class="day">
-      <div class="dayhead"><span class="d">Wed</span><span class="n">10</span></div>
-      <div class="rest">Rest</div>
-    </div>
-    <!-- Thu — Endurance (Z2) -->
-    <div class="day">
-      <div class="dayhead"><span class="d">Thu</span><span class="n">11</span></div>
-      <div class="wk light" style="background:#9FB295;color:#1C2A1C">
-        <span class="type">Endurance · Z2</span>
-        <span class="title">Endurance Base</span>
-        <span class="meta">1h 00m · 42 TSS</span>
-        <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
-      </div>
-    </div>
-    <!-- Fri — today, Threshold (Z4) -->
-    <div class="day today">
-      <div class="dayhead"><span class="d">Fri</span><span class="n">12</span></div>
-      <div class="wk dark" style="background:#C0714A">
-        <span class="type">Threshold · Z4</span>
-        <span class="title">2 × 20 Threshold</span>
-        <span class="meta">1h 30m · 98 TSS</span>
-        <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
-      </div>
-    </div>
-    <!-- Sat — Endurance (Z2) -->
-    <div class="day">
-      <div class="dayhead"><span class="d">Sat</span><span class="n">13</span></div>
-      <div class="wk light" style="background:#9FB295;color:#1C2A1C">
-        <span class="type">Endurance · Z2</span>
-        <span class="title">Long Endurance</span>
-        <span class="meta">3h 00m · 150 TSS</span>
-        <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
-      </div>
-    </div>
-    <!-- Sun — Recovery (Z1) -->
-    <div class="day">
-      <div class="dayhead"><span class="d">Sun</span><span class="n">14</span></div>
-      <div class="wk dark" style="background:#7C95A3">
-        <span class="type">Recovery · Z1</span>
-        <span class="title">Recovery Spin</span>
-        <span class="meta">45m · 23 TSS</span>
-        <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
-      </div>
-    </div>
-  </div>
 
-  <div class="legend">
-    <span class="item"><span class="sw" style="background:#7C95A3"></span> Z1 Recovery</span>
-    <span class="item"><span class="sw" style="background:#9FB295"></span> Z2 Endurance</span>
-    <span class="item"><span class="sw" style="background:#C7A458"></span> Z3 Tempo</span>
-    <span class="item"><span class="sw" style="background:#C28F4E"></span> Sweet spot</span>
-    <span class="item"><span class="sw" style="background:#C0714A"></span> Z4 Threshold</span>
-    <span class="item"><span class="sw" style="background:#B0573A"></span> Z5 VO₂</span>
-    <span class="item"><span class="sw" style="background:#95442E"></span> Z6 Sprint</span>
+    <div class="day light" style="background:#9FB295;color:#1C2A1C">
+      <div class="head"><span class="d">Mon</span><span class="n">8</span></div>
+      <span class="eyebrow">Endurance · Z2</span>
+      <span class="name">Time in the Saddle</span>
+      <span class="meta">1h 0m · 42 TSS</span>
+      <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
+    </div>
+
+    <div class="day light" style="background:#C7A458;color:#3A2E10">
+      <div class="head"><span class="d">Tue</span><span class="n">9</span></div>
+      <span class="eyebrow">Tempo · Z3</span>
+      <span class="name">Comfortably Hard</span>
+      <span class="meta">1h 15m · 80 TSS</span>
+      <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
+    </div>
+
+    <div class="day rest">
+      <div class="head"><span class="d">Wed</span><span class="n">10</span></div>
+      <span class="restlbl">Rest — go on, you've earned it</span>
+    </div>
+
+    <div class="day light" style="background:#9FB295;color:#1C2A1C">
+      <div class="head"><span class="d">Thu</span><span class="n">11</span></div>
+      <span class="eyebrow">Endurance · Z2</span>
+      <span class="name">The Long Game</span>
+      <span class="meta">1h 0m · 42 TSS</span>
+      <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
+    </div>
+
+    <div class="day rest">
+      <div class="head"><span class="d">Fri</span><span class="n">12</span></div>
+      <span class="restlbl">Rest</span>
+    </div>
+
+    <div class="day light today" style="background:#9FB295;color:#1C2A1C">
+      <div class="head"><span class="d">Sat</span><span class="n">13</span></div>
+      <span class="eyebrow">Endurance · Z2</span>
+      <span class="name">Saturday Steady</span>
+      <span class="meta">3h 0m · 150 TSS</span>
+      <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
+    </div>
+
+    <div class="day dark" style="background:#7C95A3">
+      <div class="head"><span class="d">Sun</span><span class="n">14</span></div>
+      <span class="eyebrow">Recovery · Z1</span>
+      <span class="name">Spin the Legs Loose</span>
+      <span class="meta">45m · 23 TSS</span>
+      <div class="ctrls"><button class="done">✓</button><button>✕</button></div>
+    </div>
+
   </div>
 </body>
 </html>

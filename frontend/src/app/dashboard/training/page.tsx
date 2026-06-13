@@ -34,6 +34,44 @@ const ZONE_STYLES: Record<
   rest:       { bg: "#ECE8DE", fg: "#615B50", dark: false, label: "Rest" },
 };
 
+// Creative, human session names keyed by zone, picked deterministically so a
+// given workout always shows the same name. The zone tag carries the "what";
+// these carry the character.
+const SESSION_NAMES: Record<string, string[]> = {
+  recovery: ["Spin the Legs Loose", "Easy Does It", "Coffee-Pace Spin", "Just Turning Pedals", "Keep It Gentle", "Shake Out the Legs"],
+  endurance: ["Time in the Saddle", "The Long Game", "Bank the Miles", "Money in the Bank", "Steady Wins", "Settle In", "Aerobic Patience", "Just Keep Pedalling"],
+  tempo: ["Comfortably Hard", "Find Your Rhythm", "Hold the Line", "The Sustained Push", "Tempo, No Drama"],
+  sweet_spot: ["The Sweet Spot", "Just Shy of the Red", "Productive Discomfort", "Threshold's Little Sibling"],
+  threshold: ["Right at the Edge", "FTP Territory", "The Honest Hour", "Toe the Line", "Hold Your Threshold"],
+  vo2max: ["Lungs on Fire", "Going Deep", "Maximum Effort", "Above the Red", "Embrace the Burn"],
+  sprint: ["Full Gas", "Empty the Tank", "All or Nothing", "Send It"],
+  rest: ["Rest"],
+};
+
+const REST_LINES = [
+  "Rest — you've earned it",
+  "Rest day. Resist the urge.",
+  "Feet up",
+  "Recover like you mean it",
+  "Rest",
+];
+
+function stableIndex(seed: string, len: number): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++)
+    h = (Math.imul(h, 31) + seed.charCodeAt(i)) >>> 0;
+  return len > 0 ? h % len : 0;
+}
+
+function sessionName(workout: Workout): string {
+  const pool = SESSION_NAMES[workout.workout_type] ?? SESSION_NAMES.rest;
+  return pool[stableIndex(workout.id, pool.length)];
+}
+
+function restLine(dateStr: string): string {
+  return REST_LINES[stableIndex(dateStr, REST_LINES.length)];
+}
+
 function getWeekDates(offset: number): { start: Date; dates: Date[] } {
   const today = new Date();
   const start = new Date(today);
@@ -388,190 +426,219 @@ export default function TrainingPage() {
           const dayWorkouts = workoutsByDate[dateStr] || [];
 
           const dayGoals = goalsByDate[dateStr] || [];
+          const activeWorkouts = dayWorkouts.filter(
+            (w) => w.status !== "skipped"
+          );
+          const primary = activeWorkouts[0];
+          const z = primary
+            ? ZONE_STYLES[primary.workout_type] ?? ZONE_STYLES.rest
+            : null;
+          const colored = !!z;
+          const chipBg = z?.dark
+            ? "rgba(255,255,255,0.22)"
+            : "rgba(0,0,0,0.09)";
 
           return (
             <div
               key={dateStr}
               className={cn(
-                "min-h-[180px] rounded-md border p-3",
-                isToday
-                  ? "border-vb-forest bg-vb-sage-tint/40"
-                  : "border-vb-border-subtle bg-vb-surface"
+                "flex min-h-[176px] flex-col rounded-md p-3",
+                !colored &&
+                  (isToday
+                    ? "border border-vb-forest bg-vb-sage-tint/40"
+                    : "border border-vb-border-subtle bg-vb-surface")
               )}
+              style={{
+                ...(colored ? { backgroundColor: z!.bg, color: z!.fg } : {}),
+                ...(isToday
+                  ? { outline: "2px solid #36513F", outlineOffset: "2px" }
+                  : {}),
+              }}
             >
+              {/* Day header */}
               <div className="mb-2 flex items-center justify-between">
                 <span
                   className={cn(
                     "text-xs font-medium",
-                    isToday ? "text-vb-forest" : "text-vb-text-dim"
+                    !colored && (isToday ? "text-vb-forest" : "text-vb-text-dim")
                   )}
+                  style={colored ? { opacity: 0.82 } : undefined}
                 >
                   {dayLabels[i]}
                 </span>
                 <span
                   className={cn(
                     "text-xs tabular-nums",
-                    isToday ? "text-vb-forest font-semibold" : "text-vb-text-muted"
+                    !colored &&
+                      (isToday
+                        ? "text-vb-forest font-semibold"
+                        : "text-vb-text-muted")
                   )}
+                  style={colored ? { opacity: 0.82 } : undefined}
                 >
                   {date.getDate()}
                 </span>
               </div>
 
-              <div className="space-y-1.5">
-                {/* Goal events — displayed above workouts */}
-                {dayGoals.map((goal) => (
-                  <Link
-                    key={goal.id}
-                    href={`/dashboard/goals/${goal.id}`}
-                    className="block rounded-sm border border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface p-2"
+              {/* Goal events */}
+              {dayGoals.map((goal) => (
+                <Link
+                  key={goal.id}
+                  href={`/dashboard/goals/${goal.id}`}
+                  className={cn(
+                    "mb-1.5 block rounded-sm p-2",
+                    !colored &&
+                      "border border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface"
+                  )}
+                  style={colored ? { backgroundColor: chipBg } : undefined}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Trophy
+                      className={cn("h-3 w-3 shrink-0", !colored && "text-vb-clay")}
+                    />
+                    <p
+                      className={cn(
+                        "truncate text-xs font-medium",
+                        !colored && "text-vb-clay"
+                      )}
+                    >
+                      {goal.event_name}
+                    </p>
+                  </div>
+                  <p
+                    className={cn("mt-1 text-[10px]", !colored && "text-vb-text-muted")}
+                    style={colored ? { opacity: 0.8 } : undefined}
                   >
-                    <div className="flex items-center gap-1.5">
-                      <Trophy className="h-3 w-3 shrink-0 text-vb-clay" />
-                      <p className="truncate text-xs font-medium text-vb-clay">
-                        {goal.event_name}
-                      </p>
-                    </div>
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <span className="rounded-sm bg-vb-clay/15 px-1 py-0.5 text-[9px] font-medium text-vb-clay">
-                        {goal.priority.replace(/_/g, " ").toUpperCase()}
-                      </span>
-                      <span className="text-[10px] text-vb-text-muted">
-                        {goal.event_type.replace(/_/g, " ")}
-                      </span>
+                    {goal.priority.replace(/_/g, " ").toUpperCase()} ·{" "}
+                    {goal.event_type.replace(/_/g, " ")}
+                  </p>
+                </Link>
+              ))}
+
+              {/* Primary workout fills the coloured cell */}
+              {primary ? (
+                <div className="mt-auto">
+                  <Link
+                    href={`/dashboard/training/${primary.id}`}
+                    className="block"
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <div className="min-w-0">
+                        <p
+                          className="text-[10px] font-semibold uppercase tracking-[0.11em]"
+                          style={{ opacity: 0.72 }}
+                        >
+                          {z!.label}
+                        </p>
+                        <p className="mt-0.5 font-display text-[15px] font-normal leading-[1.12] tracking-[-0.01em]">
+                          {sessionName(primary)}
+                        </p>
+                      </div>
+                      {primary.execution_score != null && (
+                        <span
+                          className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tabular-nums"
+                          style={{ backgroundColor: chipBg }}
+                        >
+                          {primary.execution_score.toFixed(1)}
+                        </span>
+                      )}
                     </div>
                   </Link>
-                ))}
 
-                {/* Workouts — full zone-colour blocks */}
-                {dayWorkouts
-                  .filter((w) => w.status !== "skipped")
-                  .map((workout) => {
-                    const hasActual = !!workout.actual_ride;
-                    const score = workout.execution_score;
-                    const z =
-                      ZONE_STYLES[workout.workout_type] ?? ZONE_STYLES.rest;
-                    const chipBg = z.dark
-                      ? "rgba(255,255,255,0.22)"
-                      : "rgba(0,0,0,0.08)";
-                    return (
-                      <div
-                        key={workout.id}
-                        className="rounded-md p-2.5"
-                        style={{ backgroundColor: z.bg, color: z.fg }}
+                  {!primary.actual_ride ? (
+                    (primary.planned_duration_seconds ||
+                      primary.planned_tss) && (
+                      <p
+                        className="mt-1.5 text-[11px] font-medium tabular-nums"
+                        style={{ opacity: 0.85 }}
                       >
-                        <Link
-                          href={`/dashboard/training/${workout.id}`}
-                          className="block"
-                        >
-                          <div className="flex items-start justify-between gap-1.5">
-                            <div className="min-w-0">
-                              <p
-                                className="text-[10px] font-semibold uppercase tracking-[0.10em]"
-                                style={{ opacity: 0.72 }}
-                              >
-                                {z.label}
-                              </p>
-                              <p className="mt-0.5 truncate text-[13px] font-medium leading-tight">
-                                {workout.title}
-                              </p>
-                            </div>
-                            {score != null && (
-                              <span
-                                className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tabular-nums"
-                                style={{ backgroundColor: chipBg }}
-                              >
-                                {score.toFixed(1)}
-                              </span>
-                            )}
-                          </div>
-                        </Link>
+                        {primary.planned_duration_seconds
+                          ? formatDuration(primary.planned_duration_seconds)
+                          : ""}
+                        {primary.planned_duration_seconds && primary.planned_tss
+                          ? " · "
+                          : ""}
+                        {primary.planned_tss
+                          ? `${Math.round(primary.planned_tss)} TSS`
+                          : ""}
+                      </p>
+                    )
+                  ) : (
+                    <p
+                      className="mt-1.5 text-[11px] font-medium tabular-nums"
+                      style={{ opacity: 0.95 }}
+                    >
+                      ✓{" "}
+                      {formatDuration(
+                        primary.actual_ride.moving_time_seconds ??
+                          primary.actual_ride.duration_seconds ??
+                          0
+                      )}
+                      {primary.actual_ride.tss != null
+                        ? ` · ${Math.round(primary.actual_ride.tss)} TSS`
+                        : ""}
+                    </p>
+                  )}
 
-                        {/* Planned / actual stats */}
-                        {!hasActual ? (
-                          (workout.planned_duration_seconds ||
-                            workout.planned_tss) && (
-                            <p
-                              className="mt-1.5 text-[11px] font-medium tabular-nums"
-                              style={{ opacity: 0.85 }}
-                            >
-                              {workout.planned_duration_seconds
-                                ? formatDuration(workout.planned_duration_seconds)
-                                : ""}
-                              {workout.planned_duration_seconds &&
-                              workout.planned_tss
-                                ? " · "
-                                : ""}
-                              {workout.planned_tss
-                                ? `${Math.round(workout.planned_tss)} TSS`
-                                : ""}
-                            </p>
-                          )
-                        ) : (
-                          <p
-                            className="mt-1.5 text-[11px] font-medium tabular-nums"
-                            style={{ opacity: 0.95 }}
-                          >
-                            ✓{" "}
-                            {formatDuration(
-                              workout.actual_ride!.moving_time_seconds ??
-                                workout.actual_ride!.duration_seconds ??
-                                0
-                            )}
-                            {workout.actual_ride!.tss != null
-                              ? ` · ${Math.round(workout.actual_ride!.tss)} TSS`
-                              : ""}
-                          </p>
-                        )}
+                  {primary.status === "planned" && (
+                    <div className="mt-2.5 flex gap-1.5">
+                      <button
+                        onClick={() =>
+                          statusMutation.mutate({
+                            id: primary.id,
+                            status: "completed",
+                          })
+                        }
+                        title="Mark completed"
+                        className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
+                        style={{ backgroundColor: chipBg, color: z!.fg }}
+                      >
+                        <Check className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          statusMutation.mutate({
+                            id: primary.id,
+                            status: "skipped",
+                          })
+                        }
+                        title="Skip"
+                        className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
+                        style={{ backgroundColor: chipBg, color: z!.fg }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                  {primary.status === "completed" && !primary.actual_ride && (
+                    <p
+                      className="mt-1.5 text-[10px] font-medium"
+                      style={{ opacity: 0.85 }}
+                    >
+                      Done ✓
+                    </p>
+                  )}
 
-                        {/* Status controls */}
-                        {workout.status === "planned" && (
-                          <div className="mt-2 flex gap-1.5">
-                            <button
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: workout.id,
-                                  status: "completed",
-                                })
-                              }
-                              title="Mark completed"
-                              className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
-                              style={{ backgroundColor: chipBg, color: z.fg }}
-                            >
-                              <Check className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: workout.id,
-                                  status: "skipped",
-                                })
-                              }
-                              title="Skip"
-                              className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
-                              style={{ backgroundColor: chipBg, color: z.fg }}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        )}
-                        {workout.status === "completed" && !hasActual && (
-                          <p
-                            className="mt-1.5 text-[10px] font-medium"
-                            style={{ opacity: 0.85 }}
-                          >
-                            Done ✓
-                          </p>
-                        )}
-                      </div>
+                  {/* Additional workouts (rare) */}
+                  {activeWorkouts.slice(1).map((w) => {
+                    const wz = ZONE_STYLES[w.workout_type] ?? ZONE_STYLES.rest;
+                    return (
+                      <Link
+                        key={w.id}
+                        href={`/dashboard/training/${w.id}`}
+                        className="mt-2 block truncate rounded-sm px-2 py-1.5 text-[11px] font-medium"
+                        style={{ backgroundColor: wz.bg, color: wz.fg }}
+                      >
+                        {wz.label.split(" · ")[0]} · {sessionName(w)}
+                      </Link>
                     );
                   })}
-                {dayWorkouts.filter((w) => w.status !== "skipped").length === 0 && dayGoals.length === 0 && (
-                  <p className="py-2 text-center text-[10px] text-vb-text-muted">
-                    Rest
-                  </p>
-                )}
-              </div>
+                </div>
+              ) : dayGoals.length === 0 ? (
+                <p className="my-auto text-center text-[11px] text-vb-text-muted">
+                  {restLine(dateStr)}
+                </p>
+              ) : null}
             </div>
           );
         })}
