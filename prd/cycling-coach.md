@@ -43,6 +43,14 @@ Existing tools each solve one slice. Nobody solves the whole relationship.
 
 **Wedge:** the *coach* is the product. The plan, the analytics, the ride execution, the race reports — those are the *evidence* of the coach. Every screen and every interaction must feel like one continuous relationship with one coach who knows you.
 
+**Positioning evolution (June 2026):** Marco is a **life coach and a cycling coach** — because the
+life *is* the training context. The memory graph (Pillar 2, v2) models the whole person — values,
+goals, gaps, habits, people, life events, mind and body — and renders it back to the user as
+**"Your Brain"**: a living, visual memory organ that grows with the relationship (see
+`cycling-coach/memory-layer.md`). The product is therefore three things fused: **a brain** (your
+connected life), **a training system** (plans, rides, analytics), and **a companion** (Marco, who
+reads both). Strava/TrainerRoad can never draw this page; it is the moat made visible.
+
 **Note on naming:** "Marco" is the **default coach name** within the app. Users pick their coach's name and voice during onboarding — Marco (male voice) is the default, Maria (female voice) is the equally-prominent alternative, and custom names are supported. The product brand itself is TBD (see OQ1) and is decoupled from the in-app coach name.
 
 ### The three pillars (non-negotiable)

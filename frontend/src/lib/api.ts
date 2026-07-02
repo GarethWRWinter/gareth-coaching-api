@@ -1075,3 +1075,39 @@ export const exports_ = {
       `${(title || "ride").replace(/\s+/g, "_")}.gpx`
     ),
 };
+
+// === Memory — the Brain (Pillar 2) ===
+
+export interface MemoryEntity {
+  id: string;
+  type: string;
+  kind: string | null;
+  life_area: string;
+  label: string;
+  summary: string | null;
+  status: string | null;
+  source: string | null;
+  source_ref: string | null;
+  created_at: string | null;
+}
+
+export interface MemoryEdge {
+  id: string;
+  from_id: string;
+  to_id: string;
+  edge_type: string;
+}
+
+export interface MemoryGraph {
+  entities: MemoryEntity[];
+  edges: MemoryEdge[];
+}
+
+export const memory = {
+  getGraph: () => request<MemoryGraph>("/memory/graph"),
+  getReading: () => request<{ reading: string | null }>("/memory/reading"),
+  hide: (id: string) =>
+    request<{ id: string; hidden: boolean }>(`/memory/${id}/hide`, { method: "PATCH" }),
+  unhide: (id: string) =>
+    request<{ id: string; hidden: boolean }>(`/memory/${id}/unhide`, { method: "PATCH" }),
+};

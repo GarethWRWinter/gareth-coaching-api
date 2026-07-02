@@ -1,162 +1,139 @@
 ---
-title: 'Memory Layer (Pillar 2)'
+title: 'Memory Layer (Pillar 2) — The Brain'
 slug: 'memory-layer'
 scope: epic
-status: discovery
+status: resolved
 parent: cycling-coach.md
 children: []
 created: 2026-05-05
-updated: 2026-05-05
-resolution: 4/7
+updated: 2026-06-14
+resolution: 7/7
+version: 2.0
+reference: 'TIE Memory v2 — Taxonomy & App Lenses (blinklife.com/vishen/p/memory-v2/taxonomy-and-lenses)'
 ---
 
-# Memory Layer (Pillar 2)
+# Memory Layer (Pillar 2) — The Brain
 
 > Part of [AI Cycling Coach (Marco)](../cycling-coach.md)
+>
+> **v2** — rearchitected after studying TIE Memory v2 (BlinkLife). The core change: Layer C is no
+> longer a flat pile of embedded sentences — it is a **typed entity graph** whose relationships are
+> where the intelligence lives. The user-facing rendering of this graph — **"Your Brain"** — is a
+> flagship product feature, not a settings page.
 
 ## Purpose
 
-Memory is the moat. Every other Marco capability — coaching tone, plan adaptation, in-ride cues, post-ride debriefs, race reports — depends on Marco knowing who the user is across months and years. Without memory, Marco is a stateless chatbot wearing a coach's voice. With memory, Marco is the only coach who can say "you bonked here last year, let's pace this differently" and mean it.
+Memory is the moat. Every other Marco capability — coaching tone, plan adaptation, in-ride cues,
+post-ride debriefs, race reports — depends on Marco knowing who the user is across months and years.
 
-The memory layer is also the structural foundation of Pillars 1 and 3:
-- Pillar 1 (Marco everywhere) is only coherent if every surface reads the same memory.
-- Pillar 3 (Marco rides with you) only feels coached, not scripted, if Marco recalls the rider during the workout.
+v2 adds the deeper claim: **"knows you better than you know yourself" doesn't come from recalling
+facts; it comes from traversing connections between them.** A coach who can follow the thread from
+your son's Tuesday school runs to your missed intervals — and re-plan around it — is a companion,
+not a chatbot. Marco is a **life coach and a cycling coach**: the whole life feeds the training.
 
-This epic delivers the storage, write, retrieval, audit, and user-control machinery for Marco's memory.
+## Architecture decision: build, not buy
 
-## User Stories
+**Own it: Postgres (existing Railway instance) + two tables.** Memory is the moat; we do not rent
+the moat (no Zep/Graphiti/mem0/Neo4j). The traversals a coach needs are 1–2 hops — plain SQL.
 
-### Returning to a familiar workout
+- `mem_entities` — typed nodes: `id, user_id, type, kind, life_area, label, summary, attrs jsonb,
+  visibility, status, source, source_ref, embedding (nullable), observed_at, hidden_at, created_at`
+- `mem_edges` — typed connections: `id, user_id, from_id, to_id, edge_type, attrs jsonb, created_at`
 
-*"Marco asks me how I'm feeling before the threshold session. I say tired. Marco says: 'Last time you said tired before this one, you still nailed the second interval. Let's start the warm-up and see how it goes — we can scale back if it's still in your legs at the first ramp.' That's the memory making the coaching feel real."*
+**Cost model** (on top of the master PRD's ~$1.87/user/mo): extraction ≈ +$0.05–0.15 (Haiku pass per
+conversation/debrief; taxonomy prompt is a stable cacheable prefix), storage ≈ $0 (≤50MB/user after
+years), retrieval ≈ $0 (SQL — no per-query vendor fees, ever). **Net ≈ +$0.15–0.30/user/mo; margin
+stays ~89–90% at £19.99.** Embeddings (when added) ≈ $0.001/user/mo.
 
-### Quietly adapting around life
+## The taxonomy (v2) — ~10 types, tags not types
 
-*"I told Marco three weeks ago I had a wedding in Cornwall. Today's plan view for that weekend shows Saturday as a rest day with a note: 'Cornwall — enjoy it.' I never had to remind him."*
+Docstrings are load-bearing: each type's definition **is** the extraction LLM's prompt
+(`app/core/memory_taxonomy.py`). New type only when it is *extracted differently* and *holds
+different data*; otherwise a `kind` tag.
 
-### Hide-not-delete trust
+| # | Type | What it is | Key tags |
+|---|---|---|---|
+| 1 | **Value** | Why you ride — identity, beliefs, principles | kind: value\|identity\|principle |
+| 2 | **Goal** | Events + aspirations | kind: a_race\|b_race\|dream\|comeback · status |
+| 3 | **LearningGap** | Agent-inferred weakness, avoidance, fear, blind spot | kind: physiological\|technical\|psychological\|pacing\|fueling |
+| 4 | **Insight** | Coaching advice given / learning surfaced | **status: noted\|applied\|became_habit\|rejected** · source_ref |
+| 5 | **Habit** | Recurring practice | cadence · streak |
+| 6 | **LifeEvent** | Weddings, work crunch, school runs — constraints & moments | kind: constraint\|event\|milestone · date |
+| 7 | **Person** | Wife, kids, physio, clubmates, rivals | relationship |
+| 8 | **HealthSignal** | Injury, illness, sleep, stress | **visibility: private, never auto-surfaced** |
+| 9 | **Procedural** | How to coach me — "be direct", "no Sunday messages" | kind: preference\|rule · strength: hard\|soft |
+| 10 | **RideMemory** | Notable rides — the epics, the bonks | source_ref → ride_id |
 
-*"I told Marco about a knee twinge in March. It's healed and I don't want to keep seeing it in my profile. I hide it. Marco still avoids stacking heavy sprint blocks without first checking in — he uses the fact, but doesn't surface it. That's the right balance of privacy and care."*
+Every entity carries **`life_area`** (training \| body \| mind \| life) — the clustering dimension of
+the Brain view — and **`visibility`** (private by default; medical never auto-surfaced; future
+club/social mode reads only an opt-in projection, never the private graph).
 
-### Recall under pressure
+### The growth loop (edges)
 
-*"Mid-conversation I ask Marco what my best 20-minute power was last summer. He answers correctly with the date, the ride, and the conditions. If he can't do this, the whole 'remembers you' promise is a lie."*
+```
+Value —GROUNDS→ Goal —SURFACES→ LearningGap —ADDRESSED_BY→ Insight —BECAME→ Habit —SERVES→ Goal
+                                                                    ↑ re-measured against ride/metric data (Layers A/B)
+```
+Edge types: `GROUNDS, SERVES, SURFACES, ADDRESSED_BY, BECAME, INVOLVES, CONSTRAINS, ABOUT`.
 
-## Workflows
+The **closed loop is the signature coaching move**: gap found in March → advice → habit → the data
+proves it worked → Marco says so. `Insight.status` means Marco never re-suggests what failed and can
+celebrate what stuck. **Plans are wiring, not a type** — a plan is the traversal of a Goal's edges;
+nothing to drift out of sync.
 
-### Layered store
+### Layers A/B/D/E (unchanged roles, one source of truth)
 
-Memory has five layers, each with a different write rate, retention, and read pattern.
+- **A — structured state** (rides, PMC, FTP…) and **B — event log** stay as-is: Marco's objective
+  ground truth, *referenced* by entities via `source_ref`, never duplicated into the graph.
+- **D — semantic profile / E — coach arc** remain cache-friendly prompt prefixes, now **derived by
+  traversing the graph**, not rewriting a fact pile.
 
-**Layer A — Structured athlete state.**
-Numerical, queryable, updated on data ingestion.
-Examples: FTP curve, weight curve, CTL/ATL/TSB time series, power-duration curve, HRV trend, ride-by-ride TSS, sleep, RHR.
+## Lenses (Pillar 1 = N lenses over one graph)
 
-**Layer B — Event log.**
-Append-only timeline of *things that happened*.
-Examples: every ride (id, date, planned vs actual, file source), every goal created/edited, every plan generated, every plan adaptation, every device connection, every Marco conversation turn, every voice session.
+No surface owns its own memory. Each foregrounds a subgraph: **Dashboard nudge** (today's workout +
+active gaps + imminent LifeEvents), **Ride debrief** (this ride + linked workout + relevant
+gaps/insights + comparable past rides), **In-ride** (Procedural + psychological gaps + today's
+targets), **Performance** (trends + closed loops), **The Brain** (everything, user-facing).
 
-**Layer C — Episodic facts.**
-Small, dated, natural-language statements extracted from conversations and ride debriefs.
-Examples: "Felt strong on the Cicle Classic climbs, dropped my mate at km 60." / "Knee twinge on left leg week of 22 March, eased off." / "Wedding in Cornwall 13–15 June, no rides Saturday." / "Hates VO2 work on Tuesdays, tired by then." / "Goal: sub-12 for M2L 2026 (PR is sub-12 from 2017)." / "Daughter's recital 14 May."
+## Flagship feature: "Your Brain"
 
-**Layer D — Semantic profile.**
-Slow-moving, distilled summary of *who this rider is*. Updated weekly.
-Example: "All-rounder. ~3.9 W/kg. Strong steady-state, weaker repeated 30-second efforts. Tends to overtrain early in a block. Responds well to direct coaching, doesn't need hand-holding. Race head good — race-prep emotional steadiness above average."
+The graph rendered as a **living organ** — the most intimate surface in the product and the visible
+proof of the moat. Reference: `mockups/memory-graph-almanac.html` (approved).
 
-**Layer E — Coach identity / running narrative.**
-The current arc Marco is coaching. Updated every session.
-Example: "Currently in build phase 2/4 for M2L 2026. 8 weeks out. Last week was a good adherence week. Next week is a rest week and he tends to feel guilty about rest weeks — pre-empt."
+- Force-directed canvas, ALMANAC palette; **continuous motion** (breathing nodes, swaying threads).
+- **Two lenses:** Organic ↔ **Life areas** (training / body / mind / life clusters).
+- **Type filters** (Values, Goals, Habits, Insights, Gaps, People, Life).
+- **Hover** → label + the node's thread lights up, everything else recedes.
+- **Click** → the memory's story: lifecycle (noted → applied → became habit), edges in plain
+  English, provenance, **Hide** (hide-not-delete lives here).
+- **Time scrubber ▶** — replay the year; nodes appear when the memory was born. The relationship
+  made visible ("+9 this week").
+- **Marco's reading of your brain** — the graph narrated in Marco's voice, signed by hand.
+- Empty state: "Your brain starts with your first conversation."
 
-### Write paths
+## Write & read paths
 
-- **A and B** are written by the data pipeline (Strava webhook → FIT parse → DB upsert). Append-only audit on B.
-- **C** is written by an extraction pass: after each Marco conversation turn or ride debrief, a small Claude (Haiku) call extracts dated facts in JSON, deduped against existing C entries by embedding similarity. Each fact is auto-tagged with a category (`general`, `medical`, `life`, `performance`).
-- **D** is written by a weekly cron — a Claude (Sonnet) call that reads the prior week of layers A, B, C and rewrites the semantic profile.
-- **E** is written every time Marco generates or adapts a plan (Sonnet).
+- **Extraction:** after each coach conversation turn and each ride debrief, a Haiku call with the
+  taxonomy prompt returns entities + edges (JSON). Dedup on (type, normalized label) similarity;
+  existing entities are enriched, not duplicated. Failures are **logged loudly** — never swallowed.
+- **Retrieval (`get_context`)**: compact text block for Marco's prompts — recent + high-degree +
+  goal-adjacent entities, hidden facts included but flagged *never quote verbatim*.
+- Hidden ≠ deleted: `hidden_at` set; excluded from Brain view; retained for coaching safety
+  (medical soft-warning per v1). Hard-delete only via GDPR account deletion.
 
-### Read paths
+## Success criteria (carried from v1 + new)
 
-- Every coach prompt is constructed by retrieving (i) the relevant slice of A and B for the question (deterministic SQL), (ii) the top-k semantically relevant C facts (vector search, including hidden facts), and (iii) D + E as fixed prefixes.
-- All prompts use `{coach_name}` as a substitution variable for the user's chosen coach name. The system prompt template is identical regardless of coach name — only the substitution + the voice ID differ between users.
-- All retrieval is logged (`marco_calls.retrieval_count`, `retrieval_log_id`) so we can audit "why did Marco say this".
-- Retrieval respects the **hidden-but-retained** rule: hidden C facts ARE included in retrieval results passed to Marco, but Marco's system prompt instructs him not to quote them verbatim or surface them in user-facing summaries.
+- Recall eval ≥ 90% on the 50-question held-out set; **extraction eval**: labelled fixture set in CI
+  (docstrings are prompts — test them like prompts).
+- Marco references at least one cross-life thread per week of active use (the companion metric).
+- Retrieval p95 ≤ 200ms; zero cross-user leakage (RLS + tests, per v1).
+- Brain page renders 1K+ nodes at 60fps (canvas).
 
-### Hide-not-delete UX
+## Open questions (v2)
 
-- User can hide any C-layer fact from "What Marco Knows About Me" view → `mem_facts.user_hidden_at` set.
-- Marco's retrieval continues to surface hidden facts internally; system prompt forbids verbatim quotation.
-- Safety-relevant categories (`medical`) trigger a soft warning on hide: *"Marco uses this when planning intensity. Hide from view, but Marco will keep using it. OK?"*
-- Deletion audit log accessible to user — they can recover a hidden fact at any time.
-- Hard-delete only on account deletion (GDPR right to erasure).
-- Privacy policy explicitly states retention behaviour.
-
-### Cross-screen surfacing (Pillar 1 leverage)
-
-Memory is rendered as Marco's voice on every screen — see Coach Presence epic for surface-by-surface detail.
-
-## Boundaries
-
-### In scope
-
-- Five-layer store with the schemas above.
-- Postgres + pgvector for embeddings (no external vector DB).
-- Hide-not-delete with soft-warning for medical category.
-- Retrieval audit log accessible to admins.
-- "What Marco Knows About Me" settings page (Layer C only — A/B are too granular for end-user view).
-- GDPR data export (JSON archive of all layers) and account deletion (hard-delete after 30-day grace).
-- Cross-user isolation enforced via Postgres RLS + automated tests asserting no leak.
-
-### Out of scope (for this epic)
-
-- Cross-user "shared" memory (e.g., team training contexts).
-- Memory-driven coaching personas beyond Marco (parked under OQ6).
-- Multi-modal memory (image, video) — text-only.
-- External-source memory ingestion (e.g., import TrainingPeaks notes) — v2.
-
-## Dependencies
-
-- **`marco-core` service** must be the sole funnel for Claude calls so retrieval + caching + cost logging are centralised. **Dependency for every read path.** Stand up the skeleton in Milestone 1.
-- **Postgres + pgvector extension** enabled.
-- **Multi-User & Auth (Epic D)** for per-user RLS — but a single-user mode with a hardcoded user_id can ship in M1 ahead of Epic D.
-
-## Success Criteria
-
-- **Memory recall quality (eval):** Marco answers ≥ 90% of recall questions correctly on a held-out test set of 50 questions covering A/B/C/D/E layers. *("What was my best 20-min power last summer?", "Remind me what I said about my knee in March.", "When's the wedding?", "What kind of rider am I?")*
-- **Cross-user isolation:** automated test suite — no cross-user PII leak across 100 simulated users sharing a vector index. Zero tolerance.
-- **Retrieval latency:** p95 ≤ 200ms for top-k=8 against a user with 5K+ facts.
-- **Hide-respecting:** in eval, Marco never quotes a hidden fact verbatim. Acts on it (e.g., reduces intensity) but doesn't surface it.
-- **User-controlled deletion:** on user account deletion, all layers wiped within 24 hours; data export job completes within 5 minutes.
-
-## Features
-
-### F1 — Memory schema + write pipeline
-
-Postgres tables for layers A–E. Append-only event log. Strava-webhook → fact-extraction pipeline. Idempotent.
-
-### F2 — Embeddings + retrieval API
-
-pgvector index on `mem_facts.embedding`. `get_context(user_id, query, k, include_hidden=true)` API consumed only by `marco-core`.
-
-### F3 — "What Marco Knows About Me" settings page
-
-Layer-C view with hide/unhide controls, category filter, search. Soft warning on medical-category hide. Audit log access.
-
-### F4 — Weekly profile rewrite + arc update
-
-Cron job + Marco-call wiring for D and E layers.
-
-### F5 — Cross-user isolation tests
-
-Property-based tests + RLS assertions. Runs in CI on every change to memory paths.
-
-### F6 — GDPR export + account-deletion job
-
-JSON archive of all layers + raw FIT files. Hard-delete worker.
-
-## Open Questions
-
-- **OQ1:** Episodic-fact dedup similarity threshold — how close in embedding space before we treat a new fact as a duplicate / refinement of an old one?
-- **OQ2:** Memory size cap — does a user with 5 years of daily rides + conversations end up with 10K+ facts? At what point does pgvector retrieval cost or latency degrade? Need to model and decide an age-out / consolidation policy. (Likely: facts older than 18 months get summarised into D-layer profile and archived.)
-- **OQ3:** Should Marco be able to *correct* his own memory? E.g., user mentions "I was joking about hating Tuesdays" — does Marco update the prior C-fact, mark it superseded, or write a new contradicting fact and let retrieval handle it?
-- **OQ4:** Embedding model — local (open source) or hosted (OpenAI/Voyage)? Cost vs quality trade-off; affects retrieval quality more than any other choice.
+- **OQ1 (was OQ4):** embedding vendor for semantic retrieval — OpenAI text-embedding-3-small vs
+  Voyage. Deferred: v2 ships with type/recency/graph retrieval; embeddings slot in behind
+  `get_context` without schema change (column reserved).
+- **OQ2:** consolidation policy at 10K+ entities (age-out into D-layer profile) — revisit at 1K.
+- **OQ3:** Insight.status transitions — automatic (workout-completion + debrief evidence) vs
+  Marco-confirmed. Start manual/heuristic, automate at M2.

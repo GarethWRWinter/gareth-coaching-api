@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth-context";
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/coach", label: "Coach Marco" },
+  { href: "/dashboard/brain", label: "Your Brain" },
   { href: "/dashboard/rides", label: "Rides" },
   { href: "/dashboard/performance", label: "Performance" },
   { href: "/dashboard/goals", label: "Goals" },

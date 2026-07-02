@@ -29,9 +29,28 @@ async def _generate_debrief_bg(db: Session, user: User, ride):
     """Background task to generate a Coach Marco debrief for a new ride."""
     try:
         from app.services.coach_insights_service import generate_ride_debrief
-        await generate_ride_debrief(db, user, ride)
+        # NB: generate_ride_debrief is synchronous — awaiting it was the bug
+        # that silently killed every debrief (audit finding #4).
+        generate_ride_debrief(db, user, ride)
     except Exception:
-        _logger.warning("Failed to generate debrief for ride %s", ride.id)
+        _logger.exception("Failed to generate debrief for ride %s", ride.id)
+        return
+
+    # Memory extraction — the debrief is a rich source of durable facts
+    # (gaps observed, insights given, ride memories). Pillar 2 write path.
+    try:
+        if getattr(ride, "debrief_text", None):
+            from app.services.memory_service import extract_memories
+
+            extract_memories(
+                db,
+                user,
+                f"Ride: {ride.title}\n\nMarco's debrief:\n{ride.debrief_text}",
+                source="debrief",
+                source_ref=str(ride.id),
+            )
+    except Exception:
+        _logger.exception("Memory extraction after debrief failed (ride %s)", ride.id)
 
 
 @router.post("/upload", response_model=RideResponse, status_code=201)

@@ -523,6 +523,20 @@ def _build_rider_context(db: Session, user: User) -> str:
     except Exception:
         pass
 
+    # ── 9. Long-term memory (the brain — Pillar 2) ──
+    # Injected inside the context dict so the result stays valid JSON
+    # (stream_response round-trips this via json.loads for the snapshot).
+    try:
+        from app.services.memory_service import get_context as _memory_context
+
+        memory_block = _memory_context(db, user)
+        if memory_block:
+            context["long_term_memory"] = memory_block.split("\n")
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Memory context failed (user=%s)", user.id)
+
     return json.dumps(context, indent=2, default=str)
 
 
@@ -871,6 +885,25 @@ Today's date: {date.today().isoformat()}
         yield f'data: {json.dumps({"type": "plan_updated"})}\n\n'
 
     yield f'data: {json.dumps({"type": "done"})}\n\n'
+
+    # Memory extraction — write this exchange into the brain (Pillar 2).
+    # Runs after the client has received `done`, so it never delays the stream.
+    try:
+        from app.services.memory_service import extract_memories
+
+        extract_memories(
+            db,
+            user,
+            f"Rider: {user_message}\n\nMarco: {full_response}",
+            source="chat",
+            source_ref=session.id,
+        )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception(
+            "Memory extraction after chat failed (user=%s)", user.id
+        )
 
 
 VOICE_MODE_ADDENDUM = """

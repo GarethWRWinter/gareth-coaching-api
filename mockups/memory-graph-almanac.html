@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your brain · ALMANAC living memory graph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500&family=Caveat:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F1EA; --surface:#FFFFFF; --sunken:#ECE8DE;
+    --line:#E7E2D7; --line-strong:#D6CFC1; --ink:#23211C; --ink-2:#615B50; --ink-3:#948D80;
+    --forest:#36513F; --sage:#9FB295; --sage-tint:#E9ECE2; --clay:#BB6647; --ochre:#C7A458;
+    --dusty:#7C95A3; --rust:#A24E36;
+    --sans:'Schibsted Grotesk',system-ui,sans-serif; --display:'Bricolage Grotesque',var(--sans);
+    --script:'Caveat',cursive;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:40px 52px}
+  .label{font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+  h1{font-family:var(--display);font-weight:300;font-size:40px;letter-spacing:-.02em;margin-top:10px}
+  .sub{color:var(--ink-2);font-size:15px;margin-top:8px;max-width:600px}
+  .topline{display:flex;justify-content:space-between;align-items:flex-end}
+  .stats{text-align:right;color:var(--ink-3);font-size:13px}
+  .stats b{color:var(--ink);font-weight:500}
+
+  .wrap{display:grid;grid-template-columns:1fr 316px;gap:22px;margin-top:26px}
+  .canvasbox{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  canvas{display:block;width:100%;height:660px;cursor:crosshair}
+
+  .filters{position:absolute;top:12px;left:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:78%;z-index:2}
+  .chip{display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:500;color:var(--ink-2);cursor:pointer;user-select:none}
+  .chip .dot{width:8px;height:8px;border-radius:50%}
+  .chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .modes{position:absolute;top:12px;right:12px;display:flex;gap:0;z-index:2;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .modes button{border:none;background:var(--paper);color:var(--ink-2);font-family:var(--sans);font-size:11.5px;font-weight:500;padding:6px 12px;cursor:pointer}
+  .modes button.on{background:var(--forest);color:#fff}
+
+  .timebar{position:absolute;bottom:12px;left:12px;right:12px;display:flex;align-items:center;gap:12px;background:rgba(243,241,234,.92);border:1px solid var(--line);border-radius:8px;padding:9px 14px;z-index:2}
+  .timebar .play{width:28px;height:28px;border-radius:50%;border:none;background:var(--forest);color:#fff;cursor:pointer;font-size:11px;flex-shrink:0}
+  .timebar input{flex:1;accent-color:#36513F}
+  .timebar .t{font-size:11.5px;color:var(--ink-2);width:86px;text-align:right;font-variant-numeric:tabular-nums}
+
+  .panel{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px}
+  .card .type{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ochre)}
+  .card .type .dot{width:9px;height:9px;border-radius:50%;background:var(--ochre)}
+  .card h3{font-family:var(--display);font-weight:400;font-size:19px;line-height:1.22;letter-spacing:-.01em;margin-top:9px}
+  .card .meta{font-size:12px;color:var(--ink-3);margin-top:7px}
+  .lifecycle{display:flex;margin-top:14px}
+  .lifecycle .step{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:4px 9px;border:1px solid var(--line);background:var(--paper)}
+  .lifecycle .step:first-child{border-radius:5px 0 0 5px}
+  .lifecycle .step:last-child{border-radius:0 5px 5px 0}
+  .lifecycle .step.on{background:var(--forest);border-color:var(--forest);color:#fff}
+  .links{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+  .links .lnk{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-2)}
+  .links .lnk .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .links .lnk .rel{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .card .actions{margin-top:15px;display:flex;gap:8px}
+  .btn{border:none;border-radius:5px;padding:8px 13px;font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer}
+  .btn.primary{background:var(--forest);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid var(--line-strong);color:var(--ink-2)}
+
+  .marconote{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  .marconote p{font-size:14px;line-height:1.6;color:var(--ink-2);margin-top:7px}
+  .marconote .sig{font-family:var(--script);font-size:25px;color:var(--forest);margin-top:8px}
+</style>
+</head>
+<body>
+  <div class="topline">
+    <div>
+      <div class="label">What Marco knows about you</div>
+      <h1>Your brain.</h1>
+      <p class="sub">Every conversation, ride, goal and life moment becomes one connected, living memory. Hover to follow a thread. Scrub to replay your year.</p>
+    </div>
+    <div class="stats"><b>214</b> memories · <b>387</b> connections<br/>+9 this week</div>
+  </div>
+
+  <div class="wrap">
+    <div class="canvasbox">
+      <div class="filters" id="filters">
+        <span class="chip active" data-f="all">All</span>
+        <span class="chip" data-f="value"><span class="dot" style="background:#36513F"></span>Values</span>
+        <span class="chip" data-f="goal"><span class="dot" style="background:#BB6647"></span>Goals</span>
+        <span class="chip" data-f="habit"><span class="dot" style="background:#9FB295"></span>Habits</span>
+        <span class="chip" data-f="insight"><span class="dot" style="background:#C7A458"></span>Insights</span>
+        <span class="chip" data-f="gap"><span class="dot" style="background:#A24E36"></span>Gaps</span>
+        <span class="chip" data-f="person"><span class="dot" style="background:#7C95A3"></span>People</span>
+        <span class="chip" data-f="life"><span class="dot" style="background:#948D80"></span>Life</span>
+      </div>
+      <div class="modes">
+        <button id="mOrganic">Organic</button>
+        <button id="mAreas" class="on">Life areas</button>
+      </div>
+      <canvas id="c" width="1240" height="1320"></canvas>
+      <div class="timebar">
+        <button class="play" id="play">▶</button>
+        <input type="range" id="scrub" min="0" max="365" value="365"/>
+        <span class="t" id="tlabel">Today</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <span class="type"><span class="dot"></span>Insight · from Sunday's debrief</span>
+        <h3>Fuel every 45 minutes on rides over two hours.</h3>
+        <p class="meta">First noted 12 May · applied 4 times since</p>
+        <div class="lifecycle">
+          <span class="step">Noted</span><span class="step">Applied</span><span class="step on">Became habit</span>
+        </div>
+        <div class="links">
+          <span class="lnk"><span class="dot" style="background:#A24E36"></span><span><span class="rel">addresses</span> &nbsp;Fades in the final hour</span></span>
+          <span class="lnk"><span class="dot" style="background:#9FB295"></span><span><span class="rel">became</span> &nbsp;Bottle alarm every 45 min</span></span>
+          <span class="lnk"><span class="dot" style="background:#BB6647"></span><span><span class="rel">serves</span> &nbsp;Manchester → London, sub-12</span></span>
+        </div>
+        <div class="actions">
+          <button class="btn primary">Ask Marco about this</button>
+          <button class="btn ghost">Hide</button>
+        </div>
+      </div>
+
+      <div class="marconote">
+        <div class="label" style="color:var(--forest)">Marco's reading of your brain</div>
+        <p>Your training cluster is thriving. But follow the thread from Hayden's Tuesday school runs to your missed intervals — that's not a discipline problem, it's a scheduling one. Let's move the hard day to Wednesday.</p>
+        <div class="sig">Marco</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const TYPES = {
+  user:   {c:'#23211C', r:15},
+  value:  {c:'#36513F', r:8.5},
+  goal:   {c:'#BB6647', r:9.5},
+  habit:  {c:'#9FB295', r:6.5},
+  insight:{c:'#C7A458', r:6.5},
+  gap:    {c:'#A24E36', r:7.5},
+  person: {c:'#7C95A3', r:7},
+  life:   {c:'#948D80', r:5.5},
+};
+const AREAS = {
+  training: {label:'TRAINING & PERFORMANCE', ax:340, ay:400},
+  body:     {label:'BODY & HEALTH',          ax:900, ay:400},
+  mind:     {label:'MIND',                   ax:340, ay:960},
+  life:     {label:'LIFE & PEOPLE',          ax:900, ay:960},
+};
+
+// ---- curated, labelled memories (birth = day 0..365) ----
+const N = [];
+const L = [];
+function node(t, area, label, birth){ N.push({t, area, label, birth,
+  x:620+(Math.random()-.5)*300, y:660+(Math.random()-.5)*300, vx:0, vy:0, ph:Math.random()*6.28}); return N.length-1; }
+function edge(a,b){ L.push([a,b]); }
+
+const u = node('user','', 'You', 0);
+
+// TRAINING thread
+const vProve = node('value','mind','Prove it to myself again', 4);
+const gM2L  = node('goal','training','Manchester → London · sub-12', 10);
+const gapFade = node('gap','training','Fades in the final hour', 62);
+const insFuel = node('insight','training','Fuel every 45 minutes', 70);
+const habFuel = node('habit','training','Bottle alarm · every 45 min', 84);
+const gapPace = node('gap','training','Starts climbs too hot', 120);
+const insPace = node('insight','training','Cap the first 5 min at tempo', 128);
+const habTue  = node('habit','training','Tuesday intervals', 30);
+const rideCornwall = node('life','training','The Cornwall bonk · 14 Apr', 45);
+edge(u,vProve); edge(vProve,gM2L); edge(u,gM2L);
+edge(gM2L,gapFade); edge(gapFade,insFuel); edge(insFuel,habFuel); edge(habFuel,gM2L);
+edge(gM2L,gapPace); edge(gapPace,insPace); edge(rideCornwall,gapFade); edge(habTue,gM2L);
+
+// BODY thread
+const metSleep = node('gap','body','Sleep slipping · 5.9h avg', 150);
+const insScreens = node('insight','body','Screens off after 10pm', 158);
+const habScreens = node('habit','body','Screens off · logged nightly', 170);
+const injKnee = node('life','body','Knee twinge · March (healed)', 20);
+edge(u,metSleep); edge(metSleep,insScreens); edge(insScreens,habScreens);
+edge(habScreens,gM2L); edge(injKnee,habTue);
+
+// MIND thread
+const vFamily = node('value','mind','Family first', 2);
+const gapGuilt = node('gap','mind','Guilty about rest weeks', 95);
+const insRest = node('insight','mind','Rest is training', 102);
+const gapDescend = node('gap','mind','Nerves on fast descents', 200);
+edge(u,vFamily); edge(gapGuilt,insRest); edge(u,gapGuilt); edge(gapDescend,gM2L);
+
+// LIFE thread
+const pSarah = node('person','life','Sarah', 1);
+const pHayden = node('person','life','Hayden', 1);
+const evWedding = node('life','life','Cornwall wedding · June', 130);
+const evRuns = node('life','life','School runs · Tue & Thu', 15);
+const pDave = node('person','life','Dave · forever rival', 40);
+edge(u,pSarah); edge(u,pHayden); edge(u,pDave);
+edge(evWedding,gM2L); edge(pSarah,evWedding); edge(evRuns,pHayden);
+edge(evRuns,habTue); /* the cross-life thread Marco reads */
+edge(vFamily,evRuns); edge(pDave,gM2L); edge(vProve,pDave);
+
+// background texture nodes
+const areas = ['training','body','mind','life'];
+const bgTypes = ['insight','life','habit','person','gap','value'];
+for(let i=0;i<86;i++){
+  const a = areas[Math.floor(Math.random()*4)];
+  const t = bgTypes[Math.floor(Math.random()*bgTypes.length)];
+  const b = node(t, a, '', Math.floor(Math.random()*365));
+  // attach to a random curated node in same area (or user)
+  const cands = N.map((n,idx)=>({n,idx})).filter(o=>o.idx!==b && o.n.area===a && o.n.label);
+  edge(b, cands.length? cands[Math.floor(Math.random()*cands.length)].idx : u);
+  if(Math.random()<.3) edge(b, Math.floor(Math.random()*(N.length-1)));
+}
+
+// ---- state ----
+let mode = 'areas';          // 'organic' | 'areas'
+let filter = 'all';
+let tDay = 365;
+let hover = L.length ? N.indexOf(N.find(n=>n===N[evRuns])) : -1; // default: spotlight the school-runs thread
+hover = evRuns;
+let playing = false;
+
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const scrub = document.getElementById('scrub'), tlabel = document.getElementById('tlabel');
+const MONTHS=['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb'];
+function dayLabel(d){ if(d>=365) return 'Today'; const m=Math.floor(d/30.5); return MONTHS[Math.min(11,m)] + ' · month ' + (m+1); }
+
+function alive(i){ return N[i].birth <= tDay; }
+function visible(i){ const n=N[i]; if(!alive(i)) return false; if(filter==='all') return true; if(n.t==='user') return true; return n.t===filter; }
+function neighbors(i){ const s=new Set([i]); L.forEach(([a,b])=>{ if(a===i)s.add(b); if(b===i)s.add(a); }); return s; }
+
+// ---- simulation (continuous) ----
+function tick(dt, time){
+  for(let i=0;i<N.length;i++){ const n=N[i]; if(!alive(i)) continue;
+    n.vx*= .82; n.vy*= .82;
+    // gravity: organic → center; areas → area anchor (user stays center)
+    let gx=620, gy=660;
+    if(mode==='areas' && n.t!=='user' && AREAS[n.area]){ gx=AREAS[n.area].ax; gy=AREAS[n.area].ay; }
+    n.vx += (gx-n.x)*.012; n.vy += (gy-n.y)*.012;
+    // gentle organic drift — the "alive" breath
+    n.vx += Math.sin(time*.0006 + n.ph)*.05;
+    n.vy += Math.cos(time*.0005 + n.ph*1.3)*.05;
+    for(let j=i+1;j<N.length;j++){ if(!alive(j)) continue; const m=N[j];
+      let dx=n.x-m.x, dy=n.y-m.y, d2=dx*dx+dy*dy+60;
+      if(d2<36000){ const f=440/d2;
+        n.vx+=dx*f; n.vy+=dy*f; m.vx-=dx*f; m.vy-=dy*f; }
+    }
+  }
+  L.forEach(([a,b])=>{ if(!alive(a)||!alive(b)) return; const n=N[a], m=N[b];
+    let dx=m.x-n.x, dy=m.y-n.y, d=Math.sqrt(dx*dx+dy*dy)||1, want= (n.t==='user'||m.t==='user')?150:85;
+    const f=(d-want)*.012, ux=dx/d*f, uy=dy/d*f;
+    n.vx+=ux; n.vy+=uy; m.vx-=ux; m.vy-=uy;
+  });
+  N.forEach((n,i)=>{ if(!alive(i)) return; n.x+=n.vx; n.y+=n.vy;
+    n.x=Math.max(56,Math.min(1184,n.x)); n.y=Math.max(70,Math.min(1230,n.y)); });
+}
+
+// ---- draw ----
+function draw(time){
+  ctx.clearRect(0,0,1240,1320);
+  const hoverSet = hover>=0 && alive(hover) ? neighbors(hover) : null;
+
+  // area labels
+  if(mode==='areas'){
+    ctx.font='600 15px Schibsted Grotesk'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(148,141,128,.5)';
+    for(const k in AREAS){ const a=AREAS[k];
+      ctx.fillText(a.label, a.ax, k==='training'||k==='body' ? a.ay-230 : a.ay+250); }
+  }
+
+  // threads (curved, breathing)
+  L.forEach(([a,b],idx)=>{ if(!alive(a)||!alive(b)) return;
+    const n=N[a], m=N[b];
+    const inHover = hoverSet && hoverSet.has(a) && hoverSet.has(b);
+    const dim = (hoverSet && !inHover) || (filter!=='all' && !(visible(a)&&visible(b)));
+    const midx=(n.x+m.x)/2, midy=(n.y+m.y)/2;
+    const dx=m.x-n.x, dy=m.y-n.y, d=Math.sqrt(dx*dx+dy*dy)||1;
+    const bow = ((idx%2)?1:-1) * Math.min(24, d*.14) * (1+.1*Math.sin(time*.001+idx));
+    const cxp = midx - dy/d*bow, cyp = midy + dx/d*bow;
+    ctx.beginPath(); ctx.moveTo(n.x,n.y); ctx.quadraticCurveTo(cxp,cyp,m.x,m.y);
+    ctx.strokeStyle = inHover ? 'rgba(54,81,63,.75)' : dim ? 'rgba(150,140,120,.07)' : 'rgba(150,140,120,.26)';
+    ctx.lineWidth = inHover ? 1.8 : 1;
+    ctx.stroke();
+  });
+
+  // nodes (breathing radius)
+  N.forEach((n,i)=>{ if(!alive(i)) return;
+    const s=TYPES[n.t];
+    const breathe = 1 + .07*Math.sin(time*.0012 + n.ph);
+    const r = s.r*breathe;
+    const dim = (hoverSet && !hoverSet.has(i)) || !visible(i);
+    ctx.globalAlpha = dim ? .13 : 1;
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,7); ctx.fillStyle=s.c; ctx.fill();
+    if(n.t==='user'){ ctx.lineWidth=3; ctx.strokeStyle='#F3F1EA'; ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.font='600 10px Schibsted Grotesk'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('YOU',n.x,n.y); }
+    ctx.globalAlpha = 1;
+  });
+
+  // hover label
+  if(hover>=0 && alive(hover) && N[hover].label){
+    const n=N[hover];
+    ctx.font='500 13px Schibsted Grotesk';
+    const w = ctx.measureText(n.label).width + 22;
+    const lx = Math.min(1184-w, Math.max(56, n.x - w/2)), ly = n.y - 34;
+    ctx.fillStyle='#23211C';
+    ctx.beginPath(); ctx.roundRect(lx, ly-13, w, 26, 13); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(n.label, lx+11, ly+1);
+  }
+}
+
+// ---- interactions ----
+const box = cv.getBoundingClientRect ? cv : null;
+cv.addEventListener('mousemove', e=>{
+  const r = cv.getBoundingClientRect();
+  const x = (e.clientX-r.left) * (1240/r.width), y = (e.clientY-r.top) * (1320/r.height);
+  let best=-1, bd=26*26;
+  N.forEach((n,i)=>{ if(!alive(i)||!visible(i)) return; const dx=n.x-x, dy=n.y-y, d=dx*dx+dy*dy; if(d<bd){bd=d;best=i;} });
+  hover = best;
+});
+cv.addEventListener('mouseleave', ()=>{ hover=-1; });
+
+document.getElementById('filters').addEventListener('click', e=>{
+  const chip = e.target.closest('.chip'); if(!chip) return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active'); filter = chip.dataset.f;
+});
+document.getElementById('mOrganic').onclick = e=>{ mode='organic'; e.target.classList.add('on'); document.getElementById('mAreas').classList.remove('on'); };
+document.getElementById('mAreas').onclick = e=>{ mode='areas'; e.target.classList.add('on'); document.getElementById('mOrganic').classList.remove('on'); };
+
+scrub.addEventListener('input', ()=>{ tDay=+scrub.value; tlabel.textContent=dayLabel(tDay); });
+document.getElementById('play').onclick = ()=>{
+  playing=!playing; document.getElementById('play').textContent = playing?'❚❚':'▶';
+  if(playing && tDay>=365) tDay=0;
+};
+
+// ---- loop ----
+let last=performance.now();
+// warm-up so the first frame is already organic
+for(let i=0;i<200;i++) tick(16, i*16);
+function loop(now){
+  const dt=now-last; last=now;
+  if(playing){ tDay=Math.min(365, tDay+dt*.045); scrub.value=tDay; tlabel.textContent=dayLabel(tDay);
+    if(tDay>=365){ playing=false; document.getElementById('play').textContent='▶'; } }
+  tick(dt, now); draw(now);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

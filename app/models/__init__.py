@@ -1,6 +1,8 @@
 from app.models.base import Base
 from app.models.chat import ChatMessage, ChatSession
+from app.models.coach import CoachNudge
 from app.models.integration import StravaToken, TrainingPeaksToken
+from app.models.memory import MemoryEdge, MemoryEntity
 from app.models.metrics import DailyMetrics
 from app.models.onboarding import GoalEvent, OnboardingResponse
 from app.models.ride import Ride, RideData
@@ -24,6 +26,9 @@ __all__ = [
     "TrainingPeaksToken",
     "ChatSession",
     "ChatMessage",
+    "CoachNudge",
+    "MemoryEntity",
+    "MemoryEdge",
     "StravaSegment",
     "SegmentEffort",
 ]
