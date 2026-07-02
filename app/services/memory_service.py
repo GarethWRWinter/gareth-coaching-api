@@ -63,6 +63,7 @@ def extract_memories(
     text: str,
     source: str,
     source_ref: str | None = None,
+    observed_at: datetime | None = None,
 ) -> dict:
     """Extract entities + edges from text and upsert into the graph.
 
@@ -147,6 +148,10 @@ def extract_memories(
             source=source,
             source_ref=source_ref,
         )
+        if observed_at is not None:
+            # Backfill: date the memory when it actually happened, so the
+            # Brain's growth replay tells the true story.
+            node.observed_at = observed_at
         db.add(node)
         db.flush()
         label_to_entity[_norm(label)] = node
@@ -209,6 +214,7 @@ def get_graph(db: Session, user: User, include_hidden: bool = False) -> dict:
                 "status": e.status,
                 "source": e.source,
                 "source_ref": e.source_ref,
+                "observed_at": e.observed_at.isoformat() if e.observed_at else None,
                 "created_at": e.created_at.isoformat() if e.created_at else None,
             }
             for e in entities

@@ -1088,6 +1088,7 @@ export interface MemoryEntity {
   status: string | null;
   source: string | null;
   source_ref: string | null;
+  observed_at: string | null;
   created_at: string | null;
 }
 

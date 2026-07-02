@@ -131,14 +131,13 @@ export default function BrainPage() {
   useEffect(() => {
     if (!graph) return;
     const prev = new Map(nodesRef.current.map((n) => [n.id, n]));
+    const bornOn = (e: MemoryEntity) => dayOf(e.observed_at ?? e.created_at);
     const d0 = graph.entities.length
-      ? Math.min(...graph.entities.map((e) => dayOf(e.created_at)))
+      ? Math.min(...graph.entities.map(bornOn))
       : 0;
     const span = Math.max(
       1,
-      (graph.entities.length
-        ? Math.max(...graph.entities.map((e) => dayOf(e.created_at)))
-        : 0) - d0
+      (graph.entities.length ? Math.max(...graph.entities.map(bornOn)) : 0) - d0
     );
     spanRef.current = span;
     tDayRef.current = span;
@@ -172,7 +171,7 @@ export default function BrainPage() {
               type: e.type,
               area: e.life_area,
               label: e.label,
-              birth: dayOf(e.created_at) - d0,
+              birth: bornOn(e) - d0,
               x: W / 2 + (Math.random() - 0.5) * 320,
               y: H / 2 + (Math.random() - 0.5) * 320,
               vx: 0,
