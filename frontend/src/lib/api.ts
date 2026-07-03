@@ -169,6 +169,9 @@ export interface UserProfile {
   weekly_hours_available: number | null;
   preferred_hard_days: number[] | null;
   rest_days: number[] | null;
+  coach_name: string;
+  coach_avatar: string;
+  coach_tone: string;
 }
 
 export const users = {

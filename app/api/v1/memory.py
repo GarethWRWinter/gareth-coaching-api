@@ -17,7 +17,7 @@ from app.config import settings
 from app.models.user import User
 from app.services import memory_service
 from app.core.llm_utils import response_text
-from app.core.coach_skills import DISTILLED_PERSONA
+from app.core.coach_skills import distilled_persona
 
 router = APIRouter(prefix="/memory", tags=["memory"])
 logger = logging.getLogger(__name__)
@@ -42,14 +42,13 @@ def get_memory_reading(
     context = memory_service.get_context(db, current_user, limit=40)
     if not context:
         return {"reading": None}
-    coach_name = "Marco"
     try:
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         resp = client.messages.create(
             model=HAIKU_MODEL,
             max_tokens=220,
             system=(
-                DISTILLED_PERSONA
+                distilled_persona(current_user.coach_name, current_user.coach_tone)
                 + "\n\n## This surface: Marco's reading of the rider's brain\n"
                 "You are looking at their memory graph — everything you know about them. "
                 "Write a 2-3 sentence reading: name the strongest cluster or thread, "

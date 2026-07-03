@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { memory, type MemoryEntity } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
 /**
@@ -75,6 +76,8 @@ interface SimNode {
 }
 
 export default function BrainPage() {
+  const { user } = useAuth();
+  const coach = user?.coach_name || "Marco";
   const queryClient = useQueryClient();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scrubRef = useRef<HTMLInputElement>(null);
@@ -478,7 +481,7 @@ export default function BrainPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            What Marco knows about you
+            What {coach} knows about you
           </p>
           <h1 className="mt-2 font-display text-4xl font-light tracking-[-0.02em]">
             Your brain.
@@ -521,14 +524,14 @@ export default function BrainPage() {
             Your brain starts with your first conversation.
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-vb-text-dim">
-            Talk to Marco about your goals, your week, your life — every durable
+            Talk to {coach} about your goals, your week, your life — every durable
             thing you share becomes part of a memory that grows with you.
           </p>
           <Link
             href="/dashboard/coach"
             className="mt-6 inline-block rounded-sm bg-vb-forest px-5 py-2.5 text-sm font-medium text-white hover:bg-vb-forest-soft"
           >
-            Talk to Marco
+            Talk to {coach}
           </Link>
         </div>
       ) : (
@@ -695,7 +698,7 @@ export default function BrainPage() {
                     href="/dashboard/coach"
                     className="rounded-sm bg-vb-forest px-3.5 py-2 text-[12.5px] font-medium text-white hover:bg-vb-forest-soft"
                   >
-                    Ask Marco about this
+                    Ask {coach} about this
                   </Link>
                   <button
                     onClick={() => hideMutation.mutate(selected.id)}
@@ -716,13 +719,13 @@ export default function BrainPage() {
             {reading?.reading && (
               <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
                 <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
-                  Marco&apos;s reading of your brain
+                  {coach}&apos;s reading of your brain
                 </p>
                 <p className="mt-2.5 text-[13.5px] leading-relaxed text-vb-text-dim">
                   {reading.reading}
                 </p>
                 <p className="mt-2.5 font-script text-2xl leading-none text-vb-forest">
-                  Marco
+                  {coach}
                 </p>
               </div>
             )}

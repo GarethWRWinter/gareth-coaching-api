@@ -47,6 +47,12 @@ class User(TimestampMixin, Base):
     preferred_hard_days: Mapped[list | None] = mapped_column(JSON, nullable=True)
     rest_days: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
+    # Coach personalisation — the rider's coach: their name for them, their
+    # face (pen-sketch avatar key), and their communication tone.
+    coach_name: Mapped[str] = mapped_column(String(50), nullable=False, server_default="Marco")
+    coach_avatar: Mapped[str] = mapped_column(String(32), nullable=False, server_default="m1_climber")
+    coach_tone: Mapped[str] = mapped_column(String(24), nullable=False, server_default="balanced")
+
     # Relationships
     rides = relationship("Ride", back_populates="user", lazy="dynamic")
     training_plans = relationship("TrainingPlan", back_populates="user", lazy="dynamic")

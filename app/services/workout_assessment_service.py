@@ -23,7 +23,7 @@ from app.models.ride import Ride
 from app.models.training import Workout, WorkoutStatus, WorkoutType
 from app.models.user import User
 from app.core.llm_utils import response_text
-from app.core.coach_skills import DISTILLED_PERSONA
+from app.core.coach_skills import distilled_persona
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ def score_execution(workout: Workout, ride: Ride) -> dict:
 
 # --- Supportive feedback via Claude -------------------------------------------
 
-ASSESSMENT_SYSTEM_PROMPT = DISTILLED_PERSONA + """
+ASSESSMENT_SYSTEM_PROMPT = """
 
 ## This surface: workout execution assessment
 You are a supportive, data-driven \
@@ -323,7 +323,7 @@ def generate_assessment(
             response = client.messages.create(
                 model="claude-sonnet-5",
                 max_tokens=1500,
-                system=ASSESSMENT_SYSTEM_PROMPT,
+                system=distilled_persona(user.coach_name, user.coach_tone) + ASSESSMENT_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_msg}],
             )
             text = response_text(response)

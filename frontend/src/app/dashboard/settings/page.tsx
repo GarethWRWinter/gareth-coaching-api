@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { users, strava, dropbox, goals as goalsApi, metrics } from "@/lib/api";
+import { COACH_AVATARS, COACH_TONES } from "@/lib/coach";
 import { useAuth } from "@/lib/auth-context";
 import { formatDate, cn } from "@/lib/utils";
 import type { GoalEvent, StravaStatus } from "@/lib/api";
@@ -275,6 +276,9 @@ export default function SettingsPage() {
           Settings.
         </h1>
       </header>
+
+      {/* Your coach */}
+      <CoachSection />
 
       {/* Profile */}
       <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
@@ -1074,5 +1078,134 @@ export default function SettingsPage() {
         )}
       </section>
     </div>
+  );
+}
+
+// ============ Your coach — name, face, tone ============
+
+function CoachSection() {
+  const { user, refreshUser } = useAuth();
+  const [coachName, setCoachName] = useState(user?.coach_name ?? "Marco");
+  const [avatar, setAvatar] = useState(user?.coach_avatar ?? "m1_climber");
+  const [tone, setTone] = useState(user?.coach_tone ?? "balanced");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const dirty =
+    coachName !== (user?.coach_name ?? "Marco") ||
+    avatar !== (user?.coach_avatar ?? "m1_climber") ||
+    tone !== (user?.coach_tone ?? "balanced");
+
+  async function save() {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await users.updateProfile({
+        coach_name: coachName.trim() || "Marco",
+        coach_avatar: avatar,
+        coach_tone: tone,
+      });
+      await refreshUser();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
+      <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
+        Your coach
+      </h2>
+      <p className="mt-1 text-sm text-vb-text-dim">
+        Same world-class coaching — your name for them, their face, and the way
+        they talk to you.
+      </p>
+
+      {/* Name */}
+      <div className="mt-5 max-w-xs">
+        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+          Coach&apos;s name
+        </label>
+        <input
+          type="text"
+          value={coachName}
+          maxLength={30}
+          onChange={(e) => setCoachName(e.target.value)}
+          className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:outline-none focus:ring-2 focus:ring-vb-forest"
+          placeholder="Marco"
+        />
+      </div>
+
+      {/* Avatar */}
+      <div className="mt-6">
+        <label className="mb-3 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+          Their face
+        </label>
+        <div className="grid grid-cols-5 gap-3 sm:grid-cols-10">
+          {COACH_AVATARS.map((a) => (
+            <button
+              key={a.key}
+              type="button"
+              onClick={() => setAvatar(a.key)}
+              title={a.label}
+              className={cn(
+                "overflow-hidden rounded-full border-2 transition-all",
+                avatar === a.key
+                  ? "border-vb-forest ring-2 ring-vb-forest/30"
+                  : "border-vb-border-subtle opacity-70 hover:opacity-100"
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={a.src} alt={a.label} className="aspect-square w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tone */}
+      <div className="mt-6">
+        <label className="mb-3 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+          How they talk to you
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {COACH_TONES.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTone(t.key)}
+              className={cn(
+                "rounded-md border p-4 text-left transition-colors",
+                tone === t.key
+                  ? "border-vb-forest bg-vb-sage-tint/40"
+                  : "border-vb-border-subtle bg-vb-surface hover:border-vb-border"
+              )}
+            >
+              <p className="text-sm font-medium text-vb-text">{t.label}</p>
+              <p className="mt-1 text-xs text-vb-text-dim">{t.description}</p>
+              <p className="mt-2 text-xs italic leading-relaxed text-vb-text-muted">
+                &ldquo;{t.sample}&rdquo;
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving || !dirty}
+          className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save coach"}
+        </button>
+        {saved && (
+          <span className="text-xs text-vb-forest">
+            Done — {coachName.trim() || "Marco"} is ready.
+          </span>
+        )}
+      </div>
+    </section>
   );
 }

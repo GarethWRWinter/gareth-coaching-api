@@ -25,7 +25,7 @@ from app.models.training import TrainingPlan, TrainingPhase, Workout, PlanStatus
 from app.models.user import User
 from app.services.metrics_service import get_current_fitness, get_weekly_training_load
 from app.core.llm_utils import response_text
-from app.core.coach_skills import DISTILLED_PERSONA
+from app.core.coach_skills import distilled_persona
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ SONNET_MODEL = "claude-sonnet-5"
 
 # ── Daily Nudge ──────────────────────────────────────────────────────────────
 
-NUDGE_SYSTEM_PROMPT = DISTILLED_PERSONA + """
+NUDGE_SYSTEM_PROMPT = """
 
 ## This surface: the daily dashboard nudge
 Generate a SHORT coaching nudge (2-3 sentences max) based on the rider's current state.
@@ -199,7 +199,7 @@ def generate_daily_nudge(db: Session, user: User) -> dict:
         response = client.messages.create(
             model=HAIKU_MODEL,
             max_tokens=200,
-            system=NUDGE_SYSTEM_PROMPT,
+            system=distilled_persona(user.coach_name, user.coach_tone) + NUDGE_SYSTEM_PROMPT,
             messages=[{
                 "role": "user",
                 "content": f"Generate today's coaching nudge based on this data:\n\n```json\n{json.dumps(context, indent=2, default=str)}\n```",
@@ -235,7 +235,7 @@ def generate_daily_nudge(db: Session, user: User) -> dict:
 
 # ── Ride Debrief ─────────────────────────────────────────────────────────────
 
-DEBRIEF_SYSTEM_PROMPT = DISTILLED_PERSONA + """
+DEBRIEF_SYSTEM_PROMPT = """
 
 ## This surface: the post-ride debrief
 The rider just completed a ride and you are giving them a brief, honest debrief.
@@ -359,7 +359,7 @@ def generate_ride_debrief(
         response = client.messages.create(
             model=SONNET_MODEL,
             max_tokens=500,
-            system=DEBRIEF_SYSTEM_PROMPT,
+            system=distilled_persona(user.coach_name, user.coach_tone) + DEBRIEF_SYSTEM_PROMPT,
             messages=[{
                 "role": "user",
                 "content": f"Generate a post-ride debrief for this ride:\n\n```json\n{json.dumps(context, indent=2, default=str)}\n```",
@@ -392,7 +392,7 @@ def generate_ride_debrief(
 
 # ── Metric Explanation ───────────────────────────────────────────────────────
 
-EXPLAIN_SYSTEM_PROMPT = DISTILLED_PERSONA + """
+EXPLAIN_SYSTEM_PROMPT = """
 
 ## This surface: tap-to-explain a metric
 Explain this metric in THE RIDER'S specific context. Personal and actionable.
@@ -445,7 +445,7 @@ def explain_metric(
         response = client.messages.create(
             model=HAIKU_MODEL,
             max_tokens=200,
-            system=EXPLAIN_SYSTEM_PROMPT,
+            system=distilled_persona(user.coach_name, user.coach_tone) + EXPLAIN_SYSTEM_PROMPT,
             messages=[{
                 "role": "user",
                 "content": f"Explain this metric to the rider:\n\n```json\n{json.dumps(context, default=str)}\n```",

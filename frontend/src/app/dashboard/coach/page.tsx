@@ -9,11 +9,16 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { chat, goals as goalsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { coachAvatarSrc } from "@/lib/coach";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
+import { useAuth } from "@/lib/auth-context";
 import { VoiceButton } from "@/components/voice/VoiceButton";
 import { VoiceIndicator } from "@/components/voice/VoiceIndicator";
 
 function CoachPageInner() {
+  const { user: authUser } = useAuth();
+  const coach = authUser?.coach_name || "Marco";
+  const coachAvatar = coachAvatarSrc(authUser?.coach_avatar);
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const goalId = searchParams.get("goal_id");
@@ -400,9 +405,9 @@ function CoachPageInner() {
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <Bot className="mx-auto h-12 w-12 text-vb-forest/50" />
+                <img src={coachAvatar} alt={coach} className="mx-auto h-20 w-20 rounded-full border border-vb-border-subtle object-cover" />
                 <h3 className="mt-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
-                  Coach Marco
+                  Coach {coach}
                 </h3>
                 <p className="mt-1 max-w-sm text-sm text-vb-text-dim">
                   Training, racing, head, life — ask me anything. And I
@@ -452,7 +457,7 @@ function CoachPageInner() {
               >
                 {msg.role === "assistant" && (
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-vb-forest">
-                    <Bot className="h-4 w-4 text-white" />
+                    <img src={coachAvatar} alt={coach} className="h-full w-full rounded-full object-cover" />
                   </div>
                 )}
                 <div

@@ -107,7 +107,7 @@ export default function DashboardPage() {
         <section className="max-w-3xl border-b border-vb-border-subtle pb-10">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
-              A note from Marco
+              A note from {user?.coach_name || "Marco"}
             </p>
             <Link
               href="/dashboard/coach"
@@ -120,7 +120,9 @@ export default function DashboardPage() {
             {nudge.nudge}
           </p>
           <div className="mt-5 flex items-baseline gap-3">
-            <span className="font-script text-3xl leading-none text-vb-forest">Marco</span>
+            <span className="font-script text-3xl leading-none text-vb-forest">
+              {user?.coach_name || "Marco"}
+            </span>
             <span className="text-xs tracking-[0.04em] text-vb-text-muted">your coach</span>
           </div>
         </section>
@@ -195,7 +197,7 @@ export default function DashboardPage() {
         <section>
           <AlmanacRule />
           <SectionHead
-            rubric={`Marco's debrief · ${formatDate(latestRide.ride_date)}`}
+            rubric={`${user?.coach_name || "Marco"}'s debrief · ${formatDate(latestRide.ride_date)}`}
             title={latestRide.title}
             meta={
               <Link

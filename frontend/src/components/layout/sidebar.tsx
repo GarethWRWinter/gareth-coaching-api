@@ -110,7 +110,9 @@ export function Sidebar() {
                       isActive ? "bg-vb-forest" : "bg-vb-border"
                     )}
                   />
-                  {item.label}
+                  {item.href === "/dashboard/coach"
+                    ? `Coach ${user?.coach_name || "Marco"}`
+                    : item.label}
                 </Link>
               </li>
             );
