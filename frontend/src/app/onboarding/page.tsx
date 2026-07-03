@@ -13,6 +13,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { onboarding, users, goals, training } from "@/lib/api";
+import { COACH_AVATARS, COACH_TONES } from "@/lib/coach";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
@@ -98,14 +99,19 @@ export default function OnboardingPage() {
   const [ftp, setFtp] = useState("");
   const [weight, setWeight] = useState("");
 
+  // Coach choice — fully user-controlled: any face, any name, any tone.
+  const [coachAvatar, setCoachAvatar] = useState("");
+  const [coachName, setCoachName] = useState("");
+  const [coachTone, setCoachTone] = useState("balanced");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Whether event step is needed
   const isEventGoal = goal === "target_event";
 
-  // Total steps: 3 normally, 4 if training for event
-  const totalSteps = isEventGoal ? 4 : 3;
+  // Total steps: 4 normally (goal, experience, physical, coach), 5 with event details
+  const totalSteps = isEventGoal ? 5 : 4;
 
   // Map display step to actual step index
   const getActualStep = (displayStep: number) => {
@@ -151,11 +157,17 @@ export default function OnboardingPage() {
       });
 
       // 2. Update profile with FTP, weight, and schedule preferences
-      const profileData: Record<string, number | number[]> = {};
+      const profileData: Record<string, number | number[] | string> = {};
       if (ftp) profileData.ftp = parseInt(ftp);
       if (weight) profileData.weight_kg = parseFloat(weight);
       profileData.preferred_hard_days = hardDays;
       profileData.rest_days = restDays;
+      // Coach choice — only persist what the rider actually chose.
+      const coachData: Record<string, string> = {};
+      if (coachAvatar) coachData.coach_avatar = coachAvatar;
+      if (coachName.trim()) coachData.coach_name = coachName.trim();
+      if (coachTone) coachData.coach_tone = coachTone;
+      Object.assign(profileData, coachData);
       await users.updateProfile(profileData);
 
       // 3. If training for event, create the goal event
@@ -216,7 +228,7 @@ export default function OnboardingPage() {
   // Progress bar calculation
   const currentProgress = (() => {
     if (!isEventGoal) {
-      return step === 0 ? 0 : step === 2 ? 1 : 2;
+      return step === 0 ? 0 : step === 2 ? 1 : step === 3 ? 2 : 3;
     }
     return step;
   })();
@@ -662,6 +674,107 @@ export default function OnboardingPage() {
             <div className="mt-8 flex gap-3">
               <button
                 onClick={() => setStep(2)}
+                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setStep(4)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft"
+              >
+                Next — meet your coach
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Meet your coach — any face, any name, any tone */}
+        {step === 4 && (
+          <div>
+            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
+              Meet your coach.
+            </h2>
+            <p className="mt-2 text-center text-sm text-vb-text-dim">
+              Choose the face, the name and the voice that suits you — the
+              coaching is world-class either way.
+            </p>
+
+            <div className="mt-8">
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+                Their face
+              </p>
+              <div className="grid grid-cols-5 gap-3">
+                {COACH_AVATARS.map((a) => (
+                  <button
+                    key={a.key}
+                    type="button"
+                    onClick={() => {
+                      setCoachAvatar(a.key);
+                      const n = coachName.trim();
+                      if (n === "" || n === "Marco" || n === "Maria") {
+                        setCoachName(a.key.startsWith("f") ? "Maria" : "Marco");
+                      }
+                    }}
+                    title={a.label}
+                    className={cn(
+                      "overflow-hidden rounded-full border-2 transition-all",
+                      coachAvatar === a.key
+                        ? "border-vb-forest ring-2 ring-vb-forest/30"
+                        : "border-vb-border-subtle opacity-75 hover:opacity-100"
+                    )}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.src} alt={a.label} className="aspect-square w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
+                Their name
+              </label>
+              <input
+                type="text"
+                value={coachName}
+                maxLength={30}
+                onChange={(e) => setCoachName(e.target.value)}
+                placeholder="Marco, Maria — or anything you like"
+                className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
+              />
+            </div>
+
+            <div className="mt-6">
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+                How they talk to you
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {COACH_TONES.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setCoachTone(t.key)}
+                    className={cn(
+                      "rounded-md border p-3 text-left transition-colors",
+                      coachTone === t.key
+                        ? "border-vb-forest bg-vb-sage-tint/40"
+                        : "border-vb-border-subtle bg-vb-surface hover:border-vb-border"
+                    )}
+                  >
+                    <p className="text-xs font-medium text-vb-text">{t.label}</p>
+                    <p className="mt-0.5 text-[11px] leading-snug text-vb-text-dim">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <p className="mt-4 text-center text-sm text-vb-clay">{error}</p>
+            )}
+
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setStep(3)}
                 className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
               >
                 Back
