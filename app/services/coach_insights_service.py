@@ -25,6 +25,7 @@ from app.models.training import TrainingPlan, TrainingPhase, Workout, PlanStatus
 from app.models.user import User
 from app.services.metrics_service import get_current_fitness, get_weekly_training_load
 from app.core.llm_utils import response_text
+from app.core.coach_skills import DISTILLED_PERSONA
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,10 @@ SONNET_MODEL = "claude-sonnet-5"
 
 # ── Daily Nudge ──────────────────────────────────────────────────────────────
 
-NUDGE_SYSTEM_PROMPT = """\
-You are Coach Marco, a warm and knowledgeable cycling coach. Generate a SHORT \
-coaching nudge (2-3 sentences max) based on the rider's current state.
+NUDGE_SYSTEM_PROMPT = DISTILLED_PERSONA + """
+
+## This surface: the daily dashboard nudge
+Generate a SHORT coaching nudge (2-3 sentences max) based on the rider's current state.
 
 Rules:
 1. Address the rider by first name.
@@ -233,9 +235,10 @@ def generate_daily_nudge(db: Session, user: User) -> dict:
 
 # ── Ride Debrief ─────────────────────────────────────────────────────────────
 
-DEBRIEF_SYSTEM_PROMPT = """\
-You are Coach Marco, a supportive cycling coach. The rider just completed a ride \
-and you are giving them a brief, encouraging debrief.
+DEBRIEF_SYSTEM_PROMPT = DISTILLED_PERSONA + """
+
+## This surface: the post-ride debrief
+The rider just completed a ride and you are giving them a brief, honest debrief.
 
 Rules:
 1. Address the rider by first name.
@@ -389,9 +392,10 @@ def generate_ride_debrief(
 
 # ── Metric Explanation ───────────────────────────────────────────────────────
 
-EXPLAIN_SYSTEM_PROMPT = """\
-You are Coach Marco, explaining a cycling performance metric to a rider in \
-their specific context. Make it personal and actionable.
+EXPLAIN_SYSTEM_PROMPT = DISTILLED_PERSONA + """
+
+## This surface: tap-to-explain a metric
+Explain this metric in THE RIDER'S specific context. Personal and actionable.
 
 Rules:
 1. Address the rider by first name.

@@ -17,6 +17,7 @@ from app.config import settings
 from app.models.user import User
 from app.services import memory_service
 from app.core.llm_utils import response_text
+from app.core.coach_skills import DISTILLED_PERSONA
 
 router = APIRouter(prefix="/memory", tags=["memory"])
 logger = logging.getLogger(__name__)
@@ -48,10 +49,11 @@ def get_memory_reading(
             model=HAIKU_MODEL,
             max_tokens=220,
             system=(
-                f"You are {coach_name}, a warm, direct cycling & life coach. "
-                "You are looking at the rider's memory graph — everything you know about them. "
-                "Write a 2–3 sentence 'reading of your brain': name the strongest cluster or "
-                "thread, point out one meaningful cross-life connection or one quiet corner "
+                DISTILLED_PERSONA
+                + "\n\n## This surface: Marco's reading of the rider's brain\n"
+                "You are looking at their memory graph — everything you know about them. "
+                "Write a 2-3 sentence reading: name the strongest cluster or thread, "
+                "point out one meaningful cross-life connection or one quiet corner "
                 "worth attention. Speak to the rider as 'you'. No preamble, no sign-off."
             ),
             messages=[{"role": "user", "content": context}],
