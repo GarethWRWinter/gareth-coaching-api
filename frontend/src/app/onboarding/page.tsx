@@ -712,10 +712,9 @@ export default function OnboardingPage() {
                       setCoachAvatar(a.key);
                       const n = coachName.trim();
                       if (n === "" || n === "Marco" || n === "Maria") {
-                        setCoachName(a.key.startsWith("f") ? "Maria" : "Marco");
+                        setCoachName(a.defaultName);
                       }
                     }}
-                    title={a.label}
                     className={cn(
                       "overflow-hidden rounded-full border-2 transition-all",
                       coachAvatar === a.key
@@ -724,7 +723,7 @@ export default function OnboardingPage() {
                     )}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={a.src} alt={a.label} className="aspect-square w-full object-cover" />
+                    <img src={a.src} alt="Coach portrait" className="aspect-square w-full object-cover" />
                   </button>
                 ))}
               </div>

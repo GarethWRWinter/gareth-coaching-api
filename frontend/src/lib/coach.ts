@@ -1,29 +1,54 @@
 /**
  * Coach personalisation — avatars and tones.
- * Avatar art: hand-drawn pen-sketch portraits (public/coaches/*.webp).
+ *
+ * Avatars are hand-drawn expressive line portraits (public/coaches/*.webp).
+ * Deliberately unlabelled: no archetypes, no descriptors — the rider decides
+ * for themselves what they see in each face. `defaultName` is internal
+ * metadata only (drives the Marco/Maria name suggestion), never displayed.
  */
 
 export interface CoachAvatar {
   key: string;
-  label: string;
   src: string;
+  /** Internal: name suggested when this face is picked. Never shown as a label. */
+  defaultName: "Marco" | "Maria";
 }
 
 export const COACH_AVATARS: CoachAvatar[] = [
-  { key: "m1_climber", label: "The Climber", src: "/coaches/m1_climber.webp" },
-  { key: "m2_sprinter", label: "The Sprinter", src: "/coaches/m2_sprinter.webp" },
-  { key: "m3_tt", label: "The TT Specialist", src: "/coaches/m3_tt.webp" },
-  { key: "m4_ds", label: "The Directeur", src: "/coaches/m4_ds.webp" },
-  { key: "m5_allrounder", label: "The All-Rounder", src: "/coaches/m5_allrounder.webp" },
-  { key: "f1_hardwoman", label: "The Hardwoman", src: "/coaches/f1_hardwoman.webp" },
-  { key: "f2_sprinter", label: "The Sprinter", src: "/coaches/f2_sprinter.webp" },
-  { key: "f3_climber", label: "The Climber", src: "/coaches/f3_climber.webp" },
-  { key: "f4_professor", label: "The Professor", src: "/coaches/f4_professor.webp" },
-  { key: "f5_endurance", label: "The Specialist", src: "/coaches/f5_endurance.webp" },
+  { key: "coach_01", src: "/coaches/coach_01.webp", defaultName: "Marco" },
+  { key: "coach_02", src: "/coaches/coach_02.webp", defaultName: "Marco" },
+  { key: "coach_03", src: "/coaches/coach_03.webp", defaultName: "Marco" },
+  { key: "coach_04", src: "/coaches/coach_04.webp", defaultName: "Marco" },
+  { key: "coach_05", src: "/coaches/coach_05.webp", defaultName: "Marco" },
+  { key: "coach_06", src: "/coaches/coach_06.webp", defaultName: "Maria" },
+  { key: "coach_07", src: "/coaches/coach_07.webp", defaultName: "Maria" },
+  { key: "coach_08", src: "/coaches/coach_08.webp", defaultName: "Maria" },
+  { key: "coach_09", src: "/coaches/coach_09.webp", defaultName: "Maria" },
+  { key: "coach_10", src: "/coaches/coach_10.webp", defaultName: "Maria" },
 ];
 
+// Legacy keys (pre-neutralisation) → new keys, so stored preferences keep working.
+const LEGACY_KEYS: Record<string, string> = {
+  m1_climber: "coach_01",
+  m2_sprinter: "coach_02",
+  m3_tt: "coach_03",
+  m4_ds: "coach_04",
+  m5_allrounder: "coach_05",
+  f1_hardwoman: "coach_06",
+  f2_sprinter: "coach_07",
+  f3_climber: "coach_08",
+  f4_professor: "coach_09",
+  f5_endurance: "coach_10",
+};
+
+export function normalizeAvatarKey(key: string | undefined | null): string {
+  if (!key) return COACH_AVATARS[0].key;
+  return LEGACY_KEYS[key] ?? key;
+}
+
 export function coachAvatarSrc(key: string | undefined | null): string {
-  const found = COACH_AVATARS.find((a) => a.key === key);
+  const k = normalizeAvatarKey(key);
+  const found = COACH_AVATARS.find((a) => a.key === k);
   return (found ?? COACH_AVATARS[0]).src;
 }
 

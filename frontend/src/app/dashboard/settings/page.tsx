@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { users, strava, dropbox, goals as goalsApi, metrics } from "@/lib/api";
-import { COACH_AVATARS, COACH_TONES } from "@/lib/coach";
+import { COACH_AVATARS, COACH_TONES, normalizeAvatarKey } from "@/lib/coach";
 import { useAuth } from "@/lib/auth-context";
 import { formatDate, cn } from "@/lib/utils";
 import type { GoalEvent, StravaStatus } from "@/lib/api";
@@ -1086,14 +1086,14 @@ export default function SettingsPage() {
 function CoachSection() {
   const { user, refreshUser } = useAuth();
   const [coachName, setCoachName] = useState(user?.coach_name ?? "Marco");
-  const [avatar, setAvatar] = useState(user?.coach_avatar ?? "m1_climber");
+  const [avatar, setAvatar] = useState(normalizeAvatarKey(user?.coach_avatar));
   const [tone, setTone] = useState(user?.coach_tone ?? "balanced");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const dirty =
     coachName !== (user?.coach_name ?? "Marco") ||
-    avatar !== (user?.coach_avatar ?? "m1_climber") ||
+    avatar !== normalizeAvatarKey(user?.coach_avatar) ||
     tone !== (user?.coach_tone ?? "balanced");
 
   async function save() {
@@ -1150,14 +1150,13 @@ function CoachSection() {
               type="button"
               onClick={() => {
                 setAvatar(a.key);
-                // Marco ↔ Maria pair with the face — but never override a
-                // custom name the rider typed themselves (PRD OQ2).
+                // Marco ↔ Maria pair with the face (internal metadata only) —
+                // never override a custom name the rider typed (PRD OQ2).
                 const n = coachName.trim();
                 if (n === "" || n === "Marco" || n === "Maria") {
-                  setCoachName(a.key.startsWith("f") ? "Maria" : "Marco");
+                  setCoachName(a.defaultName);
                 }
               }}
-              title={a.label}
               className={cn(
                 "overflow-hidden rounded-full border-2 transition-all",
                 avatar === a.key
@@ -1166,7 +1165,7 @@ function CoachSection() {
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={a.src} alt={a.label} className="aspect-square w-full object-cover" />
+              <img src={a.src} alt="Coach portrait" className="aspect-square w-full object-cover" />
             </button>
           ))}
         </div>

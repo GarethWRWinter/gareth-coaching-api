@@ -50,7 +50,7 @@ class User(TimestampMixin, Base):
     # Coach personalisation — the rider's coach: their name for them, their
     # face (pen-sketch avatar key), and their communication tone.
     coach_name: Mapped[str] = mapped_column(String(50), nullable=False, server_default="Marco")
-    coach_avatar: Mapped[str] = mapped_column(String(32), nullable=False, server_default="m1_climber")
+    coach_avatar: Mapped[str] = mapped_column(String(32), nullable=False, server_default="coach_01")
     coach_tone: Mapped[str] = mapped_column(String(24), nullable=False, server_default="balanced")
 
     # Relationships
