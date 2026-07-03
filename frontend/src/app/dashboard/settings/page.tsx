@@ -1148,7 +1148,15 @@ function CoachSection() {
             <button
               key={a.key}
               type="button"
-              onClick={() => setAvatar(a.key)}
+              onClick={() => {
+                setAvatar(a.key);
+                // Marco ↔ Maria pair with the face — but never override a
+                // custom name the rider typed themselves (PRD OQ2).
+                const n = coachName.trim();
+                if (n === "" || n === "Marco" || n === "Maria") {
+                  setCoachName(a.key.startsWith("f") ? "Maria" : "Marco");
+                }
+              }}
               title={a.label}
               className={cn(
                 "overflow-hidden rounded-full border-2 transition-all",
