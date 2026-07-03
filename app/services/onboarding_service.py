@@ -64,6 +64,32 @@ def submit_quiz(
 
     db.commit()
     db.refresh(response)
+
+    # First contact writes the first memories — the relationship starts here.
+    try:
+        if user:
+            from app.services.memory_service import extract_memories
+
+            extract_memories(
+                db, user,
+                (
+                    "Rider's onboarding answers (their own words about who they are):\n"
+                    f"- Primary goal: {primary_goal}\n"
+                    f"- Secondary goals: {', '.join(secondary_goals) if secondary_goals else 'none'}\n"
+                    f"- Years cycling: {years_cycling}\n"
+                    f"- Weekly hours available: {current_weekly_volume_hours}\n"
+                    f"- Indoor/outdoor preference: {indoor_outdoor_preference}"
+                ),
+                source="onboarding",
+                source_ref=response.id,
+            )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception(
+            "Memory extraction after onboarding failed (user=%s)", user_id
+        )
+
     return response
 
 

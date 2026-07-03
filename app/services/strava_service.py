@@ -305,9 +305,23 @@ async def sync_activities(
         from app.services.coach_insights_service import generate_ride_debrief
         for r in synced_rides:
             try:
-                await generate_ride_debrief(db, user, r)
+                # NB: synchronous — `await`ing it was the bug that silently
+                # killed every Strava-ride debrief (same as audit finding #4).
+                generate_ride_debrief(db, user, r)
             except Exception:
-                logger.warning("Failed to generate debrief for ride %s", r.id)
+                logger.exception("Failed to generate debrief for ride %s", r.id)
+            else:
+                try:
+                    if getattr(r, "debrief_text", None):
+                        from app.services.memory_service import extract_memories
+
+                        extract_memories(
+                            db, user,
+                            f"Ride: {r.title}\n\nMarco's debrief:\n{r.debrief_text}",
+                            source="debrief", source_ref=str(r.id),
+                        )
+                except Exception:
+                    logger.exception("Memory extraction after debrief failed (ride %s)", r.id)
     except Exception:
         logger.warning("Coach insights module failed to load")
 

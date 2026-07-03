@@ -25,7 +25,7 @@ export default function LandingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-vb-forest">
               <Bike className="h-5 w-5 text-white" />
             </div>
-            <span className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">Cycling Coach</span>
+            <span className="font-display text-lg font-medium tracking-[0.18em] text-vb-text">MARCO</span>
           </div>
           <div className="flex gap-3">
             <Link
@@ -47,17 +47,17 @@ export default function LandingPage() {
       <main>
         {/* Hero section */}
         <section className="mx-auto max-w-4xl px-6 py-24 text-center">
-          <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Issue 47
+          <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
+            The coach who remembers
           </p>
           <h1 className="font-display text-5xl font-light tracking-[-0.02em] text-vb-text md:text-6xl">
-            Train Smarter with{" "}
-            <span className="text-vb-forest">AI-Powered Coaching</span>
+            A coach who knows{" "}
+            <span className="text-vb-forest">every ride you&apos;ve ever done.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-vb-text-dim">
-            Upload your rides, track your fitness, generate periodized training
-            plans, and get personalised advice from an AI coach that understands
-            your data.
+            Marco builds your plan, rides every session with you, and remembers
+            everything — your goals, your weaknesses, your breakthroughs, your
+            life. The longer you ride together, the better he coaches you.
           </p>
           <div className="mt-10 flex justify-center gap-4">
             <Link

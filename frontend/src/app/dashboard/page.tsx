@@ -66,13 +66,22 @@ export default function DashboardPage() {
   });
 
   const tsb = Math.round(fitness?.current_tsb ?? 0);
-  const tsbLabel = tsb > 10 ? "Fresh" : tsb < -20 ? "Fatigued" : "Productive strain";
+  const tsbLabel =
+    tsb > 10 ? "Fresh — good day to go hard" : tsb < -20 ? "Fatigued — absorb it" : "Productive strain";
 
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
+
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 5 ? "Up early" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const nextGoal = goalsData?.goals
+    ?.filter((g) => g.status === "upcoming" && g.days_until != null && g.days_until > 0)
+    ?.sort((a, b) => (a.days_until ?? 0) - (b.days_until ?? 0))?.[0];
 
   const firstName = user?.full_name?.split(" ")[0] || "Rider";
 
@@ -82,9 +91,14 @@ export default function DashboardPage() {
       <header>
         <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
           {today}
+          {nextGoal && (
+            <span className="text-vb-text-muted">
+              {" "}· {nextGoal.days_until} days to {nextGoal.event_name}
+            </span>
+          )}
         </p>
         <h1 className="mt-3 font-display text-5xl font-light leading-[1.04] tracking-[-0.02em] md:text-6xl">
-          Good morning, {firstName}.
+          {greeting}, {firstName}.
         </h1>
       </header>
 
@@ -159,13 +173,13 @@ export default function DashboardPage() {
                 <ClipboardCheck className="h-5 w-5 shrink-0 text-vb-clay" />
                 <div>
                   <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-clay">
-                    Race report pending
+                    So — how did it go?
                   </p>
                   <p className="font-display text-xl leading-tight tracking-[-0.01em]">
                     {goal.event_name}
                   </p>
                   <p className="mt-1 text-sm text-vb-text-dim">
-                    Tell Marco how it went.
+                    Debrief with Marco — what you tell him shapes the next block.
                   </p>
                 </div>
               </div>
@@ -300,10 +314,11 @@ export default function DashboardPage() {
           />
           {recentRides?.rides.length === 0 ? (
             <div className="rounded-md border border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
-              No rides yet.{" "}
+              No rides yet — and I&apos;d love to see what you can do.{" "}
               <Link href="/dashboard/rides" className="text-vb-forest hover:underline">
-                Upload your first FIT file →
-              </Link>
+                Upload a ride or connect Strava →
+              </Link>{" "}
+              and I&apos;ll start building your power profile.
             </div>
           ) : (
             <ul>
@@ -363,10 +378,11 @@ export default function DashboardPage() {
             {!goalsData ||
             goalsData.goals.filter((g) => g.status === "upcoming").length === 0 ? (
               <div className="rounded-md border border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
-                No upcoming goals.{" "}
+                Nothing on the calendar. Give me a race to aim you at —{" "}
                 <Link href="/dashboard/goals" className="text-vb-forest hover:underline">
-                  Add one →
-                </Link>
+                  set a goal →
+                </Link>{" "}
+                and the whole plan bends around it.
               </div>
             ) : (
               <ul>

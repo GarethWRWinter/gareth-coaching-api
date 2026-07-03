@@ -41,7 +41,7 @@ export default function RegisterPage() {
             MARCO
           </h1>
           <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Issue 47 · Sign Up
+            Your coach · Every ride remembered
           </p>
         </div>
 
@@ -55,8 +55,8 @@ export default function RegisterPage() {
             coach.
           </h2>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-vb-text-dim">
-            Sport science. Mindset. Memory across every ride. £19.99 a month.
-            Free Strava account is all you need.
+            Sport science. Mindset. A memory that never forgets a ride.
+            £19.99 a month — a free Strava account is all you need.
           </p>
         </div>
 

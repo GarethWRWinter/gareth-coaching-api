@@ -89,7 +89,8 @@ export default function RidesPage() {
         </div>
       ) : data?.rides.length === 0 ? (
         <div className="rounded-md border border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
-          No rides yet. Upload a FIT file or wait for the Strava backfill to catch up.
+          No rides yet. Upload a FIT file — or connect Strava in Settings and
+          Marco will pull in your history, every ride feeding your power profile.
         </div>
       ) : (
         <>

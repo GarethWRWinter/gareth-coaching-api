@@ -577,7 +577,7 @@ export default function BrainPage() {
               ref={canvasRef}
               width={W}
               height={H}
-              className="block h-[620px] w-full cursor-crosshair"
+              className="block h-[72vh] min-h-[560px] w-full cursor-crosshair"
             />
 
             <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center gap-3 rounded-lg border border-vb-border-subtle bg-vb-bg/95 px-3.5 py-2">

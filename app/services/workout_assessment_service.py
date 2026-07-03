@@ -22,6 +22,7 @@ from app.config import settings
 from app.models.ride import Ride
 from app.models.training import Workout, WorkoutStatus, WorkoutType
 from app.models.user import User
+from app.core.llm_utils import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -316,12 +317,12 @@ def generate_assessment(
         try:
             client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
             response = client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-5",
                 max_tokens=1500,
                 system=ASSESSMENT_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_msg}],
             )
-            text = response.content[0].text if response.content else ""
+            text = response_text(response)
             parsed = _parse_claude_json(text)
             workout.execution_feedback = parsed.get("feedback") or text
             workout.execution_adjustments = parsed.get("adjustments") or []

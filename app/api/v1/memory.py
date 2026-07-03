@@ -16,6 +16,7 @@ from app.api.v1.deps import get_current_user, get_db
 from app.config import settings
 from app.models.user import User
 from app.services import memory_service
+from app.core.llm_utils import response_text
 
 router = APIRouter(prefix="/memory", tags=["memory"])
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ def get_memory_reading(
             ),
             messages=[{"role": "user", "content": context}],
         )
-        return {"reading": resp.content[0].text.strip()}
+        return {"reading": response_text(resp).strip()}
     except Exception:
         logger.exception("Memory reading failed (user=%s)", current_user.id)
         return {"reading": None}

@@ -27,6 +27,7 @@ from app.config import settings
 from app.core.memory_taxonomy import EDGE_TYPES, ENTITY_TYPES, LIFE_AREAS, extraction_prompt
 from app.models.memory import MemoryEdge, MemoryEntity
 from app.models.user import User
+from app.core.llm_utils import response_text
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +106,7 @@ def extract_memories(
                 }
             ],
         )
-        raw = resp.content[0].text.strip()
+        raw = response_text(resp).strip()
         if raw.startswith("```"):
             raw = raw.strip("`")
             raw = raw[raw.index("{"):]

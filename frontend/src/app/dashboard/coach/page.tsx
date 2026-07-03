@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Send, Plus, MessageCircle, Bot, User, Mic } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -404,9 +405,12 @@ function CoachPageInner() {
                   Coach Marco
                 </h3>
                 <p className="mt-1 max-w-sm text-sm text-vb-text-dim">
-                  Your personal cycling performance partner. Ask me about
-                  training, race preparation, mental performance, or how to
-                  balance cycling with the rest of your life.
+                  Training, racing, head, life — ask me anything. And I
+                  remember what you tell me: every conversation sharpens{" "}
+                  <Link href="/dashboard/brain" className="text-vb-forest hover:underline">
+                    your brain
+                  </Link>
+                  , and better memory makes a better coach.
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-2">
                   {[

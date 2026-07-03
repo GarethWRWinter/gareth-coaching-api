@@ -507,11 +507,12 @@ function GoalsPageInner() {
             Empty calendar
           </p>
           <h3 className="font-display text-4xl font-light leading-tight tracking-[-0.01em]">
-            No goals yet.
+            What are we aiming at?
           </h3>
           <p className="mx-auto mt-4 max-w-md text-sm text-vb-text-dim">
-            Add your target events and Marco tailors training to your race
-            calendar. Share route URLs and GPX files for detailed analysis.
+            A sportive, a road race, a number you&apos;ve been chasing — give
+            Marco the target and he&apos;ll build the season backwards from it.
+            Add the route&apos;s GPX and he&apos;ll study every climb.
           </p>
           <button
             onClick={() => {

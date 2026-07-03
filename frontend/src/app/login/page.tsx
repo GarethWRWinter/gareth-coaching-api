@@ -40,7 +40,7 @@ export default function LoginPage() {
             MARCO
           </h1>
           <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Issue 47 · Sign In
+            Your coach · Every ride remembered
           </p>
         </div>
 

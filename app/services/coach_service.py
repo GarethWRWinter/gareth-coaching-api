@@ -31,6 +31,7 @@ from app.services.onboarding_service import get_goals, get_onboarding_response
 from app.services.plan_service import get_plans, get_workouts_by_date
 from app.services.ride_service import get_rides
 from app.services.zone_service import get_zones
+from app.core.llm_utils import response_text
 
 # === System Prompt ===
 
@@ -820,7 +821,7 @@ Today's date: {date.today().isoformat()}
         max_iterations = 5
         for _ in range(max_iterations):
             with client.messages.stream(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-5",
                 max_tokens=2048,
                 system=system,
                 messages=messages,
@@ -980,7 +981,7 @@ Today's date: {date.today().isoformat()}
         max_iterations = 5
         for _ in range(max_iterations):
             with client.messages.stream(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-5",
                 max_tokens=1024,  # Shorter for voice — conciseness matters
                 system=system,
                 messages=messages,
@@ -1077,6 +1078,22 @@ Today's date: {date.today().isoformat()}
 
     yield f'data: {json.dumps({"type": "done"})}\n\n'
 
+    # Memory extraction — voice conversations feed the brain too (Pillar 2).
+    try:
+        from app.services.memory_service import extract_memories
+
+        extract_memories(
+            db, user,
+            f"Rider: {user_message}\n\nMarco: {full_response}",
+            source="chat", source_ref=session.id,
+        )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception(
+            "Memory extraction after voice chat failed (user=%s)", user.id
+        )
+
 
 def get_non_streaming_response(
     db: Session, user: User, session: ChatSession, user_message: str
@@ -1104,13 +1121,13 @@ Today's date: {date.today().isoformat()}
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     response = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-5",
         max_tokens=2048,
         system=system,
         messages=messages,
     )
 
-    content = response.content[0].text
+    content = response_text(response)
     tokens_used = (
         response.usage.input_tokens + response.usage.output_tokens
         if response.usage else 0
@@ -1118,5 +1135,21 @@ Today's date: {date.today().isoformat()}
 
     context_snapshot = json.loads(rider_context) if rider_context else None
     add_assistant_message(db, session, content, context_snapshot, tokens_used)
+
+    # Memory extraction — every conversational surface writes to the brain.
+    try:
+        from app.services.memory_service import extract_memories
+
+        extract_memories(
+            db, user,
+            f"Rider: {user_message}\n\nMarco: {content}",
+            source="chat", source_ref=session.id,
+        )
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception(
+            "Memory extraction after non-streaming chat failed (user=%s)", user.id
+        )
 
     return content

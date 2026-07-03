@@ -24,12 +24,13 @@ from app.models.ride import Ride
 from app.models.training import TrainingPlan, TrainingPhase, Workout, PlanStatus, WorkoutStatus
 from app.models.user import User
 from app.services.metrics_service import get_current_fitness, get_weekly_training_load
+from app.core.llm_utils import response_text
 
 logger = logging.getLogger(__name__)
 
 # Cost-aware model selection
 HAIKU_MODEL = "claude-haiku-4-5-20251001"
-SONNET_MODEL = "claude-sonnet-4-20250514"
+SONNET_MODEL = "claude-sonnet-5"
 
 
 # ── Daily Nudge ──────────────────────────────────────────────────────────────
@@ -45,7 +46,10 @@ Rules:
 4. Match your tone to the situation: encouraging on rest days, motivating before hard sessions, \
    celebrating consistency, cautioning when fatigued.
 5. Return ONLY the nudge text — no JSON, no markdown headings, just the message.
-6. Keep it conversational, like a text from a coach you trust."""
+6. Keep it conversational, like a text from a coach you trust.
+7. Use the rider's long-term memory (goals, gaps, habits, values, life events) to make it \
+   PERSONAL — reference something specific you know about them when it's relevant. \
+   Respect any [HIDDEN] items: use them for judgement, never mention them."""
 
 
 def _build_nudge_context(
@@ -148,6 +152,16 @@ def _build_nudge_context(
             for w in weekly_load[:4]
         ]
 
+    # Long-term memory — the nudge must come from a coach who KNOWS this rider.
+    try:
+        from app.services.memory_service import get_context as get_memory_context
+
+        memory_block = get_memory_context(db, user, limit=12)
+        if memory_block:
+            context["long_term_memory"] = memory_block.split("\n")
+    except Exception:
+        logger.exception("Memory context for nudge failed (user=%s)", user.id)
+
     return context
 
 
@@ -189,7 +203,7 @@ def generate_daily_nudge(db: Session, user: User) -> dict:
                 "content": f"Generate today's coaching nudge based on this data:\n\n```json\n{json.dumps(context, indent=2, default=str)}\n```",
             }],
         )
-        nudge_text = response.content[0].text.strip()
+        nudge_text = response_text(response).strip()
     except Exception as e:
         logger.error(f"Nudge generation failed: {e}")
         # Deterministic fallback
@@ -230,7 +244,11 @@ Rules:
 4. Reference specific numbers from the ride (power, duration, TSS, IF).
 5. If you can relate this ride to their fitness trend or upcoming goal, do so briefly.
 6. End with a forward-looking statement (what's next, how this builds toward their goal).
-7. Return ONLY the debrief text as plain paragraphs (markdown OK for bold/italic). No JSON."""
+7. Use the rider's long-term memory: does this ride confirm or contradict a known gap \
+   (e.g. "fades in the final hour")? Did they apply an insight you gave them (e.g. fueling)? \
+   If advice you gave is visibly working, SAY SO with the evidence — closing that loop is \
+   the most valuable thing you can do. Respect [HIDDEN] items: use, never mention.
+8. Return ONLY the debrief text as plain paragraphs (markdown OK for bold/italic). No JSON."""
 
 
 def _build_debrief_context(
@@ -302,6 +320,17 @@ def _build_debrief_context(
             "priority": str(upcoming_goal.priority),
         }
 
+    # Long-term memory — the debrief should close loops: known gaps, applied
+    # insights, patterns across rides. This is the coach's signature move.
+    try:
+        from app.services.memory_service import get_context as get_memory_context
+
+        memory_block = get_memory_context(db, user, limit=15)
+        if memory_block:
+            context["long_term_memory"] = memory_block.split("\n")
+    except Exception:
+        logger.exception("Memory context for debrief failed (user=%s)", user.id)
+
     return context
 
 
@@ -333,7 +362,7 @@ def generate_ride_debrief(
                 "content": f"Generate a post-ride debrief for this ride:\n\n```json\n{json.dumps(context, indent=2, default=str)}\n```",
             }],
         )
-        debrief_text = response.content[0].text.strip()
+        debrief_text = response_text(response).strip()
     except Exception as e:
         logger.error(f"Debrief generation failed: {e}")
         rider_name = context["rider_name"]
@@ -397,6 +426,16 @@ def explain_metric(
         },
     }
 
+    # Long-term memory — explain the number in the context of THEIR journey.
+    try:
+        from app.services.memory_service import get_context as get_memory_context
+
+        memory_block = get_memory_context(db, user, limit=8)
+        if memory_block:
+            context["long_term_memory"] = memory_block.split("\n")
+    except Exception:
+        logger.exception("Memory context for explain_metric failed (user=%s)", user.id)
+
     try:
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         response = client.messages.create(
@@ -408,7 +447,7 @@ def explain_metric(
                 "content": f"Explain this metric to the rider:\n\n```json\n{json.dumps(context, default=str)}\n```",
             }],
         )
-        explanation = response.content[0].text.strip()
+        explanation = response_text(response).strip()
     except Exception as e:
         logger.error(f"Metric explanation failed: {e}")
         explanation = f"{rider_name}, your {metric_name} is currently {metric_value}. This reflects your recent training load and recovery balance."

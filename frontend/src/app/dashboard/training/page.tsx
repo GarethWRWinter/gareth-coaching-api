@@ -165,7 +165,9 @@ export default function TrainingPage() {
               {plans?.plans.find((p) => p.status === "active")?.name}
             </p>
           ) : (
-            <p className="mt-1 text-sm text-vb-text-dim">No active plan</p>
+            <p className="mt-1 text-sm text-vb-text-dim">
+              No active plan — let&apos;s build one around your goal.
+            </p>
           )}
         </div>
         <button
