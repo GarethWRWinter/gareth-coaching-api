@@ -56,7 +56,7 @@ export default function LandingPage() {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-vb-text-dim">
             Marco builds your plan, rides every session with you, and remembers
-            everything — your goals, your weaknesses, your breakthroughs, your
+            everything, your goals, your weaknesses, your breakthroughs, your
             life. The longer you ride together, the better he coaches you.
           </p>
           <div className="mt-10 flex justify-center gap-4">

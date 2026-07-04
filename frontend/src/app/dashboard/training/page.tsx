@@ -34,11 +34,23 @@ const ZONE_STYLES: Record<
   rest:       { bg: "#ECE8DE", fg: "#615B50", dark: false, label: "Rest" },
 };
 
+// Plan-phase palette for the proportional timeline. Warmer as the plan
+// sharpens toward race day, dusty blue for the taper.
+const PHASE_COLORS: Record<string, { bg: string; fg: string }> = {
+  base:       { bg: "#9FB295", fg: "#1C2A1C" },
+  build:      { bg: "#C7A458", fg: "#3A2E10" },
+  peak:       { bg: "#C0714A", fg: "#FFFFFF" },
+  taper:      { bg: "#7C95A3", fg: "#FFFFFF" },
+  race:       { bg: "#BB6647", fg: "#FFFFFF" },
+  recovery:   { bg: "#C3CDBC", fg: "#23211C" },
+  transition: { bg: "#C3CDBC", fg: "#23211C" },
+};
+
 // Rest-day copy — cosmetic empty-state only (not AI-facing). Session names now
 // come from the backend (workout.title) so the calendar, the detail page, and
 // Marco all use one canonical name.
 const REST_LINES = [
-  "Rest — you've earned it",
+  "Rest, you've earned it",
   "Rest day. Resist the urge.",
   "Feet up",
   "Recover like you mean it",
@@ -107,6 +119,14 @@ export default function TrainingPage() {
     queryFn: () => goals.list(),
   });
 
+  // The plans list omits phases; fetch the active plan's detail for the timeline.
+  const activePlanId = plans?.plans.find((p) => p.status === "active")?.id;
+  const { data: planDetail } = useQuery({
+    queryKey: ["plan-detail", activePlanId],
+    queryFn: () => training.getPlan(activePlanId!),
+    enabled: !!activePlanId,
+  });
+
   const generateMutation = useMutation({
     mutationFn: (data: { periodization_model: string; goal_event_id?: string }) =>
       training.generatePlan(data),
@@ -123,8 +143,8 @@ export default function TrainingPage() {
     ?.filter((g) => g.status === "upcoming" && g.days_until != null && g.days_until >= 0)
     ?.sort((a, b) => (a.days_until ?? 0) - (b.days_until ?? 0))?.[0];
 
-  const hasActivePlan =
-    plans && plans.plans.filter((p) => p.status === "active").length > 0;
+  const activePlan = plans?.plans.find((p) => p.status === "active");
+  const hasActivePlan = !!activePlan;
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
@@ -153,20 +173,70 @@ export default function TrainingPage() {
   const today = new Date().toISOString().split("T")[0];
   const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+  // Where are we in the plan? Drives the header kicker and the timeline.
+  const planPhases = planDetail?.phases ?? activePlan?.phases ?? [];
+  const currentPhase = planPhases.find(
+    (ph) => today >= ph.start_date && today <= ph.end_date
+  );
+  const planWeek = activePlan
+    ? Math.max(
+        1,
+        Math.min(
+          activePlan.total_weeks,
+          Math.floor(
+            (new Date(today).getTime() -
+              new Date(activePlan.start_date).getTime()) /
+              (7 * 86400000)
+          ) + 1
+        )
+      )
+    : null;
+
+  // This week's shape: totals + an intensity-mix bar above the grid.
+  const weekActive = (weekWorkouts ?? [])
+    .filter((w) => w.status !== "skipped")
+    .sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date));
+  const weekSeconds = weekActive.reduce(
+    (s, w) =>
+      s +
+      (w.actual_ride?.moving_time_seconds ??
+        w.planned_duration_seconds ??
+        0),
+    0
+  );
+  const weekTss = Math.round(
+    weekActive.reduce(
+      (s, w) => s + (w.actual_ride?.tss ?? w.planned_tss ?? 0),
+      0
+    )
+  );
+  const weekDone = weekActive.filter(
+    (w) => w.status === "completed" || !!w.actual_ride
+  ).length;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
+          {activePlan && (
+            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
+              {currentPhase
+                ? `${currentPhase.phase_type.replace(/_/g, " ")} phase`
+                : activePlan.name}
+              {planWeek ? ` · week ${planWeek} of ${activePlan.total_weeks}` : ""}
+              {nextUpcomingGoal?.days_until != null &&
+              nextUpcomingGoal.days_until > 0
+                ? ` · ${nextUpcomingGoal.days_until} days to ${nextUpcomingGoal.event_name}`
+                : ""}
+            </p>
+          )}
           <h1 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Training</h1>
           {hasActivePlan ? (
-            <p className="mt-1 text-sm text-vb-text-dim">
-              Active plan:{" "}
-              {plans?.plans.find((p) => p.status === "active")?.name}
-            </p>
+            <p className="mt-1 text-sm text-vb-text-dim">{activePlan?.name}</p>
           ) : (
             <p className="mt-1 text-sm text-vb-text-dim">
-              No active plan — let&apos;s build one around your goal.
+              No active plan, let&apos;s build one around your goal.
             </p>
           )}
         </div>
@@ -379,7 +449,7 @@ export default function TrainingPage() {
               day: "numeric",
               month: "short",
             })}{" "}
-            &ndash;{" "}
+            -{" "}
             {dates[6].toLocaleDateString("en-GB", {
               day: "numeric",
               month: "short",
@@ -402,6 +472,73 @@ export default function TrainingPage() {
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
+
+      {/* Week summary: the shape of the week at a glance */}
+      {weekActive.length > 0 && (
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-5 py-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="flex items-end gap-8">
+              <div>
+                <p className="font-display text-2xl font-semibold leading-none tabular-nums text-vb-text">
+                  {weekActive.length}
+                </p>
+                <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                  Sessions
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-2xl font-semibold leading-none tabular-nums text-vb-text">
+                  {formatDuration(weekSeconds)}
+                </p>
+                <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                  On the bike
+                </p>
+              </div>
+              <div>
+                <p className="font-display text-2xl font-semibold leading-none tabular-nums text-vb-text">
+                  {weekTss}
+                </p>
+                <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                  TSS
+                </p>
+              </div>
+            </div>
+            <p className="text-xs tabular-nums text-vb-text-dim">
+              {weekDone} of {weekActive.length} done
+            </p>
+          </div>
+          {(() => {
+            const segs = weekActive.map((w) => ({
+              w,
+              dur:
+                w.actual_ride?.moving_time_seconds ??
+                w.planned_duration_seconds ??
+                1800,
+            }));
+            const total = segs.reduce((s, x) => s + x.dur, 0) || 1;
+            return (
+              <div className="mt-4 flex h-2.5 gap-[3px]">
+                {segs.map(({ w, dur }) => {
+                  const zz = ZONE_STYLES[w.workout_type] ?? ZONE_STYLES.rest;
+                  const done = w.status === "completed" || !!w.actual_ride;
+                  return (
+                    <div
+                      key={w.id}
+                      className="rounded-full transition-opacity"
+                      title={w.title}
+                      style={{
+                        width: `${(dur / total) * 100}%`,
+                        backgroundColor: zz.bg,
+                        opacity: done ? 1 : 0.5,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Week Grid */}
       <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 sm:pb-0">
@@ -445,12 +582,13 @@ export default function TrainingPage() {
               <div className="mb-2 flex items-center justify-between">
                 <span
                   className={cn(
-                    "text-xs font-medium",
+                    "text-xs",
+                    isToday ? "font-semibold" : "font-medium",
                     !colored && (isToday ? "text-vb-forest" : "text-vb-text-dim")
                   )}
                   style={colored ? { opacity: 0.82 } : undefined}
                 >
-                  {dayLabels[i]}
+                  {isToday ? "Today" : dayLabels[i]}
                 </span>
                 <span
                   className={cn(
@@ -631,54 +769,88 @@ export default function TrainingPage() {
       </div>
       </div>
 
-      {/* Plan Phases */}
-      {plans &&
-        plans.plans
-          .filter((p) => p.status === "active")
-          .slice(0, 1)
-          .map((plan) => (
-            <div
-              key={plan.id}
-              className="rounded-md border border-vb-border-subtle bg-vb-surface p-5"
-            >
-              <h2 className="mb-3 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
-                Plan Phases
-              </h2>
-              <div className="flex gap-1 overflow-x-auto">
-                {plan.phases?.map((phase) => {
-                  const isCurrentPhase =
-                    today >= phase.start_date && today <= phase.end_date;
-                  return (
-                    <div
-                      key={phase.id}
-                      className={cn(
-                        "flex-1 rounded-sm border p-3",
-                        isCurrentPhase
-                          ? "border-vb-forest bg-vb-sage-tint/40"
-                          : "border-vb-border-subtle bg-vb-surface"
-                      )}
-                    >
-                      <p className="text-xs font-semibold capitalize text-vb-text">
-                        {phase.phase_type.replace("_", " ")}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-vb-text-dim">
-                        {formatDate(phase.start_date)} &ndash;{" "}
-                        {formatDate(phase.end_date)}
-                      </p>
-                      {phase.focus && (
-                        <p className="mt-1 text-[10px] text-vb-text-muted">
-                          {phase.focus}
-                        </p>
-                      )}
-                      <p className="mt-1 text-[10px] tabular-nums text-vb-text-dim">
-                        {phase.workout_count} workouts
-                      </p>
-                    </div>
-                  );
-                })}
+      {/* Plan timeline: proportional phases with a you-are-here marker */}
+      {activePlan && planPhases.length > 0 && (
+        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+          <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+              The road to {nextUpcomingGoal?.event_name ?? "race day"}
+            </h2>
+            <p className="text-xs tabular-nums text-vb-text-muted">
+              {formatDate(activePlan.start_date)} -{" "}
+              {formatDate(activePlan.end_date)}
+            </p>
+          </div>
+          {(() => {
+            const planStart = new Date(activePlan.start_date).getTime();
+            const planEnd =
+              new Date(activePlan.end_date).getTime() + 86400000;
+            const span = Math.max(1, planEnd - planStart);
+            const todayPct = Math.min(
+              99.5,
+              Math.max(0, ((new Date(today).getTime() - planStart) / span) * 100)
+            );
+            const phases = [...planPhases].sort(
+              (a, b) => a.sort_order - b.sort_order
+            );
+            return (
+              <div className="relative">
+                <div className="flex h-10 gap-[3px] overflow-hidden rounded-md">
+                  {phases.map((ph) => {
+                    const w =
+                      ((new Date(ph.end_date).getTime() -
+                        new Date(ph.start_date).getTime() +
+                        86400000) /
+                        span) *
+                      100;
+                    const pc =
+                      PHASE_COLORS[ph.phase_type] ?? PHASE_COLORS.recovery;
+                    const isCur =
+                      today >= ph.start_date && today <= ph.end_date;
+                    const isPast = today > ph.end_date;
+                    return (
+                      <div
+                        key={ph.id}
+                        className="flex items-center justify-center overflow-hidden"
+                        style={{
+                          width: `${w}%`,
+                          backgroundColor: pc.bg,
+                          opacity: isCur ? 1 : isPast ? 0.45 : 0.75,
+                        }}
+                      >
+                        <span
+                          className="truncate px-2 text-[10px] font-semibold uppercase tracking-[0.1em]"
+                          style={{ color: pc.fg }}
+                        >
+                          {ph.phase_type.replace(/_/g, " ")}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* You are here */}
+                <div
+                  className="pointer-events-none absolute -top-1.5 bottom-[-6px] w-[2px] rounded-full bg-vb-text"
+                  style={{ left: `${todayPct}%` }}
+                />
               </div>
-            </div>
-          ))}
+            );
+          })()}
+          {currentPhase && (
+            <p className="mt-4 text-xs text-vb-text-dim">
+              <span className="font-semibold capitalize text-vb-text">
+                {currentPhase.phase_type.replace(/_/g, " ")}
+              </span>
+              {" · "}
+              {formatDate(currentPhase.start_date)} -{" "}
+              {formatDate(currentPhase.end_date)}
+              {currentPhase.focus ? <> · {currentPhase.focus}</> : null}
+              {" · "}
+              {currentPhase.workout_count} workouts
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -56,7 +56,7 @@ export default function RegisterPage() {
           </h2>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-vb-text-dim">
             Sport science. Mindset. A memory that never forgets a ride.
-            £19.99 a month — a free Strava account is all you need.
+            £19.99 a month, a free Strava account is all you need.
           </p>
         </div>
 

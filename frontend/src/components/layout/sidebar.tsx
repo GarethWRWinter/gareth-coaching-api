@@ -71,7 +71,7 @@ export function Sidebar() {
               MARCO
             </h1>
             <p className="mt-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-vb-text-muted">
-              Your coach — life &amp; legs
+              Your coach · life &amp; legs
             </p>
             <RouteMotif />
           </div>

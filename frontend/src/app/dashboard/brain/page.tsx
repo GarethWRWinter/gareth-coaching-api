@@ -524,7 +524,7 @@ export default function BrainPage() {
             Your brain starts with your first conversation.
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-vb-text-dim">
-            Talk to {coach} about your goals, your week, your life — every durable
+            Talk to {coach} about your goals, your week, your life, every durable
             thing you share becomes part of a memory that grows with you.
           </p>
           <Link
@@ -711,7 +711,7 @@ export default function BrainPage() {
               </div>
             ) : (
               <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5 text-[13px] leading-relaxed text-vb-text-dim">
-                Click any memory to see its story — where it came from, what it
+                Click any memory to see its story, where it came from, what it
                 connects to, and what it became.
               </div>
             )}

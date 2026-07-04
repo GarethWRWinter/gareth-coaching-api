@@ -832,7 +832,7 @@ export default function SettingsPage() {
             {stravaStatus.backfill?.status === "completed" && (
               <div className="rounded-md border border-vb-border-subtle bg-vb-sage-tint p-3">
                 <p className="text-sm text-vb-forest">
-                  History import complete — {stravaStatus.backfill.total} activities processed
+                  History import complete, {stravaStatus.backfill.total} activities processed
                 </p>
                 {stravaStatus.backfill.completed_at && (
                   <p className="mt-0.5 text-xs text-vb-text-muted">
@@ -855,11 +855,11 @@ export default function SettingsPage() {
               <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-vb-clay">
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  Paused — waiting for Strava 15-min rate limit to reset
+                  Paused, waiting for Strava 15-min rate limit to reset
                 </div>
                 <p className="mt-1 text-xs text-vb-text-dim">
                   {stravaStatus.backfill.total
-                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed — resuming in ~15 minutes`
+                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed, resuming in ~15 minutes`
                     : "Resuming in ~15 minutes"}
                 </p>
               </div>
@@ -869,12 +869,12 @@ export default function SettingsPage() {
               <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-vb-clay">
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  Paused — Strava daily limit reached
+                  Paused, Strava daily limit reached
                 </div>
                 <p className="mt-1 text-xs text-vb-text-dim">
                   {stravaStatus.backfill.total
-                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed. Strava allows 1,000 requests/day — your backfill will auto-resume at midnight UTC.`
-                    : "Strava allows 1,000 requests/day — your backfill will auto-resume at midnight UTC."}
+                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed. Strava allows 1,000 requests/day, your backfill will auto-resume at midnight UTC.`
+                    : "Strava allows 1,000 requests/day, your backfill will auto-resume at midnight UTC."}
                 </p>
               </div>
             )}
@@ -882,7 +882,7 @@ export default function SettingsPage() {
             {stravaStatus.backfill?.status === "failed" && (
               <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
                 <p className="text-sm text-vb-clay">
-                  History import failed — {stravaStatus.backfill.progress || 0} of{" "}
+                  History import failed, {stravaStatus.backfill.progress || 0} of{" "}
                   {stravaStatus.backfill.total || "?"} processed before error
                 </p>
                 <button
@@ -1119,7 +1119,7 @@ function CoachSection() {
         Your coach
       </h2>
       <p className="mt-1 text-sm text-vb-text-dim">
-        Same world-class coaching — your name for them, their face, and the way
+        Same world-class coaching, your name for them, their face, and the way
         they talk to you.
       </p>
 
@@ -1209,7 +1209,7 @@ function CoachSection() {
         </button>
         {saved && (
           <span className="text-xs text-vb-forest">
-            Done — {coachName.trim() || "Marco"} is ready.
+            Done, {coachName.trim() || "Marco"} is ready.
           </span>
         )}
       </div>

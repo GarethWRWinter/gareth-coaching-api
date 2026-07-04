@@ -212,7 +212,7 @@ export default function WorkoutDetailPage() {
         </div>
       </div>
 
-      {/* Planned vs Actual — shown when a ride has been linked to this workout */}
+      {/* Planned vs Actual, shown when a ride has been linked to this workout */}
       {hasActualRide && workout.actual_ride && (
         <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
           <div className="mb-4 flex items-center justify-between gap-2">
@@ -244,7 +244,7 @@ export default function WorkoutDetailPage() {
               planned={
                 workout.planned_duration_seconds
                   ? formatDuration(workout.planned_duration_seconds)
-                  : "—"
+                  : ", "
               }
               actual={
                 workout.actual_ride.moving_time_seconds ||
@@ -253,7 +253,7 @@ export default function WorkoutDetailPage() {
                       (workout.actual_ride.moving_time_seconds ??
                         workout.actual_ride.duration_seconds)!
                     )
-                  : "—"
+                  : ", "
               }
             />
             <StatCompare
@@ -261,12 +261,12 @@ export default function WorkoutDetailPage() {
               planned={
                 workout.planned_tss != null
                   ? Math.round(workout.planned_tss).toString()
-                  : "—"
+                  : ", "
               }
               actual={
                 workout.actual_ride.tss != null
                   ? Math.round(workout.actual_ride.tss).toString()
-                  : "—"
+                  : ", "
               }
             />
             <StatCompare
@@ -274,21 +274,21 @@ export default function WorkoutDetailPage() {
               planned={
                 workout.planned_if != null
                   ? workout.planned_if.toFixed(2)
-                  : "—"
+                  : ", "
               }
               actual={
                 workout.actual_ride.intensity_factor != null
                   ? workout.actual_ride.intensity_factor.toFixed(2)
-                  : "—"
+                  : ", "
               }
             />
             <StatCompare
               label="NP"
-              planned="—"
+              planned=", "
               actual={
                 workout.actual_ride.normalized_power != null
                   ? `${Math.round(workout.actual_ride.normalized_power)}W`
-                  : "—"
+                  : ", "
               }
             />
           </div>

@@ -410,7 +410,7 @@ function CoachPageInner() {
                   Coach {coach}
                 </h3>
                 <p className="mt-1 max-w-sm text-sm text-vb-text-dim">
-                  Training, racing, head, life — ask me anything. And I
+                  Training, racing, head, life, ask me anything. And I
                   remember what you tell me: every conversation sharpens{" "}
                   <Link href="/dashboard/brain" className="text-vb-forest hover:underline">
                     your brain
@@ -492,7 +492,7 @@ function CoachPageInner() {
 
         {/* Input */}
         <div className="border-t border-vb-border-subtle p-4">
-          {/* Voice indicator — shown during voice interactions */}
+          {/* Voice indicator, shown during voice interactions */}
           {voiceMode && voiceIndicatorMode !== "idle" && (
             <VoiceIndicator
               mode={voiceIndicatorMode}

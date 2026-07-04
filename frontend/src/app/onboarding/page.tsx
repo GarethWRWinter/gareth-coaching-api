@@ -682,20 +682,20 @@ export default function OnboardingPage() {
                 onClick={() => setStep(4)}
                 className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft"
               >
-                Next — meet your coach
+                Next, meet your coach
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 4: Meet your coach — any face, any name, any tone */}
+        {/* Step 4: Meet your coach, any face, any name, any tone */}
         {step === 4 && (
           <div>
             <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
               Meet your coach.
             </h2>
             <p className="mt-2 text-center text-sm text-vb-text-dim">
-              Choose the face, the name and the voice that suits you — the
+              Choose the face, the name and the voice that suits you, the
               coaching is world-class either way.
             </p>
 
@@ -738,7 +738,7 @@ export default function OnboardingPage() {
                 value={coachName}
                 maxLength={30}
                 onChange={(e) => setCoachName(e.target.value)}
-                placeholder="Marco, Maria — or anything you like"
+                placeholder="Marco, Maria, or anything you like"
                 className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
               />
             </div>

@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
   const tsb = Math.round(fitness?.current_tsb ?? 0);
   const tsbLabel =
-    tsb > 10 ? "Fresh — good day to go hard" : tsb < -20 ? "Fatigued — absorb it" : "Productive strain";
+    tsb > 10 ? "Fresh, good day to go hard" : tsb < -20 ? "Fatigued, absorb it" : "Productive strain";
 
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
@@ -175,13 +175,13 @@ export default function DashboardPage() {
                 <ClipboardCheck className="h-5 w-5 shrink-0 text-vb-clay" />
                 <div>
                   <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-clay">
-                    So — how did it go?
+                    So, how did it go?
                   </p>
                   <p className="font-display text-xl leading-tight tracking-[-0.01em]">
                     {goal.event_name}
                   </p>
                   <p className="mt-1 text-sm text-vb-text-dim">
-                    Debrief with Marco — what you tell him shapes the next block.
+                    Debrief with Marco, what you tell him shapes the next block.
                   </p>
                 </div>
               </div>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
           />
           {recentRides?.rides.length === 0 ? (
             <div className="rounded-md border border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
-              No rides yet — and I&apos;d love to see what you can do.{" "}
+              No rides yet, and I&apos;d love to see what you can do.{" "}
               <Link href="/dashboard/rides" className="text-vb-forest hover:underline">
                 Upload a ride or connect Strava →
               </Link>{" "}
@@ -380,7 +380,7 @@ export default function DashboardPage() {
             {!goalsData ||
             goalsData.goals.filter((g) => g.status === "upcoming").length === 0 ? (
               <div className="rounded-md border border-vb-border-subtle px-5 py-8 text-center text-sm text-vb-text-dim">
-                Nothing on the calendar. Give me a race to aim you at —{" "}
+                Nothing on the calendar. Give me a race to aim you at:{" "}
                 <Link href="/dashboard/goals" className="text-vb-forest hover:underline">
                   set a goal →
                 </Link>{" "}
@@ -434,7 +434,7 @@ export default function DashboardPage() {
                       {plan.name}
                     </p>
                     <p className="text-xs leading-relaxed text-vb-text-dim">
-                      {formatDate(plan.start_date)} – {formatDate(plan.end_date)}
+                      {formatDate(plan.start_date)}, {formatDate(plan.end_date)}
                       <br />
                       {plan.total_weeks} weeks · {plan.phase_count} phases
                     </p>

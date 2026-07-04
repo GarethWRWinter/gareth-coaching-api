@@ -48,11 +48,11 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
 
   pre_step_change: [
     {
-      text: "{stepRemaining} seconds — get ready for {nextZoneName} at {nextTargetWatts}W.",
+      text: "{stepRemaining} seconds, get ready for {nextZoneName} at {nextTargetWatts}W.",
       stepTypes: ["warmup", "steady_state", "interval_off", "cooldown"],
     },
     {
-      text: "Heads up — {nextZoneName} interval coming in {stepRemaining}. Build your focus.",
+      text: "Heads up, {nextZoneName} interval coming in {stepRemaining}. Build your focus.",
       stepTypes: ["warmup", "steady_state", "interval_off"],
     },
     {
@@ -81,7 +81,7 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
       stepTypes: ["interval_on"],
     },
     {
-      text: "Hit it! {targetWatts} watts. Don't spike — ramp in over 5 seconds.",
+      text: "Hit it! {targetWatts} watts. Don't spike, ramp in over 5 seconds.",
       stepTypes: ["interval_on"],
     },
     {
@@ -117,7 +117,7 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
       stepTypes: ["steady_state", "ramp"],
     },
     {
-      text: "Settle in at {targetWatts}W. {zoneName} pace — find your breathing rhythm.",
+      text: "Settle in at {targetWatts}W. {zoneName} pace, find your breathing rhythm.",
       stepTypes: ["steady_state"],
     },
   ],
@@ -136,7 +136,7 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
       stepTypes: ["interval_on"],
     },
     {
-      text: "Halfway. Your legs are talking to you — that's normal. Stay committed.",
+      text: "Halfway. Your legs are talking to you, that's normal. Stay committed.",
       stepTypes: ["interval_on"],
     },
     {
@@ -146,10 +146,10 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
   ],
 
   long_effort_check: [
-    { text: "Check your form — drop your shoulders, relax your grip, smooth circles." },
+    { text: "Check your form, drop your shoulders, relax your grip, smooth circles." },
     { text: "This {zoneName} work is building your aerobic engine. Every pedal stroke counts." },
     { text: "How's your breathing? Rhythmic and controlled. In through the nose if you can." },
-    { text: "Stay present. Don't think about the finish — own this moment right now." },
+    { text: "Stay present. Don't think about the finish, own this moment right now." },
     { text: "Relax your jaw, unclench your hands. Tension wastes energy." },
     { text: "You're doing great. This is exactly the kind of work that builds race fitness." },
     {
@@ -162,14 +162,14 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
   ],
 
   power_too_high: [
-    { text: "Power is running high. Ease back to {targetWatts}W — save your matches for later." },
+    { text: "Power is running high. Ease back to {targetWatts}W, save your matches for later." },
     { text: "You're above target. Dial it back to {targetWatts}W. Discipline is strength." },
     { text: "Too hot! Bring it down to {targetWatts}W. We want to finish strong, not just start strong." },
     { text: "Control the effort. {targetWatts}W is the target. Going harder isn't better here." },
   ],
 
   power_too_low: [
-    { text: "Power is dropping. Dig in — {stepRemaining} seconds to go. You've got this." },
+    { text: "Power is dropping. Dig in, {stepRemaining} seconds to go. You've got this." },
     { text: "Come on, bring it back to {targetWatts}W. Find your rhythm again." },
     { text: "Don't let it slip. {targetWatts}W. Focus on the next 30 seconds, nothing else." },
     { text: "I need you at {targetWatts}W. Recommit. This is where you grow." },
@@ -180,7 +180,7 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
     { text: "Workout complete! Great work today. Stretch, refuel, and rest up." },
     { text: "Done! That's another session in the bank. Your future self will thank you." },
     { text: "Brilliant effort! Now it's recovery time. The gains happen when you rest." },
-    { text: "Session complete. You showed up and got it done — that's what champions do." },
+    { text: "Session complete. You showed up and got it done, that's what champions do." },
   ],
 };
 

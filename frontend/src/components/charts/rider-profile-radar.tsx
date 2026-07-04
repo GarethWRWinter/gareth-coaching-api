@@ -75,7 +75,7 @@ export function RiderProfileRadar({
 
   return (
     <div className={cn(compact ? "" : "rounded-md border border-vb-border-subtle bg-vb-surface p-4", className)}>
-      {/* Header — hidden in compact mode */}
+      {/* Header, hidden in compact mode */}
       {!compact && (
         <div className="mb-2 text-center">
           <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">Rider Profile</h3>
@@ -142,7 +142,7 @@ export function RiderProfileRadar({
         </div>
       )}
 
-      {/* Strengths & Weaknesses — hidden in compact mode */}
+      {/* Strengths & Weaknesses, hidden in compact mode */}
       {!compact && (strengths.length > 0 || weaknesses.length > 0) && (
         <div className="mt-3 space-y-2">
           {strengths.length > 0 && (

@@ -654,7 +654,7 @@ def _build_phases(
             "type": PhaseType.peak,
             "start_date": mid,
             "end_date": end_date,
-            "focus": "Sharpen form — maintain intensity, reduce volume",
+            "focus": "Sharpen form: maintain intensity, reduce volume",
         })
         return phases
 
@@ -682,7 +682,7 @@ def _build_phases(
             "type": PhaseType.peak,
             "start_date": d2,
             "end_date": end_date,
-            "focus": "Sharpen and taper — key sessions only",
+            "focus": "Sharpen and taper: key sessions only",
         })
         return phases
 
@@ -712,26 +712,26 @@ def _build_phases(
         "type": PhaseType.base,
         "start_date": current_date,
         "end_date": d1 - timedelta(days=1),
-        "focus": "Aerobic base — endurance foundation and movement efficiency",
+        "focus": "Aerobic base: endurance foundation and movement efficiency",
     })
     phases.append({
         "type": PhaseType.build,
         "start_date": d1,
         "end_date": d2 - timedelta(days=1),
-        "focus": "Build race-specific fitness — progressive intensity",
+        "focus": "Build race-specific fitness with progressive intensity",
     })
     phases.append({
         "type": PhaseType.peak,
         "start_date": d2,
         "end_date": d3 - timedelta(days=1),
-        "focus": "Peak — reduce volume, maintain sharpness",
+        "focus": "Peak: reduce volume, maintain sharpness",
     })
     if race_weeks > 0:
         phases.append({
             "type": PhaseType.race,
             "start_date": d3,
             "end_date": end_date,
-            "focus": "Race week — taper, activate, perform",
+            "focus": "Race week: taper, activate, perform",
         })
 
     return phases

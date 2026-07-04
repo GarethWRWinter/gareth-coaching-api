@@ -52,7 +52,7 @@ export default function RidesPage() {
             Rides
           </h1>
           <p className="mt-3 text-xs text-vb-text-muted">
-            {data?.total ?? "—"} total · page {page}
+            {data?.total ?? ", "} total · page {page}
             {totalPages > 0 && ` of ${totalPages}`}
           </p>
         </div>
@@ -89,12 +89,12 @@ export default function RidesPage() {
         </div>
       ) : data?.rides.length === 0 ? (
         <div className="rounded-md border border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
-          No rides yet. Upload a FIT file — or connect Strava in Settings and
+          No rides yet. Upload a FIT file, or connect Strava in Settings and
           Marco will pull in your history, every ride feeding your power profile.
         </div>
       ) : (
         <>
-          {/* Column rubric — visible on lg+ only, gives editorial structure */}
+          {/* Column rubric, visible on lg+ only, gives editorial structure */}
           <div className="hidden border-b border-vb-border-subtle pb-2 lg:grid lg:grid-cols-[1fr_90px_90px_90px_90px_70px_60px] lg:gap-6">
             <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
               Ride
@@ -145,7 +145,7 @@ export default function RidesPage() {
                     </p>
                   </div>
 
-                  {/* Compact numbers row — visible always, repositioned on lg */}
+                  {/* Compact numbers row, visible always, repositioned on lg */}
                   <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-vb-text lg:hidden">
                     {ride.duration_seconds != null && (
                       <NumWithLabel
@@ -174,30 +174,30 @@ export default function RidesPage() {
                   <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.duration_seconds
                       ? formatDuration(ride.duration_seconds)
-                      : "—"}
+                      : ", "}
                   </span>
                   <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.distance_meters
                       ? `${(ride.distance_meters / 1000).toFixed(1)} km`
-                      : "—"}
+                      : ", "}
                   </span>
                   <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.average_power
                       ? `${Math.round(ride.average_power)}`
-                      : "—"}
+                      : ", "}
                   </span>
                   <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.normalized_power
                       ? `${Math.round(ride.normalized_power)}`
-                      : "—"}
+                      : ", "}
                   </span>
                   <span className="hidden text-right text-sm font-medium text-vb-text tabular-nums lg:inline">
-                    {ride.tss ? Math.round(ride.tss) : "—"}
+                    {ride.tss ? Math.round(ride.tss) : ", "}
                   </span>
                   <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
                     {ride.intensity_factor
                       ? ride.intensity_factor.toFixed(2)
-                      : "—"}
+                      : ", "}
                   </span>
                 </Link>
               </li>

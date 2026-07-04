@@ -140,11 +140,11 @@ export default function AssessPage() {
           </div>
         </div>
 
-        {/* What's next — invite user to plan their next block */}
+        {/* What's next, invite user to plan their next block */}
         <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
           <h2 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">What&apos;s next?</h2>
           <p className="mt-1 text-xs text-vb-text-dim">
-            Keep momentum going — pick your next target and we&apos;ll build a plan
+            Keep momentum going, pick your next target and we&apos;ll build a plan
             around it, or start a fresh training block to keep building fitness.
           </p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -229,7 +229,7 @@ export default function AssessPage() {
           })}
         </div>
 
-        {/* Finish time + position — only for completed */}
+        {/* Finish time + position, only for completed */}
         {status === "completed" && (
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div>

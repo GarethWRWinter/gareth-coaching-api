@@ -17,7 +17,6 @@ import {
   Zap,
   Activity,
   Gauge,
-  Timer,
   X,
   Check,
   AlertTriangle,
@@ -650,7 +649,7 @@ export default function TrainingSessionPage() {
               <Pause className="h-5 w-5 text-vb-clay shrink-0" />
               <div>
                 <p className="text-sm font-medium text-vb-clay">
-                  Auto-paused — no power detected
+                  Auto-paused, no power detected
                 </p>
                 <p className="text-xs text-vb-clay/70">
                   Start pedalling to resume automatically
@@ -664,7 +663,7 @@ export default function TrainingSessionPage() {
             <div className="flex items-center gap-2 text-xs text-vb-clay/70">
               <AlertTriangle className="h-3 w-3" />
               <span>
-                No power — auto-pausing in {autoPauseCountdown}s
+                No power, auto-pausing in {autoPauseCountdown}s
               </span>
             </div>
           )}
@@ -700,7 +699,7 @@ export default function TrainingSessionPage() {
                         <p className="text-xs text-vb-clay/70 mt-1">
                           Use <strong>Chrome</strong>, <strong>Edge</strong>, or
                           <strong> Brave</strong> on a Mac, PC, or Android.{" "}
-                          <strong>iPhone and iPad aren&apos;t supported</strong> —
+                          <strong>iPhone and iPad aren&apos;t supported</strong>:
                           every iOS browser (including Chrome) runs on Safari&apos;s
                           engine, which doesn&apos;t have Web Bluetooth. Native
                           iOS app coming soon.
@@ -801,7 +800,7 @@ export default function TrainingSessionPage() {
                     <div className="flex items-center justify-center gap-2 mb-1">
                       <Radio className="h-3 w-3 text-vb-forest" />
                       <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-forest">
-                        Marco &mdash; Race Radio
+                        {user?.coach_name || "Marco"} · Race Radio
                       </span>
                     </div>
                     <p className="text-sm text-vb-text-dim italic">
@@ -858,9 +857,9 @@ export default function TrainingSessionPage() {
 
               {/* Target Power - big display (single clay highlight: the live target) */}
               <div className="text-center">
-                <p className="font-display text-6xl font-light text-vb-clay tabular-nums tracking-[-0.02em]">
+                <p className="font-display text-7xl font-bold text-vb-clay tabular-nums tracking-[-0.02em]">
                   {session.currentTargetWatts}
-                  <span className="text-2xl text-vb-text-muted ml-1 font-light">W</span>
+                  <span className="text-2xl text-vb-text-muted ml-1.5 font-light">W</span>
                 </p>
                 <p className="text-lg mt-1 text-vb-text-dim tabular-nums">
                   {Math.round(session.currentTargetPct * 100)}% FTP
@@ -939,6 +938,94 @@ export default function TrainingSessionPage() {
                 })()}
               </div>
 
+              {/* Live metrics strip: rider numbers front and centre */}
+              <div className="w-full max-w-lg rounded-md border border-vb-border-subtle bg-vb-surface px-5 py-4">
+                <div className="grid grid-cols-5 gap-2">
+                  <div className="text-center">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                      Power
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-1 font-display text-2xl font-semibold tabular-nums",
+                        livePower > 0
+                          ? livePower > session.currentTargetWatts * 1.05
+                            ? "text-vb-clay"
+                            : livePower < session.currentTargetWatts * 0.95
+                              ? "text-vb-text-dim"
+                              : "text-vb-forest"
+                          : "text-vb-text-muted"
+                      )}
+                    >
+                      {livePower}
+                      <span className="ml-0.5 text-xs font-normal text-vb-text-muted">
+                        W
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                      Heart Rate
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-1 font-display text-2xl font-semibold tabular-nums",
+                        liveHR > 0 ? "text-vb-clay" : "text-vb-text-muted"
+                      )}
+                    >
+                      {liveHR}
+                      <span className="ml-0.5 text-xs font-normal text-vb-text-muted">
+                        bpm
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                      Cadence
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-1 font-display text-2xl font-semibold tabular-nums",
+                        liveCadence > 0 ? "text-vb-forest" : "text-vb-text-muted"
+                      )}
+                    >
+                      {liveCadence}
+                      <span className="ml-0.5 text-xs font-normal text-vb-text-muted">
+                        rpm
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                      Elapsed
+                    </p>
+                    <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-vb-text">
+                      {formatTime(session.totalElapsedSeconds)}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
+                      Remaining
+                    </p>
+                    <p className="mt-1 font-display text-2xl font-semibold tabular-nums text-vb-text-dim">
+                      {formatTime(totalRemaining)}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 h-1.5 rounded-full bg-vb-sunken">
+                  <div
+                    className="h-full rounded-full bg-vb-forest transition-all"
+                    style={{ width: `${Math.min(100, workoutProgress)}%` }}
+                  />
+                </div>
+                {btState.trainer.connected && (
+                  <p className="mt-2.5 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-vb-forest">
+                    ERG active · {btState.trainer.name} · holding{" "}
+                    {session.currentTargetWatts}W
+                  </p>
+                )}
+              </div>
+
               {/* Coach Message Overlay */}
               {coach.currentMessage && (
                 <div className="animate-pulse w-full max-w-lg">
@@ -946,7 +1033,7 @@ export default function TrainingSessionPage() {
                     <div className="flex items-center justify-center gap-2 mb-1">
                       <Radio className="h-3 w-3 text-vb-forest" />
                       <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-forest">
-                        Marco &mdash; Race Radio
+                        {user?.coach_name || "Marco"} · Race Radio
                       </span>
                     </div>
                     <p className="text-sm text-vb-text-dim italic">
@@ -1067,99 +1154,6 @@ export default function TrainingSessionPage() {
           </div>
         </div>
 
-        {/* Right Sidebar: Live Metrics */}
-        {isActive && (
-          <div className="w-64 border-l border-vb-border-subtle bg-vb-surface p-4 space-y-4 overflow-y-auto">
-            <h3 className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Live Metrics
-            </h3>
-
-            {/* Power */}
-            <MetricCard
-              icon={<Zap className="h-5 w-5 text-vb-forest" />}
-              label="Power"
-              value={livePower}
-              unit="W"
-              target={session.currentTargetWatts}
-              color={
-                livePower > 0
-                  ? livePower > session.currentTargetWatts * 1.05
-                    ? "text-vb-clay"
-                    : livePower < session.currentTargetWatts * 0.95
-                      ? "text-vb-text-dim"
-                      : "text-vb-forest"
-                  : "text-vb-text-muted"
-              }
-            />
-
-            {/* Heart Rate */}
-            <MetricCard
-              icon={<Heart className="h-5 w-5 text-vb-clay" />}
-              label="Heart Rate"
-              value={liveHR}
-              unit="bpm"
-              color={liveHR > 0 ? "text-vb-clay" : "text-vb-text-muted"}
-            />
-
-            {/* Cadence */}
-            <MetricCard
-              icon={<Activity className="h-5 w-5 text-vb-forest" />}
-              label="Cadence"
-              value={liveCadence}
-              unit="rpm"
-              target={session.currentCadenceTarget ?? undefined}
-              color={liveCadence > 0 ? "text-vb-forest" : "text-vb-text-muted"}
-            />
-
-            {/* ERG Mode Status */}
-            {btState.trainer.connected && (
-              <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-3">
-                <div className="flex items-center gap-2">
-                  <Gauge className="h-4 w-4 text-vb-forest" />
-                  <span className="text-xs font-medium text-vb-forest">
-                    ERG Mode Active
-                  </span>
-                </div>
-                <p className="mt-1 text-xs tabular-nums text-vb-text-muted">
-                  Target: {session.currentTargetWatts}W
-                </p>
-                <p className="text-xs text-vb-text-muted">
-                  {btState.trainer.name}
-                </p>
-              </div>
-            )}
-
-            {/* Timer */}
-            <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Timer className="h-4 w-4 text-vb-text-dim" />
-                <span className="text-xs font-medium text-vb-text-dim">
-                  Session Time
-                </span>
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-vb-text-muted">Elapsed</span>
-                  <span className="font-display font-light tabular-nums text-vb-text">
-                    {formatTime(session.totalElapsedSeconds)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-vb-text-muted">Remaining</span>
-                  <span className="font-display font-light tabular-nums text-vb-text-dim">
-                    {formatTime(totalRemaining)}
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full bg-vb-sunken mt-2">
-                  <div
-                    className="h-full rounded-full bg-vb-forest transition-all"
-                    style={{ width: `${Math.min(100, workoutProgress)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Device Panel Modal */}
@@ -1189,7 +1183,7 @@ export default function TrainingSessionPage() {
                     <p className="text-xs text-vb-clay/70 mt-1">
                       Use <strong>Chrome</strong>, <strong>Edge</strong>, or
                       <strong> Brave</strong> on a Mac, PC, or Android.{" "}
-                      <strong>iPhone and iPad aren&apos;t supported</strong> —
+                      <strong>iPhone and iPad aren&apos;t supported</strong>:
                       every iOS browser (including Chrome) runs on Safari&apos;s
                       engine, which doesn&apos;t have Web Bluetooth. Native iOS
                       app coming soon.
@@ -1299,7 +1293,7 @@ export default function TrainingSessionPage() {
             </p>
             {saveError && (
               <div className="mb-4 rounded-sm border border-vb-clay/40 bg-vb-clay/10 px-3 py-2 text-xs text-vb-clay">
-                Save failed: {saveError}. Your data is still buffered — try
+                Save failed: {saveError}. Your data is still buffered, try
                 again.
               </div>
             )}
@@ -1392,44 +1386,6 @@ export default function TrainingSessionPage() {
 }
 
 // === Sub-Components ===
-
-function MetricCard({
-  icon,
-  label,
-  value,
-  unit,
-  target,
-  color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  unit: string;
-  target?: number;
-  color?: string;
-}) {
-  return (
-    <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-3">
-      <div className="flex items-center gap-2 mb-1">
-        {icon}
-        <span className="text-xs font-medium text-vb-text-dim">{label}</span>
-      </div>
-      <div className="flex items-baseline gap-1">
-        <span
-          className={cn("font-display text-2xl font-light tabular-nums", color || "text-vb-text")}
-        >
-          {value || "--"}
-        </span>
-        <span className="text-xs text-vb-text-muted">{unit}</span>
-      </div>
-      {target !== undefined && target > 0 && (
-        <p className="text-[10px] tabular-nums text-vb-text-muted mt-0.5">
-          Target: {target} {unit}
-        </p>
-      )}
-    </div>
-  );
-}
 
 function DeviceRow({
   icon,

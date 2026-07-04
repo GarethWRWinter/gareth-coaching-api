@@ -420,7 +420,7 @@ export function ElevationProfileChart({
               connectNulls
             />
           )}
-          {/* Speed is shown in tooltip only — km/h values can't share the power (W) axis */}
+          {/* Speed is shown in tooltip only, km/h values can't share the power (W) axis */}
         </ComposedChart>
       </ResponsiveContainer>
 

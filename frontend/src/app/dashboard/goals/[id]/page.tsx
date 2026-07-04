@@ -365,7 +365,7 @@ export default function GoalDetailPage() {
         </div>
       </div>
 
-      {/* Assessment Banner — needs assessment */}
+      {/* Assessment Banner, needs assessment */}
       {goal.needs_assessment && (
         <Link
           href={`/dashboard/goals/${goalId}/assess`}
@@ -382,7 +382,7 @@ export default function GoalDetailPage() {
               How did {goal.event_name} go?
             </p>
             <p className="mt-0.5 text-sm text-vb-text-dim">
-              Complete your race report — capture results, link your ride data, and debrief with Coach Marco.
+              Complete your race report, capture results, link your ride data, and debrief with Coach Marco.
             </p>
           </div>
           <span className="rounded-sm border border-vb-clay px-4 py-2 text-sm font-medium text-vb-clay">
@@ -391,7 +391,7 @@ export default function GoalDetailPage() {
         </Link>
       )}
 
-      {/* Assessment Results — completed goals */}
+      {/* Assessment Results, completed goals */}
       {goal.assessment_completed_at && (
         <div className="space-y-4">
           {/* Result Summary Card */}
@@ -668,7 +668,7 @@ export default function GoalDetailPage() {
         </div>
       )}
 
-      {/* Course Profile — elevation chart or GPX upload CTA */}
+      {/* Course Profile, elevation chart or GPX upload CTA */}
       {goal.route_data?.elevation_profile &&
         goal.route_data.elevation_profile.length > 0 ? (
           <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">

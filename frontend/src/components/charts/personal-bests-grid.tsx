@@ -128,7 +128,7 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
               </div>
               {/* Current form power */}
               <div className={cn("text-xl font-bold tabular-nums", band.color)}>
-                {point.best_power > 0 ? Math.round(point.best_power) : "—"}
+                {point.best_power > 0 ? Math.round(point.best_power) : ", "}
                 <span className="ml-0.5 text-xs font-normal text-vb-text-muted">W</span>
               </div>
               {point.watts_per_kg !== null && point.best_power > 0 && (

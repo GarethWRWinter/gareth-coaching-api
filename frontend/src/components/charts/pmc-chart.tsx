@@ -133,7 +133,7 @@ export function PMCChart({ data, dateRange, className }: PMCChartProps) {
             iconSize={8}
           />
 
-          {/* TSS bars at the bottom — sage */}
+          {/* TSS bars at the bottom, sage */}
           <Bar
             yAxisId="tss"
             dataKey="tss"
@@ -144,7 +144,7 @@ export function PMCChart({ data, dateRange, className }: PMCChartProps) {
             radius={[1, 1, 0, 0]}
           />
 
-          {/* TSB / Form as an area — dusty blue */}
+          {/* TSB / Form as an area, dusty blue */}
           <Area
             yAxisId="metrics"
             type="monotone"
@@ -158,7 +158,7 @@ export function PMCChart({ data, dateRange, className }: PMCChartProps) {
             activeDot={{ r: 3, fill: "#7C95A3" }}
           />
 
-          {/* CTL / Fitness line — forest */}
+          {/* CTL / Fitness line, forest */}
           <Line
             yAxisId="metrics"
             type="monotone"
@@ -170,7 +170,7 @@ export function PMCChart({ data, dateRange, className }: PMCChartProps) {
             activeDot={{ r: 4, fill: "#36513F" }}
           />
 
-          {/* ATL / Fatigue line — clay */}
+          {/* ATL / Fatigue line, clay */}
           <Line
             yAxisId="metrics"
             type="monotone"

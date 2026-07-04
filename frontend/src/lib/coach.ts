@@ -73,14 +73,14 @@ export const COACH_TONES: CoachTone[] = [
   {
     key: "balanced",
     label: "Balanced",
-    description: "Warm and direct in equal measure — the classic coach.",
-    sample: "Solid week. Thursday's the session that matters — let's arrive fresh.",
+    description: "Warm and direct in equal measure, the classic coach.",
+    sample: "Solid week. Thursday's the session that matters, let's arrive fresh.",
   },
   {
     key: "empathetic",
     label: "Empathetic & nurturing",
     description: "Leads with feelings, celebrates generously, softens hard truths.",
-    sample: "You've carried a heavy week and still showed up — I'm proud of you. Let's be kind to your legs today.",
+    sample: "You've carried a heavy week and still showed up, I'm proud of you. Let's be kind to your legs today.",
   },
   {
     key: "stoic",
@@ -98,12 +98,12 @@ export const COACH_TONES: CoachTone[] = [
     key: "analytical",
     label: "Analytical & data-deep",
     description: "Numbers first, mechanisms explained, depth welcome.",
-    sample: "Decoupling was 8.4% after 2,100kJ — fueling, not fitness. At 80g/hr I'd expect under 5%.",
+    sample: "Decoupling was 8.4% after 2,100kJ, fueling, not fitness. At 80g/hr I'd expect under 5%.",
   },
   {
     key: "playful",
     label: "Playful & witty",
-    description: "Light, funny, banter-forward — serious training, unserious delivery.",
+    description: "Light, funny, banter-forward, serious training, unserious delivery.",
     sample: "Three PBs in one ride? Leave some watts for the rest of us. Easy spin tomorrow, hotshot.",
   },
 ];

@@ -510,7 +510,7 @@ function GoalsPageInner() {
             What are we aiming at?
           </h3>
           <p className="mx-auto mt-4 max-w-md text-sm text-vb-text-dim">
-            A sportive, a road race, a number you&apos;ve been chasing — give
+            A sportive, a road race, a number you&apos;ve been chasing, give
             Marco the target and he&apos;ll build the season backwards from it.
             Add the route&apos;s GPX and he&apos;ll study every climb.
           </p>
