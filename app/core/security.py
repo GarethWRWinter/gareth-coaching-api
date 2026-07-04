@@ -35,6 +35,27 @@ def create_refresh_token(user_id: str) -> str:
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
+def create_oauth_state_token(user_id: str, provider: str) -> str:
+    """Short-lived signed state for OAuth flows. The callback is
+    unauthenticated, so the state must prove which user started the flow."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode = {"sub": user_id, "exp": expire, "type": f"oauth_state:{provider}"}
+    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
+
+
+def verify_oauth_state_token(token: str, provider: str) -> str | None:
+    """Return the user id if the state token is valid, else None."""
+    try:
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
+    except JWTError:
+        return None
+    if payload.get("type") != f"oauth_state:{provider}":
+        return None
+    return payload.get("sub")
+
+
 def decode_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])

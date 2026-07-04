@@ -106,10 +106,10 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 autoComplete="new-password"
                 className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 pr-11 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
               />
               <button
                 type="button"

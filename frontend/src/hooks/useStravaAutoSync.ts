@@ -23,7 +23,9 @@ import { strava } from "@/lib/api";
  */
 
 const LAST_SYNC_KEY = "strava:auto-sync:last";
+const LAST_FAIL_KEY = "strava:auto-sync:last-fail";
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const FAIL_BACKOFF_MS = 10 * 60 * 1000; // after a failure, wait 10 minutes
 
 interface UseStravaAutoSyncOptions {
   /** Only run the sync when true (e.g. after auth + user are loaded). */
@@ -53,6 +55,12 @@ export function useStravaAutoSync({ enabled = true }: UseStravaAutoSyncOptions =
       const fresh = Date.now() - lastSyncAt < SYNC_INTERVAL_MS;
       if (fresh) return;
 
+      // A recent failure means retrying now would just fail again (expired
+      // token, Strava outage). Back off rather than hammer on every page.
+      const lastFailRaw = localStorage.getItem(LAST_FAIL_KEY);
+      const lastFailAt = lastFailRaw ? parseInt(lastFailRaw, 10) : 0;
+      if (Date.now() - lastFailAt < FAIL_BACKOFF_MS) return;
+
       inFlightRef.current = true;
 
       try {
@@ -68,6 +76,7 @@ export function useStravaAutoSync({ enabled = true }: UseStravaAutoSyncOptions =
         if (cancelled) return;
 
         localStorage.setItem(LAST_SYNC_KEY, Date.now().toString());
+        localStorage.removeItem(LAST_FAIL_KEY);
         setLastSyncedCount(result.synced ?? 0);
 
         // Invalidate every query that depends on ride data so the UI
@@ -91,6 +100,7 @@ export function useStravaAutoSync({ enabled = true }: UseStravaAutoSyncOptions =
         // "Reconnect Strava" controls in settings.
         const msg = err instanceof Error ? err.message : String(err);
         console.warn(`Strava auto-sync (${reason}) failed:`, err);
+        localStorage.setItem(LAST_FAIL_KEY, Date.now().toString());
         if (!cancelled) setLastError(msg);
       } finally {
         inFlightRef.current = false;

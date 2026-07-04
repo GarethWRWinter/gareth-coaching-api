@@ -24,7 +24,7 @@ from app.models.ride import Ride
 from app.models.training import TrainingPlan, TrainingPhase, Workout, PlanStatus, WorkoutStatus
 from app.models.user import User
 from app.services.metrics_service import get_current_fitness, get_weekly_training_load
-from app.core.llm_utils import response_text
+from app.core.llm_utils import humanize, response_text
 from app.core.coach_skills import distilled_persona
 
 logger = logging.getLogger(__name__)
@@ -205,7 +205,7 @@ def generate_daily_nudge(db: Session, user: User) -> dict:
                 "content": f"Generate today's coaching nudge based on this data:\n\n```json\n{json.dumps(context, indent=2, default=str)}\n```",
             }],
         )
-        nudge_text = response_text(response).strip()
+        nudge_text = humanize(response_text(response).strip())
     except Exception as e:
         logger.error(f"Nudge generation failed: {e}")
         # Deterministic fallback
@@ -365,7 +365,7 @@ def generate_ride_debrief(
                 "content": f"Generate a post-ride debrief for this ride:\n\n```json\n{json.dumps(context, indent=2, default=str)}\n```",
             }],
         )
-        debrief_text = response_text(response).strip()
+        debrief_text = humanize(response_text(response).strip())
     except Exception as e:
         logger.error(f"Debrief generation failed: {e}")
         rider_name = context["rider_name"]
@@ -451,7 +451,7 @@ def explain_metric(
                 "content": f"Explain this metric to the rider:\n\n```json\n{json.dumps(context, default=str)}\n```",
             }],
         )
-        explanation = response_text(response).strip()
+        explanation = humanize(response_text(response).strip())
     except Exception as e:
         logger.error(f"Metric explanation failed: {e}")
         explanation = f"{rider_name}, your {metric_name} is currently {metric_value}. This reflects your recent training load and recovery balance."

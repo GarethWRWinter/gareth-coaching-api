@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.v1.deps import get_current_user
 from app.config import settings
 from app.core.exceptions import BadRequestException
+from app.core.security import create_oauth_state_token, verify_oauth_state_token
 from app.database import get_db
 from app.models.user import User
 from app.services import strava_service
@@ -22,8 +23,11 @@ router = APIRouter(prefix="/integrations", tags=["integrations"])
 
 @router.get("/strava/auth-url")
 def get_strava_auth_url(current_user: User = Depends(get_current_user)):
-    """Get Strava OAuth authorization URL (includes user ID in state)."""
-    url = strava_service.get_auth_url(state=str(current_user.id))
+    """Get Strava OAuth authorization URL. The state is a signed, short-lived
+    token proving which user started the flow, since the callback is
+    unauthenticated."""
+    state = create_oauth_state_token(str(current_user.id), provider="strava")
+    url = strava_service.get_auth_url(state=state)
     return {"auth_url": url}
 
 
@@ -45,7 +49,9 @@ async def strava_callback(
     if not state:
         return RedirectResponse(f"{frontend_url}?strava=error&reason=missing_state")
 
-    user_id = state
+    user_id = verify_oauth_state_token(state, provider="strava")
+    if not user_id:
+        return RedirectResponse(f"{frontend_url}?strava=error&reason=invalid_state")
 
     try:
         token = await strava_service.exchange_code(db, user_id, code)
@@ -97,6 +103,13 @@ async def sync_strava(
         }
     except ValueError as e:
         raise BadRequestException(detail=str(e))
+    except Exception as e:
+        # Expired/revoked tokens or Strava outages should read as "reconnect
+        # Strava", not a 500 that the client keeps retrying.
+        logger.error("Strava sync failed for user %s: %s", current_user.id, e)
+        raise BadRequestException(
+            detail="Strava sync failed. Try reconnecting Strava in Settings."
+        )
 
 
 @router.get("/strava/status")

@@ -31,7 +31,7 @@ from app.services.onboarding_service import get_goals, get_onboarding_response
 from app.services.plan_service import get_plans, get_workouts_by_date
 from app.services.ride_service import get_rides
 from app.services.zone_service import get_zones
-from app.core.llm_utils import response_text
+from app.core.llm_utils import StreamHumanizer, humanize, response_text
 
 # === System Prompt ===
 
@@ -180,6 +180,25 @@ def _build_rider_context(db: Session, user: User) -> str:
     # Combined to avoid calling the expensive get_all_time_power_profile() twice.
     ftp = user.ftp or 0
     weight = user.weight_kg or 0
+
+    # Tell the coach what's missing so zeros read as "not set up yet",
+    # not "rider has no fitness". Drives FTP-test and Strava prompts.
+    missing = []
+    if not ftp:
+        missing.append("ftp")
+    if not weight:
+        missing.append("weight")
+    if missing:
+        context["setup_incomplete"] = {
+            "missing": missing,
+            "note": (
+                "This rider has not set these yet. Fitness numbers will look "
+                "like zeros because there is nothing to compute from, not "
+                "because they are unfit. Nudge them to set FTP (or ride an "
+                "FTP test) and connect Strava before reading too much into "
+                "the data."
+            ),
+        }
 
     try:
         fitness = get_current_fitness(db, user.id)
@@ -751,6 +770,7 @@ async def stream_response(
     full_response = ""
     tokens_used = 0
     plan_was_updated = False
+    scrub = StreamHumanizer()
 
     try:
         # Agentic loop — keeps going while Claude wants to call tools
@@ -766,8 +786,10 @@ async def stream_response(
                 for event in stream:
                     if event.type == "content_block_delta":
                         if hasattr(event.delta, "text"):
-                            full_response += event.delta.text
-                            yield f'data: {json.dumps({"type": "text", "content": event.delta.text})}\n\n'
+                            clean = scrub.feed(event.delta.text)
+                            if clean:
+                                full_response += clean
+                                yield f'data: {json.dumps({"type": "text", "content": clean})}\n\n'
 
                 final = stream.get_final_message()
                 tokens_used += (
@@ -807,6 +829,11 @@ async def stream_response(
             yield f'data: {json.dumps({"type": "plan_updated"})}\n\n'
 
             # Loop continues — Claude will respond to the tool results
+
+        tail = scrub.flush()
+        if tail:
+            full_response += tail
+            yield f'data: {json.dumps({"type": "text", "content": tail})}\n\n'
 
     except anthropic.APIError as e:
         error_msg = f"Sorry, I'm having trouble connecting right now. Error: {str(e)}"
@@ -907,6 +934,7 @@ async def stream_voice_response(
     tokens_used = 0
     voice_enabled = is_voice_enabled()
     plan_was_updated = False
+    scrub = StreamHumanizer()
 
     try:
         # Agentic loop — keeps going while Claude wants to call tools
@@ -922,7 +950,9 @@ async def stream_voice_response(
                 for event in stream:
                     if event.type == "content_block_delta":
                         if hasattr(event.delta, "text"):
-                            text = event.delta.text
+                            text = scrub.feed(event.delta.text)
+                            if not text:
+                                continue
                             full_response += text
                             sentence_buffer += text
 
@@ -982,6 +1012,12 @@ async def stream_voice_response(
 
             messages.append({"role": "user", "content": tool_results})
             yield f'data: {json.dumps({"type": "plan_updated"})}\n\n'
+
+        tail = scrub.flush()
+        if tail:
+            full_response += tail
+            sentence_buffer += tail
+            yield f'data: {json.dumps({"type": "text", "content": tail})}\n\n'
 
         # Handle any remaining text in buffer
         if voice_enabled and sentence_buffer.strip() and len(
@@ -1055,7 +1091,7 @@ def get_non_streaming_response(
         messages=messages,
     )
 
-    content = response_text(response)
+    content = humanize(response_text(response))
     tokens_used = (
         response.usage.input_tokens + response.usage.output_tokens
         if response.usage else 0

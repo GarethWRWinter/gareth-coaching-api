@@ -22,7 +22,7 @@ from app.config import settings
 from app.models.ride import Ride
 from app.models.training import Workout, WorkoutStatus, WorkoutType
 from app.models.user import User
-from app.core.llm_utils import response_text
+from app.core.llm_utils import humanize, response_text
 from app.core.coach_skills import distilled_persona
 
 logger = logging.getLogger(__name__)
@@ -326,7 +326,7 @@ def generate_assessment(
                 system=distilled_persona(user.coach_name, user.coach_tone) + ASSESSMENT_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_msg}],
             )
-            text = response_text(response)
+            text = humanize(response_text(response))
             parsed = _parse_claude_json(text)
             workout.execution_feedback = parsed.get("feedback") or text
             workout.execution_adjustments = parsed.get("adjustments") or []
