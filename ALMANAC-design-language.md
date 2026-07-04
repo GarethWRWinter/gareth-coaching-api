@@ -150,6 +150,8 @@ Headlines lean **light and large with negative tracking (`-0.01em` to `-0.02em`)
 
 Editorial, warm, plain-spoken, quietly confident. Treats the reader as serious and capable. Short eyebrows, human headlines, copy that sounds *written by a person*. Avoid hype, exclamation, and jargon walls. Calm authority over loud enthusiasm.
 
+**Hard rule: never use em dashes or en dashes in customer-facing copy.** They read as AI-generated. Use a comma, a full stop, or a colon in prose; a middle dot (·) between label fragments; a plain hyphen (-) in numeric and date ranges. Punctuate like a human texting, not an essayist.
+
 ---
 
 ## 8. Do / Don't
