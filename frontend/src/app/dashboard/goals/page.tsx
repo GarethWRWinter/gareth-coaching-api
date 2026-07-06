@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Target,
-  Calendar,
   MapPin,
   Mountain,
   ExternalLink,
@@ -15,14 +14,17 @@ import {
   Pencil,
   Upload,
   X,
-  MessageCircle,
-  ClipboardCheck,
-  Trophy,
-  Star,
 } from "lucide-react";
 import { goals as goalsApi, training as trainingApi } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import type { GoalEvent } from "@/lib/api";
+import { Button, Arrow, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Kicker } from "@/components/ui/kicker";
+import { SectionHeader } from "@/components/ui/section-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CoachNote } from "@/components/ui/coach-note";
+import { Input } from "@/components/ui/input";
 
 const EVENT_TYPES = [
   { value: "road_race", label: "Road Race" },
@@ -39,9 +41,9 @@ const EVENT_TYPES = [
 ];
 
 const PRIORITIES = [
-  { value: "a_race", label: "A Race (Primary)" },
-  { value: "b_race", label: "B Race (Secondary)" },
-  { value: "c_race", label: "C Race (Low Priority)" },
+  { value: "a_race", label: "A race (the one that matters)" },
+  { value: "b_race", label: "B race (a marker on the way)" },
+  { value: "c_race", label: "C race (training with a number on)" },
 ];
 
 interface GoalFormData {
@@ -83,22 +85,29 @@ function formatDurationMinutes(minutes: number): string {
   return `${m}m`;
 }
 
-function priorityColor(priority: string): string {
-  // ALMANAC: A-race gets a sage-tint forest chip. B and C get neutral
-  // outlined tags.
-  switch (priority) {
-    case "a_race":
-      return "border-transparent bg-vb-sage-tint text-vb-forest";
-    default:
-      return "border-vb-border text-vb-text-dim";
-  }
+/** Poster date block parts from an ISO date string. */
+function eventDateParts(dateStr: string) {
+  const d = new Date(dateStr.slice(0, 10) + "T00:00:00");
+  return {
+    day: String(d.getDate()).padStart(2, "0"),
+    month: d.toLocaleString("en-GB", { month: "short" }).toUpperCase(),
+    year: String(d.getFullYear()),
+  };
 }
 
-function daysUntilColor(days: number): string {
-  // Imminent (<=30) reads in forest; neutral after that.
-  if (days <= 30) return "border-vb-forest text-vb-forest";
-  return "border-vb-border text-vb-text-dim";
+function priorityBadge(priority: string) {
+  const label = priority.replace(/_/g, " ").replace("race", "race");
+  if (priority === "a_race") return <Badge variant="flamme">A race</Badge>;
+  if (priority === "b_race") return <Badge variant="outline">B race</Badge>;
+  if (priority === "c_race") return <Badge variant="outline">C race</Badge>;
+  return <Badge variant="outline">{label}</Badge>;
 }
+
+const selectClasses =
+  "flex h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red";
+
+const textareaClasses =
+  "w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red resize-none";
 
 function GoalsPageInner() {
   const queryClient = useQueryClient();
@@ -208,13 +217,10 @@ function GoalsPageInner() {
       (g) => (g.days_until == null || g.days_until < 0) && !g.needs_assessment
     ) || [];
 
-  const inputClasses =
-    "w-full rounded-sm border border-vb-border-subtle bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none";
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-forest" />
+        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-red" />
       </div>
     );
   }
@@ -222,38 +228,41 @@ function GoalsPageInner() {
   return (
     <div className="space-y-10">
       {/* ============ MASTHEAD ============ */}
-      <header className="flex items-end justify-between gap-6 border-b border-vb-border-subtle pb-5">
+      <header className="f-rise flex items-end justify-between gap-6 border-b-2 border-vb-border-strong pb-5">
         <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
-            Calendar
-          </p>
-          <h1 className="font-display text-5xl font-light leading-[0.95] tracking-[-0.01em] md:text-6xl">
+          <Kicker className="mb-2">The calendar</Kicker>
+          <h1 className="f-display text-5xl leading-[0.95] md:text-6xl">
             Goals.
           </h1>
           <p className="mt-3 max-w-md text-sm text-vb-text-dim">
-            Your target events and races. Add route data and Marco tailors
-            coaching to each goal.
+            The races your season is built backwards from. Give Forma the
+            route and it studies every climb before you do.
           </p>
         </div>
-        <button
+        <Button
           onClick={() => {
             setEditingGoalId(null);
             setGoalForm(emptyGoalForm);
             setShowForm(true);
           }}
-          className="flex shrink-0 items-center gap-2 rounded-sm bg-vb-forest px-5 py-3 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft"
+          className="shrink-0"
         >
-          <Plus className="h-3.5 w-3.5" /> Add Goal
-        </button>
+          <Plus className="h-3.5 w-3.5" /> Add goal
+        </Button>
       </header>
 
       {/* Goal Form */}
       {showForm && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
-              {editingGoalId ? "Edit Goal" : "New Goal"}
-            </h2>
+        <div className="f-rise border border-vb-border-subtle bg-vb-surface p-6">
+          <div className="mb-5 flex items-start justify-between">
+            <div>
+              <Kicker className="mb-1.5">
+                {editingGoalId ? "Edit goal" : "New goal"}
+              </Kicker>
+              <h2 className="f-display text-2xl text-vb-text">
+                {editingGoalId ? "Change the target" : "Where and when?"}
+              </h2>
+            </div>
             <button
               onClick={() => {
                 setShowForm(false);
@@ -267,41 +276,33 @@ function GoalsPageInner() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Event Name *
-              </label>
-              <input
+              <Kicker className="mb-2">What&apos;s the event? *</Kicker>
+              <Input
                 value={goalForm.event_name}
                 onChange={(e) =>
                   setGoalForm({ ...goalForm, event_name: e.target.value })
                 }
                 placeholder="e.g. Mallorca 312, Tour of Wessex"
-                className={inputClasses}
               />
             </div>
             <div>
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Event Date *
-              </label>
-              <input
+              <Kicker className="mb-2">When is race day? *</Kicker>
+              <Input
                 type="date"
                 value={goalForm.event_date}
                 onChange={(e) =>
                   setGoalForm({ ...goalForm, event_date: e.target.value })
                 }
-                className={inputClasses}
               />
             </div>
             <div>
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Event Type
-              </label>
+              <Kicker className="mb-2">What kind of race?</Kicker>
               <select
                 value={goalForm.event_type}
                 onChange={(e) =>
                   setGoalForm({ ...goalForm, event_type: e.target.value })
                 }
-                className={inputClasses}
+                className={selectClasses}
               >
                 {EVENT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -311,15 +312,13 @@ function GoalsPageInner() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Priority
-              </label>
+              <Kicker className="mb-2">How much does it matter?</Kicker>
               <select
                 value={goalForm.priority}
                 onChange={(e) =>
                   setGoalForm({ ...goalForm, priority: e.target.value })
                 }
-                className={inputClasses}
+                className={selectClasses}
               >
                 {PRIORITIES.map((p) => (
                   <option key={p.value} value={p.value}>
@@ -329,10 +328,8 @@ function GoalsPageInner() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Target Duration (minutes)
-              </label>
-              <input
+              <Kicker className="mb-2">Target time, in minutes</Kicker>
+              <Input
                 type="number"
                 value={goalForm.target_duration_minutes}
                 onChange={(e) =>
@@ -341,46 +338,38 @@ function GoalsPageInner() {
                     target_duration_minutes: e.target.value,
                   })
                 }
-                placeholder="e.g. 240 (4 hours)"
-                className={inputClasses}
+                placeholder="e.g. 240 for four hours"
               />
             </div>
             <div>
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Route / Event URL
-              </label>
-              <input
+              <Kicker className="mb-2">Where does the route live?</Kicker>
+              <Input
                 type="url"
                 value={goalForm.route_url}
                 onChange={(e) =>
                   setGoalForm({ ...goalForm, route_url: e.target.value })
                 }
-                placeholder="https://strava.com/routes/... or event website"
-                className={inputClasses}
+                placeholder="https://strava.com/routes/... or the event site"
               />
             </div>
           </div>
 
           <div className="mt-4">
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Notes
-            </label>
+            <Kicker className="mb-2">Anything I should know?</Kicker>
             <textarea
               value={goalForm.notes}
               onChange={(e) =>
                 setGoalForm({ ...goalForm, notes: e.target.value })
               }
-              placeholder="Course details, specific targets, strategy notes..."
+              placeholder="Course details, a time you're chasing, how the day needs to go..."
               rows={3}
-              className={`${inputClasses} resize-none`}
+              className={textareaClasses}
             />
           </div>
 
           {/* GPX Upload */}
           <div className="mt-4">
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              GPX Route File (optional)
-            </label>
+            <Kicker className="mb-2">The route file (.gpx)</Kicker>
             <input
               ref={formGpxInputRef}
               type="file"
@@ -404,25 +393,25 @@ function GoalsPageInner() {
               <button
                 type="button"
                 onClick={() => formGpxInputRef.current?.click()}
-                className="flex items-center gap-1.5 rounded-sm border border-dashed border-vb-border px-3 py-2 text-sm text-vb-text-dim hover:border-vb-forest hover:text-vb-forest"
+                className="flex items-center gap-1.5 rounded-sm border border-dashed border-vb-border px-3 py-2 font-mono text-xs uppercase tracking-[0.08em] text-vb-text-dim transition-colors hover:border-vb-border-strong hover:text-vb-text"
               >
                 <Upload className="h-4 w-4" />
                 {pendingGpxFile
                   ? "Change file"
                   : editingGoalId
-                    ? "Upload / Replace GPX"
+                    ? "Upload / replace GPX"
                     : "Upload GPX"}
               </button>
               {pendingGpxFile && (
                 <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1 text-xs text-vb-forest">
-                    <Mountain className="h-3 w-3" />
+                  <span className="flex items-center gap-1 font-mono text-xs text-vb-text">
+                    <Mountain className="h-3 w-3 text-vb-red" />
                     {pendingGpxFile.name}
                   </span>
                   <button
                     type="button"
                     onClick={() => setPendingGpxFile(null)}
-                    className="rounded-sm p-0.5 text-vb-text-muted hover:text-vb-clay"
+                    className="rounded-sm p-0.5 text-vb-text-muted hover:text-vb-red"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -432,8 +421,8 @@ function GoalsPageInner() {
                 const editGoal = goalsData?.goals.find((g) => g.id === editingGoalId);
                 if (editGoal?.gpx_file_path) {
                   return (
-                    <span className="flex items-center gap-1 text-xs text-vb-forest">
-                      <Mountain className="h-3 w-3" />
+                    <span className="flex items-center gap-1 font-mono text-xs text-vb-text-dim">
+                      <Mountain className="h-3 w-3 text-vb-red" />
                       GPX uploaded
                     </span>
                   );
@@ -442,19 +431,19 @@ function GoalsPageInner() {
               })()}
             </div>
             <p className="mt-1 text-[10px] text-vb-text-muted">
-              Export from Strava, RideWithGPS, or Komoot for elevation profile and pacing analysis
+              Export from Strava, RideWithGPS or Komoot and Forma reads the
+              full profile, climb by climb.
             </p>
           </div>
 
           {!editingGoalId && (
             <p className="mt-3 text-xs text-vb-text-muted">
-              After you create this goal we&apos;ll automatically build a training plan
-              that peaks on race day.
+              Save this goal and Forma builds a plan that peaks on race day.
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Button
               onClick={() => saveGoal.mutate()}
               disabled={
                 !goalForm.event_name ||
@@ -462,25 +451,25 @@ function GoalsPageInner() {
                 saveGoal.isPending ||
                 planGenerating
               }
-              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
               {saveGoal.isPending
-                ? "Saving..."
+                ? "Saving…"
                 : planGenerating
-                  ? "Generating plan..."
+                  ? "Building your plan…"
                   : editingGoalId
-                    ? "Update Goal"
-                    : "Create Goal"}
-            </button>
-            <button
+                    ? "Save changes"
+                    : "Create goal"}
+              <Arrow />
+            </Button>
+            <Button
+              variant="ghost"
               onClick={() => {
                 setShowForm(false);
                 setEditingGoalId(null);
               }}
-              className="rounded-sm border border-vb-border px-4 py-2 text-sm text-vb-forest hover:bg-vb-surface"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -502,38 +491,37 @@ function GoalsPageInner() {
 
       {/* Empty state */}
       {goalsData?.goals.length === 0 && !showForm && (
-        <div className="rounded-md border border-vb-border-subtle px-6 py-16 text-center">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
-            Empty calendar
-          </p>
-          <h3 className="font-display text-4xl font-light leading-tight tracking-[-0.01em]">
-            What are we aiming at?
-          </h3>
-          <p className="mx-auto mt-4 max-w-md text-sm text-vb-text-dim">
-            A sportive, a road race, a number you&apos;ve been chasing, give
-            Marco the target and he&apos;ll build the season backwards from it.
-            Add the route&apos;s GPX and he&apos;ll study every climb.
-          </p>
-          <button
-            onClick={() => {
-              setEditingGoalId(null);
-              setGoalForm(emptyGoalForm);
-              setShowForm(true);
-            }}
-            className="mt-8 inline-flex items-center gap-2 rounded-sm bg-vb-forest px-5 py-3 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add your first goal
-          </button>
-        </div>
+        <EmptyState
+          kicker="Empty calendar"
+          title="What are we aiming at?"
+          action={
+            <Button
+              variant="flamme"
+              onClick={() => {
+                setEditingGoalId(null);
+                setGoalForm(emptyGoalForm);
+                setShowForm(true);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" /> Add your first goal
+              <Arrow />
+            </Button>
+          }
+        >
+          A sportive, a road race, a number you&apos;ve been chasing. Give
+          Forma the date and it builds the season backwards from it. Add the
+          route&apos;s GPX and it studies every climb.
+        </EmptyState>
       )}
 
       {/* Upcoming Goals */}
       {upcomingGoals.length > 0 && (
         <div>
-          <h2 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Upcoming ({upcomingGoals.length})
-          </h2>
-          <div className="space-y-3">
+          <SectionHeader
+            kicker={`${upcomingGoals.length} on the calendar`}
+            title="Upcoming"
+          />
+          <div className="f-stagger space-y-3">
             {upcomingGoals.map((goal) => (
               <GoalCard
                 key={goal.id}
@@ -562,10 +550,11 @@ function GoalsPageInner() {
       {/* Needs Assessment */}
       {needsAssessmentGoals.length > 0 && (
         <div>
-          <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-clay">
-            Needs Assessment ({needsAssessmentGoals.length})
-          </h2>
-          <div className="space-y-3">
+          <SectionHeader
+            kicker={`${needsAssessmentGoals.length} waiting on you`}
+            title="Needs assessment"
+          />
+          <div className="f-stagger space-y-3">
             {needsAssessmentGoals.map((goal) => (
               <div key={goal.id} className="relative">
                 <GoalCard
@@ -596,10 +585,11 @@ function GoalsPageInner() {
       {/* Completed Goals */}
       {completedGoals.length > 0 && (
         <div>
-          <h2 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Completed ({completedGoals.length})
-          </h2>
-          <div className="space-y-3">
+          <SectionHeader
+            kicker={`${completedGoals.length} in the bank`}
+            title="Completed"
+          />
+          <div className="f-stagger space-y-3">
             {completedGoals.map((goal) => (
               <GoalCard
                 key={goal.id}
@@ -633,7 +623,7 @@ export default function GoalsPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-forest" />
+          <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-red" />
         </div>
       }
     >
@@ -657,173 +647,196 @@ function GoalCard({
   gpxUploading: boolean;
   assessmentBanner?: boolean;
 }) {
+  const dateParts = eventDateParts(goal.event_date);
+  const imminent =
+    goal.days_until != null && goal.days_until >= 0 && goal.days_until < 14;
+
   return (
-    <div className={`rounded-md border p-5 transition-colors ${
-      assessmentBanner
-        ? "border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface hover:bg-vb-surface-raised"
-        : "border-vb-border-subtle bg-vb-surface hover:bg-vb-surface-raised"
-    }`}>
-      <div className="flex items-start justify-between">
-        <div className="min-w-0 flex-1">
-          {/* Title row */}
-          <div className="flex items-center gap-2">
+    <div>
+      {/* ===== Event poster ===== */}
+      <div className="f-lift border border-vb-border-subtle bg-vb-surface">
+        <div className="flex items-stretch">
+          {/* Mono date block */}
+          <div className="flex w-24 shrink-0 flex-col items-center justify-center border-r border-vb-border-subtle px-3 py-5 text-center">
+            <span className="f-kicker text-vb-text-muted">
+              {dateParts.month}
+            </span>
+            <span className="f-data mt-1 text-4xl font-semibold leading-none text-vb-text">
+              {dateParts.day}
+            </span>
+            <span className="f-data mt-1 text-[10px] text-vb-text-muted">
+              {dateParts.year}
+            </span>
+          </div>
+
+          {/* Poster body */}
+          <div className="min-w-0 flex-1 p-5">
+            {/* Kicker row: type + countdown */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <Kicker>{goal.event_type.replace(/_/g, " ")}</Kicker>
+              {goal.days_until != null && goal.days_until >= 0 && (
+                <Kicker flamme={imminent} dot={imminent}>
+                  {goal.days_until === 0
+                    ? "Race day"
+                    : `${goal.days_until} days`}
+                </Kicker>
+              )}
+            </div>
+
+            {/* Event name */}
             <Link
               href={`/dashboard/goals/${goal.id}`}
-              className="font-display text-lg font-light tracking-[-0.01em] text-vb-text hover:text-vb-forest"
+              className="f-display mt-1.5 block truncate text-2xl text-vb-text transition-colors hover:text-vb-red"
             >
               {goal.event_name}
             </Link>
-            {goal.days_until != null && goal.days_until >= 0 && (
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${daysUntilColor(goal.days_until)}`}
-              >
-                {goal.days_until === 0
-                  ? "Today!"
-                  : `${goal.days_until} days`}
-              </span>
-            )}
-          </div>
 
-          {/* Meta row */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-xs text-vb-text-dim">
-              <Calendar className="h-3 w-3" />
-              {formatDate(goal.event_date)}
-            </span>
-            <span className="inline-flex items-center rounded-full border border-vb-border px-2 py-0.5 text-xs capitalize text-vb-text-dim">
-              {goal.event_type.replace(/_/g, " ")}
-            </span>
-            <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs capitalize ${priorityColor(goal.priority)}`}
-            >
-              {goal.priority.replace(/_/g, " ")}
-            </span>
-            {goal.target_duration_minutes && (
-              <span className="text-xs text-vb-text-dim">
-                Target: {formatDurationMinutes(goal.target_duration_minutes)}
+            {/* Meta row */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              {priorityBadge(goal.priority)}
+              <span className="f-kicker text-vb-text-muted">
+                {formatDate(goal.event_date)}
               </span>
-            )}
-          </div>
-
-          {/* Route data */}
-          {goal.route_data && !goal.route_data.error && (
-            <div className="mt-2 flex items-center gap-3 text-xs text-vb-forest">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              {goal.route_data.total_distance_km && (
-                <span>{goal.route_data.total_distance_km}km</span>
-              )}
-              {goal.route_data.elevation_gain_m && (
-                <span className="flex items-center gap-0.5">
-                  <Mountain className="h-3 w-3" />
-                  {goal.route_data.elevation_gain_m}m
-                </span>
-              )}
-              {(goal.route_data.title || goal.route_data.name) && (
-                <span className="truncate text-vb-text-dim">
-                  {goal.route_data.title || goal.route_data.name}
+              {goal.target_duration_minutes && (
+                <span className="f-data text-xs text-vb-text-dim">
+                  Target {formatDurationMinutes(goal.target_duration_minutes)}
                 </span>
               )}
             </div>
-          )}
 
-          {/* Notes */}
-          {goal.notes && (
-            <p className="mt-2 text-xs text-vb-text-muted line-clamp-2">
-              {goal.notes}
-            </p>
-          )}
+            {/* Route data */}
+            {goal.route_data && !goal.route_data.error && (
+              <div className="f-data mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-vb-text">
+                {goal.route_data.total_distance_km && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-vb-text-muted" />
+                    {goal.route_data.total_distance_km} km
+                  </span>
+                )}
+                {goal.route_data.elevation_gain_m && (
+                  <span className="flex items-center gap-1">
+                    <Mountain className="h-3.5 w-3.5 shrink-0 text-vb-text-muted" />
+                    {goal.route_data.elevation_gain_m} m
+                  </span>
+                )}
+                {(goal.route_data.title || goal.route_data.name) && (
+                  <span className="truncate font-sans text-xs text-vb-text-dim">
+                    {goal.route_data.title || goal.route_data.name}
+                  </span>
+                )}
+              </div>
+            )}
 
-          {/* Assessment CTA or result inline */}
-          {assessmentBanner && (
+            {/* Notes */}
+            {goal.notes && (
+              <p className="mt-2 line-clamp-2 text-xs text-vb-text-muted">
+                {goal.notes}
+              </p>
+            )}
+
+            {/* Result inline, for assessed goals */}
+            {goal.assessment_completed_at && (
+              <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                <Badge variant={goal.status === "completed" ? "ink" : "outline"}>
+                  {goal.status === "dns"
+                    ? "DNS"
+                    : goal.status === "dnf"
+                      ? "DNF"
+                      : "Completed"}
+                </Badge>
+                {goal.finish_time_seconds && (
+                  <span className="f-data text-xs text-vb-text-dim">
+                    {Math.floor(goal.finish_time_seconds / 3600)}h{" "}
+                    {Math.floor((goal.finish_time_seconds % 3600) / 60)}m
+                  </span>
+                )}
+                {goal.overall_satisfaction && (
+                  <span className="f-data text-xs text-vb-text-dim">
+                    {goal.overall_satisfaction}/10 satisfied
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Tags / indicators */}
+            {(goal.route_url || goal.gpx_file_path) && (
+              <div className="mt-2 flex items-center gap-3">
+                {goal.route_url && (
+                  <a
+                    href={goal.route_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-vb-text-muted transition-colors hover:text-vb-red"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Event link
+                  </a>
+                )}
+                {goal.gpx_file_path && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.1em] text-vb-text-dim">
+                    <Mountain className="h-3 w-3" />
+                    GPX
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex shrink-0 flex-col gap-1 p-3">
             <Link
-              href={`/dashboard/goals/${goal.id}/assess`}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-sm border border-vb-clay px-3 py-1.5 text-xs font-medium text-vb-clay hover:bg-vb-clay/5"
+              href={`/dashboard/goals/${goal.id}`}
+              className="rounded-sm p-1.5 text-vb-text-muted transition-colors hover:bg-vb-sunken hover:text-vb-text"
+              title="View details"
             >
-              <ClipboardCheck className="h-3.5 w-3.5" />
-              Complete Race Report
+              <Target className="h-4 w-4" />
             </Link>
-          )}
-          {goal.assessment_completed_at && (
-            <div className="mt-2 flex items-center gap-3 text-xs">
-              <span className={`rounded-full px-2 py-0.5 font-medium ${
-                goal.status === "completed"
-                  ? "bg-vb-sage-tint text-vb-forest"
-                  : goal.status === "dnf"
-                    ? "bg-vb-clay/15 text-vb-clay"
-                    : "bg-vb-clay/15 text-vb-clay"
-              }`}>
-                {goal.status === "dns" ? "DNS" : goal.status === "dnf" ? "DNF" : "Completed"}
-              </span>
-              {goal.finish_time_seconds && (
-                <span className="tabular-nums text-vb-text-dim">
-                  {Math.floor(goal.finish_time_seconds / 3600)}h{" "}
-                  {Math.floor((goal.finish_time_seconds % 3600) / 60)}m
-                </span>
-              )}
-              {goal.overall_satisfaction && (
-                <span className="flex items-center gap-0.5 text-vb-forest">
-                  <Star className="h-3 w-3" />
-                  {goal.overall_satisfaction}/10
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Tags / indicators */}
-          <div className="mt-2 flex items-center gap-2">
-            {goal.route_url && (
-              <a
-                href={goal.route_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-vb-text-muted hover:text-vb-forest"
-              >
-                <ExternalLink className="h-3 w-3" />
-                Event link
-              </a>
-            )}
-            {goal.gpx_file_path && (
-              <span className="inline-flex items-center gap-1 text-xs text-vb-forest">
-                <Mountain className="h-3 w-3" />
-                GPX
-              </span>
-            )}
+            <button
+              onClick={onUploadGpx}
+              disabled={gpxUploading}
+              className="rounded-sm p-1.5 text-vb-text-muted transition-colors hover:bg-vb-sunken hover:text-vb-text"
+              title="Upload GPX"
+            >
+              <Upload className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onEdit}
+              className="rounded-sm p-1.5 text-vb-text-muted transition-colors hover:bg-vb-sunken hover:text-vb-text"
+              title="Edit"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="rounded-sm p-1.5 text-vb-text-muted transition-colors hover:bg-vb-sunken hover:text-vb-red"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="ml-4 flex shrink-0 flex-col gap-1">
-          <Link
-            href={`/dashboard/goals/${goal.id}`}
-            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-forest"
-            title="View details"
-          >
-            <Target className="h-4 w-4" />
-          </Link>
-          <button
-            onClick={onUploadGpx}
-            disabled={gpxUploading}
-            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-forest"
-            title="Upload GPX"
-          >
-            <Upload className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onEdit}
-            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-text"
-            title="Edit"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-sunken hover:text-vb-clay"
-            title="Delete"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
         </div>
       </div>
+
+      {/* Forma asks for the race report */}
+      {assessmentBanner && (
+        <CoachNote
+          kicker="Race report pending"
+          signature={false}
+          className="mt-2"
+          action={
+            <Link
+              href={`/dashboard/goals/${goal.id}/assess`}
+              className={buttonVariants({ variant: "ink", size: "sm" })}
+            >
+              File the report
+              <Arrow />
+            </Link>
+          }
+        >
+          So, how did it go? Ten minutes on {goal.event_name} and this race
+          starts working for the next one.
+        </CoachNote>
+      )}
     </div>
   );
 }

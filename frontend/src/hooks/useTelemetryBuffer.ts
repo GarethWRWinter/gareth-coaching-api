@@ -16,7 +16,9 @@ import type { RideDataPoint } from "@/lib/api";
  * post directly via `rides.record(...)` on session complete.
  */
 
-const STORAGE_PREFIX = "marco:session-buffer:";
+export const SESSION_BUFFER_PREFIX = "forma:session-buffer:";
+/** Pre-rebrand key — read once for migration, never written. */
+const LEGACY_PREFIX = "marco:session-buffer:";
 const PERSIST_INTERVAL_MS = 5000;
 
 export interface BufferedSession {
@@ -61,7 +63,8 @@ export function useTelemetryBuffer({
   const lastSampledSecond = useRef<number>(-1);
   const persistTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const storageKey = `${STORAGE_PREFIX}${workoutId}`;
+  const storageKey = `${SESSION_BUFFER_PREFIX}${workoutId}`;
+  const legacyKey = `${LEGACY_PREFIX}${workoutId}`;
 
   const persist = useCallback(() => {
     if (!startedAt.current) return;
@@ -147,11 +150,12 @@ export function useTelemetryBuffer({
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem(storageKey);
+        window.localStorage.removeItem(legacyKey);
       } catch {
         // ignore
       }
     }
-  }, [storageKey]);
+  }, [storageKey, legacyKey]);
 
   const getBuffer = useCallback(() => buffer.current.slice(), []);
 
@@ -160,16 +164,27 @@ export function useTelemetryBuffer({
   const hasStored = useCallback(() => {
     if (typeof window === "undefined") return false;
     try {
-      return window.localStorage.getItem(storageKey) !== null;
+      return (
+        window.localStorage.getItem(storageKey) !== null ||
+        window.localStorage.getItem(legacyKey) !== null
+      );
     } catch {
       return false;
     }
-  }, [storageKey]);
+  }, [storageKey, legacyKey]);
 
   const restore = useCallback((): BufferedSession | null => {
     if (typeof window === "undefined") return null;
     try {
-      const raw = window.localStorage.getItem(storageKey);
+      let raw = window.localStorage.getItem(storageKey);
+      if (!raw) {
+        // Migrate a pre-rebrand buffer forward, once.
+        raw = window.localStorage.getItem(legacyKey);
+        if (raw) {
+          window.localStorage.setItem(storageKey, raw);
+          window.localStorage.removeItem(legacyKey);
+        }
+      }
       if (!raw) return null;
       const parsed = JSON.parse(raw) as BufferedSession;
       if (!Array.isArray(parsed.dataPoints)) return null;
@@ -182,7 +197,7 @@ export function useTelemetryBuffer({
       console.warn("Failed to restore telemetry buffer:", e);
       return null;
     }
-  }, [storageKey]);
+  }, [storageKey, legacyKey]);
 
   return { start, flush, clear, getBuffer, getStartTime, hasStored, restore };
 }

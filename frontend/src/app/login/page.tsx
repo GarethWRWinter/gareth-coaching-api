@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { FormaMark } from "@/components/ui/forma-mark";
+import { Kicker } from "@/components/ui/kicker";
+import { Input } from "@/components/ui/input";
+import { Button, Arrow } from "@/components/ui/button";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,7 +28,8 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Invalid email or password";
+      const msg =
+        err instanceof Error ? err.message : "That email and password don't match. Try again.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -33,63 +38,55 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-vb-bg px-6 pt-24">
-      <div className="w-full max-w-md">
+      <div className="f-rise w-full max-w-md">
         {/* Masthead */}
-        <div className="mb-12 border-b border-vb-border-subtle pb-6">
-          <h1 className="font-display text-6xl font-light leading-none tracking-[-0.02em]">
-            MARCO
+        <div className="mb-12 border-b-2 border-vb-border-strong pb-6">
+          <h1 className="f-display text-6xl leading-none tracking-[-0.03em]">
+            <FormaMark />
           </h1>
-          <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Your coach · Every ride remembered
-          </p>
+          <Kicker className="mt-3">Your coach · Every ride remembered</Kicker>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Welcome back
-          </p>
-          <h2 className="font-display text-4xl font-light leading-[0.95] tracking-[-0.02em]">
-            Log in to<br />
+          <Kicker className="mb-2">Welcome back</Kicker>
+          <h2 className="f-display text-4xl leading-[0.95]">
+            Log in to
+            <br />
             your coach.
           </h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="border-l-[3px] border-vb-clay bg-vb-surface px-4 py-3 text-sm text-vb-text">
+            <div className="border-l-[3px] border-vb-red bg-vb-surface px-4 py-3 text-sm text-vb-text">
               {error}
             </div>
           )}
 
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-vb-text">
-              Email
-            </label>
-            <input
+            <label className="f-kicker mb-2 block text-vb-text">Email</label>
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-vb-text">
-              Password
-            </label>
+            <label className="f-kicker mb-2 block text-vb-text">Password</label>
             <div className="relative">
-              <input
+              <Input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 pr-11 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 placeholder="••••••••"
+                className="pr-11"
               />
               <button
                 type="button"
@@ -106,22 +103,18 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="group block w-full rounded-sm bg-vb-forest px-6 py-3.5 text-[13px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {loading ? "Logging in…" : "Log in →"}
-          </button>
+          <Button type="submit" variant="flamme" size="lg" disabled={loading} className="w-full">
+            {loading ? "Logging in…" : <>Log in <Arrow /></>}
+          </Button>
         </form>
 
         <p className="mt-10 border-t border-vb-border-subtle pt-6 text-sm text-vb-text-dim">
-          Don&apos;t have an account?{" "}
+          New here?{" "}
           <Link
             href="/register"
-            className="font-medium uppercase tracking-[0.08em] text-vb-forest hover:text-vb-forest-soft"
+            className="f-kicker text-vb-red hover:text-vb-red-dim"
           >
-            Sign up →
+            Meet your coach →
           </Link>
         </p>
       </div>

@@ -1,36 +1,31 @@
 "use client";
 
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Clock,
-  Zap,
-  Heart,
-  Activity,
-  Mountain,
-  Download,
-  Trophy,
-  Crown,
-  Medal,
-  ThumbsUp,
-  Flag,
-  Bot,
-} from "lucide-react";
+import { ArrowLeft, Download, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { rides, exports_, metrics, coachInsights } from "@/lib/api";
 import type { SegmentEffort } from "@/lib/api";
 import { formatDuration, formatDate, formatPower } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
 import { RideChart } from "@/components/charts/ride-chart";
 import { PowerCurveChart } from "@/components/charts/power-curve-chart";
 import { RideZonesChart } from "@/components/charts/ride-zones-chart";
-import { StatCard } from "@/components/ui/stat-card";
+import { DataTile } from "@/components/ui/data-tile";
+import { Badge } from "@/components/ui/badge";
+import { Kicker } from "@/components/ui/kicker";
+import { Button } from "@/components/ui/button";
+import { CoachNote } from "@/components/ui/coach-note";
 
 export default function RideDetailPage() {
   const params = useParams();
+  const { user } = useAuth();
   const rideId = params.id as string;
+  const coachName = user?.coach_name || "Forma";
 
   const { data: ride, isLoading } = useQuery({
     queryKey: ["ride", rideId],
@@ -71,7 +66,7 @@ export default function RideDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-vb-forest border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-vb-red border-t-transparent" />
       </div>
     );
   }
@@ -83,164 +78,145 @@ export default function RideDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="space-y-8">
+      {/* ============ MASTHEAD ============ */}
+      <header className="f-rise flex items-start justify-between gap-6 border-b-2 border-vb-border-strong pb-5">
         <div>
           <Link
             href="/dashboard/rides"
-            className="mb-2 inline-flex items-center gap-1 text-sm text-vb-text-dim hover:text-vb-forest"
+            className="mb-3 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.08em] text-vb-text-dim transition-colors hover:text-vb-red"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to rides
+            <ArrowLeft className="h-3.5 w-3.5" /> The training log
           </Link>
-          <h1 className="font-display text-3xl font-light tracking-[-0.01em] text-vb-text md:text-4xl">{ride.title}</h1>
-          <p className="mt-1 text-sm text-vb-text-dim">
+          <Kicker className="mb-2">
             {formatDate(ride.ride_date)}
-            {ride.source && (
-              <span className="ml-2 rounded-full bg-vb-sunken px-2 py-0.5 text-xs capitalize text-vb-text-dim">
-                {ride.source.replace("_", " ")}
-              </span>
-            )}
-            {ride.ftp_at_time && (
-              <span className="ml-2 text-xs text-vb-text-muted">
-                FTP: {ride.ftp_at_time}W
-              </span>
-            )}
-          </p>
+            {ride.source && ` · ${ride.source.replace("_", " ")}`}
+            {ride.ftp_at_time && ` · FTP ${ride.ftp_at_time}W`}
+          </Kicker>
+          <h1 className="f-display text-4xl md:text-5xl">{ride.title}</h1>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => exports_.downloadGPX(rideId, ride.title)}
-          className="flex items-center gap-1.5 rounded-sm border border-vb-border px-3 py-2 text-sm font-medium text-vb-forest transition-colors hover:bg-vb-surface"
+          className="shrink-0"
         >
-          <Download className="h-4 w-4" /> GPX
-        </button>
-      </div>
+          <Download className="h-3.5 w-3.5" /> GPX
+        </Button>
+      </header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-        <StatCard
+      {/* ============ STATS GRID ============ */}
+      <div className="f-stagger grid grid-cols-2 gap-px md:grid-cols-4 lg:grid-cols-6">
+        <StatTile
           label="Duration"
-          value={ride.duration_seconds ? formatDuration(ride.duration_seconds) : "-"}
-        />
-        <StatCard
-          label="Distance"
-          value={
-            ride.distance_meters
-              ? `${(ride.distance_meters / 1000).toFixed(1)}`
-              : "-"
+          display={
+            ride.duration_seconds ? formatDuration(ride.duration_seconds) : null
           }
-          unit="km"
         />
-        <StatCard label="TSS" value={ride.tss ? Math.round(ride.tss) : "-"} explainable="TSS" />
-        <StatCard label="NP" value={ride.normalized_power ? Math.round(ride.normalized_power) : "-"} unit="W" explainable="Normalized Power" />
-        <StatCard
+        <StatTile
+          label="Distance"
+          value={ride.distance_meters ? ride.distance_meters / 1000 : null}
+          unit="km"
+          decimals={1}
+        />
+        <StatTile
+          label="TSS"
+          value={ride.tss != null ? Math.round(ride.tss) : null}
+          explainable="TSS"
+        />
+        <StatTile
+          label="NP"
+          value={
+            ride.normalized_power != null
+              ? Math.round(ride.normalized_power)
+              : null
+          }
+          unit="W"
+          explainable="Normalized Power"
+        />
+        <StatTile
           label="Avg Power"
-          value={ride.average_power ? Math.round(ride.average_power) : "-"}
+          value={
+            ride.average_power != null ? Math.round(ride.average_power) : null
+          }
           unit="W"
           explainable="Average Power"
         />
-        <StatCard
+        <StatTile
           label="IF"
-          value={ride.intensity_factor ? ride.intensity_factor.toFixed(2) : "-"}
+          value={ride.intensity_factor ?? null}
+          decimals={2}
           explainable="Intensity Factor"
         />
-        <StatCard
-          label="Avg HR"
-          value={ride.average_hr ?? "-"}
-          unit="bpm"
-        />
-        <StatCard
-          label="Max HR"
-          value={ride.max_hr ?? "-"}
-          unit="bpm"
-        />
-        <StatCard
+        <StatTile label="Avg HR" value={ride.average_hr ?? null} unit="bpm" />
+        <StatTile label="Max HR" value={ride.max_hr ?? null} unit="bpm" />
+        <StatTile
           label="Avg Cadence"
-          value={ride.average_cadence ?? "-"}
+          value={ride.average_cadence ?? null}
           unit="rpm"
         />
-        <StatCard
+        <StatTile
           label="Elevation"
           value={
-            ride.elevation_gain_meters
+            ride.elevation_gain_meters != null
               ? Math.round(ride.elevation_gain_meters)
-              : "-"
+              : null
           }
           unit="m"
         />
-        <StatCard
-          label="Calories"
-          value={ride.calories ?? "-"}
-          unit="kcal"
-        />
-        <StatCard
-          label="Max Power"
-          value={ride.max_power ?? "-"}
-          unit="W"
-        />
+        <StatTile label="Calories" value={ride.calories ?? null} unit="kcal" />
+        <StatTile label="Max Power" value={ride.max_power ?? null} unit="W" />
       </div>
 
-      {/* Achievements Bar */}
-      {segments && (segments.achievement_count || segments.pr_count || segments.kudos_count) && (
-        <div className="flex flex-wrap gap-3">
-          {!!segments.achievement_count && (
-            <div className="flex items-center gap-1.5 rounded-full bg-vb-sage-tint px-3 py-1.5 text-sm text-vb-forest">
-              <Trophy className="h-4 w-4" />
-              {segments.achievement_count} achievement{segments.achievement_count !== 1 ? "s" : ""}
-            </div>
-          )}
-          {!!segments.pr_count && (
-            <div className="flex items-center gap-1.5 rounded-full border border-vb-clay/40 px-3 py-1.5 text-sm text-vb-clay">
-              <Medal className="h-4 w-4" />
-              {segments.pr_count} PR{segments.pr_count !== 1 ? "s" : ""}
-            </div>
-          )}
-          {!!segments.kudos_count && (
-            <div className="flex items-center gap-1.5 rounded-full bg-vb-sage-tint px-3 py-1.5 text-sm text-vb-forest">
-              <ThumbsUp className="h-4 w-4" />
-              {segments.kudos_count} kudo{segments.kudos_count !== 1 ? "s" : ""}
-            </div>
-          )}
-        </div>
-      )}
+      {/* ============ ACHIEVEMENTS ============ */}
+      {segments &&
+        (segments.achievement_count ||
+          segments.pr_count ||
+          segments.kudos_count) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {!!segments.achievement_count && (
+              <Badge variant="ink">
+                {segments.achievement_count} achievement
+                {segments.achievement_count !== 1 ? "s" : ""}
+              </Badge>
+            )}
+            {!!segments.pr_count && (
+              <Badge variant="outline">
+                {segments.pr_count} PR{segments.pr_count !== 1 ? "s" : ""}
+              </Badge>
+            )}
+            {!!segments.kudos_count && (
+              <Badge variant="chalk">
+                {segments.kudos_count} kudo
+                {segments.kudos_count !== 1 ? "s" : ""}
+              </Badge>
+            )}
+          </div>
+        )}
 
-      {/* Coach Marco Debrief */}
+      {/* ============ THE DEBRIEF ============ */}
       {debriefLoading && (
-        <div className="flex items-center gap-3 rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-forest bg-vb-surface p-5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-forest">
-            <Bot className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex items-center gap-2 text-sm text-vb-text-dim">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-vb-forest border-t-transparent" />
-            Coach Marco is reviewing your ride...
-          </div>
-        </div>
+        <CoachNote kicker="Post-ride debrief" signature={false}>
+          <span className="flex items-center gap-2 text-vb-text-dim">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-vb-red border-t-transparent" />
+            {coachName} is reading your ride…
+          </span>
+        </CoachNote>
       )}
       {debrief && (
-        <div className="rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-forest bg-vb-surface p-5">
-          <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-forest">
-              <Bot className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">Coach Marco</span>
-              <span className="ml-2 text-xs text-vb-text-muted">Post-ride debrief</span>
-            </div>
-          </div>
-          <div className="prose prose-sm max-w-none font-light text-vb-text-dim prose-headings:font-display prose-headings:font-light prose-headings:text-vb-text prose-p:leading-relaxed prose-p:my-1.5 prose-strong:font-medium prose-strong:text-vb-text prose-em:not-italic prose-em:text-vb-clay prose-ul:my-1.5">
+        <CoachNote kicker="Post-ride debrief" coachName={coachName}>
+          <div className="prose prose-sm max-w-none text-vb-text-dim prose-headings:font-display prose-headings:font-extrabold prose-headings:text-vb-text prose-p:my-1.5 prose-p:leading-relaxed prose-strong:font-semibold prose-strong:text-vb-text prose-em:not-italic prose-em:text-vb-red prose-ul:my-1.5">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {debrief.debrief}
             </ReactMarkdown>
           </div>
-        </div>
+        </CoachNote>
       )}
 
-      {/* Ride Chart */}
+      {/* ============ RIDE CHART ============ */}
       {rideData && rideData.data_points.length > 0 && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
-            Ride Data
-          </h2>
+        <div className="border border-vb-border-subtle bg-vb-surface p-5">
+          <Kicker className="mb-4">The ride, second by second</Kicker>
           <div className="h-80">
             <RideChart data={rideData.data_points} />
           </div>
@@ -250,12 +226,10 @@ export default function RideDetailPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Power Zone Distribution */}
         {rideZones && rideZones.zones.length > 0 && (
-          <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-            <h2 className="mb-1 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
-              Power Zones
-            </h2>
-            <p className="mb-4 text-xs text-vb-text-muted">
-              Based on FTP {rideZones.ftp}W at time of ride
+          <div className="border border-vb-border-subtle bg-vb-surface p-5">
+            <Kicker className="mb-1">Where the time went</Kicker>
+            <p className="f-data mb-4 text-xs text-vb-text-muted">
+              Zones set from FTP {rideZones.ftp}W on the day
             </p>
             <RideZonesChart
               zones={rideZones.zones}
@@ -266,10 +240,8 @@ export default function RideDetailPage() {
 
         {/* Power Curve */}
         {powerCurve && powerCurve.points.length > 0 && (
-          <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-            <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
-              Power Curve
-            </h2>
+          <div className="border border-vb-border-subtle bg-vb-surface p-5">
+            <Kicker className="mb-4">Power curve</Kicker>
             <div className="h-64">
               <PowerCurveChart data={powerCurve.points} />
             </div>
@@ -277,23 +249,34 @@ export default function RideDetailPage() {
         )}
       </div>
 
-      {/* Segments */}
+      {/* ============ SEGMENTS ============ */}
       {segments && segments.segment_efforts.length > 0 && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
-            <Flag className="mr-2 inline h-5 w-5 text-vb-text-muted" />
-            Segments ({segments.segment_efforts.length})
-          </h2>
+        <div className="border border-vb-border-subtle bg-vb-surface p-5">
+          <Kicker className="mb-4">
+            Segments · {segments.segment_efforts.length}
+          </Kicker>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-vb-border-subtle text-left text-[11px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
-                  <th className="pb-2 pr-4">Segment</th>
-                  <th className="pb-2 pr-4">Time</th>
-                  <th className="pb-2 pr-4">Avg Power</th>
-                  <th className="pb-2 pr-4">Grade</th>
-                  <th className="pb-2 pr-4">Category</th>
-                  <th className="pb-2">Achievements</th>
+                <tr className="border-b border-vb-border-subtle text-left">
+                  <th className="f-kicker pb-2 pr-4 font-medium text-vb-text-muted">
+                    Segment
+                  </th>
+                  <th className="f-kicker pb-2 pr-4 font-medium text-vb-text-muted">
+                    Time
+                  </th>
+                  <th className="f-kicker pb-2 pr-4 font-medium text-vb-text-muted">
+                    Avg Power
+                  </th>
+                  <th className="f-kicker pb-2 pr-4 font-medium text-vb-text-muted">
+                    Grade
+                  </th>
+                  <th className="f-kicker pb-2 pr-4 font-medium text-vb-text-muted">
+                    Category
+                  </th>
+                  <th className="f-kicker pb-2 font-medium text-vb-text-muted">
+                    Achievements
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-vb-border-subtle">
@@ -303,6 +286,120 @@ export default function RideDetailPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Stat tile: DataTile for numbers, a matching mono tile for formatted
+ * strings and missing values. `explainable` keeps the tap-to-ask-Forma
+ * behaviour: tap a metric and the coach explains what it means.
+ */
+function StatTile({
+  label,
+  value,
+  display,
+  unit,
+  decimals = 0,
+  explainable,
+}: {
+  label: string;
+  value?: number | null;
+  display?: string | null;
+  unit?: string;
+  decimals?: number;
+  explainable?: string;
+}) {
+  const [showExplain, setShowExplain] = React.useState(false);
+  const [explanation, setExplanation] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
+
+  const hasValue = display != null || value != null;
+
+  const handleTap = async () => {
+    if (!explainable || value == null) return;
+    if (showExplain) {
+      setShowExplain(false);
+      return;
+    }
+    setShowExplain(true);
+    if (!explanation) {
+      setLoading(true);
+      try {
+        const result = await coachInsights.explainMetric(explainable, value);
+        setExplanation(result.explanation);
+      } catch {
+        setExplanation("Couldn't load that right now. Try again in a moment.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const tile =
+    value != null && display == null ? (
+      <DataTile
+        label={label}
+        value={value}
+        unit={unit}
+        decimals={decimals}
+        className={cn(
+          explainable && "cursor-pointer transition-colors hover:border-vb-border-strong"
+        )}
+      />
+    ) : (
+      <div className="border border-vb-border-subtle bg-vb-surface p-4">
+        <p className="f-kicker text-vb-text-muted">{label}</p>
+        <p
+          className={cn(
+            "f-data mt-2 text-4xl font-semibold leading-none",
+            hasValue ? "text-vb-text" : "text-vb-text-muted"
+          )}
+        >
+          {display ?? "-"}
+        </p>
+      </div>
+    );
+
+  if (!explainable) return tile;
+
+  return (
+    <div
+      className="relative"
+      onClick={handleTap}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") handleTap();
+      }}
+    >
+      {tile}
+      {showExplain && (
+        <div className="absolute left-0 right-0 top-full z-20 mt-1 border border-vb-border-subtle border-l-[3px] border-l-vb-red bg-vb-surface p-3">
+          <div className="mb-1.5 flex items-center justify-between">
+            <Kicker flamme>Forma explains</Kicker>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowExplain(false);
+              }}
+              className="text-vb-text-muted hover:text-vb-text"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {loading ? (
+            <div className="flex items-center gap-2 text-xs text-vb-text-dim">
+              <div className="h-3 w-3 animate-spin rounded-full border border-vb-red border-t-transparent" />
+              Forma is thinking…
+            </div>
+          ) : (
+            <p className="text-xs leading-relaxed text-vb-text-dim">
+              {explanation}
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -334,40 +431,38 @@ function SegmentRow({ effort }: { effort: SegmentEffort }) {
           {effort.segment_name}
         </span>
         {effort.distance_meters && (
-          <span className="ml-2 text-xs text-vb-text-muted">
+          <span className="f-data ml-2 text-xs text-vb-text-muted">
             {(effort.distance_meters / 1000).toFixed(1)}km
           </span>
         )}
       </td>
-      <td className="py-2.5 pr-4 tabular-nums">
+      <td className="f-data py-2.5 pr-4">
         {formatSegmentTime(effort.elapsed_time_seconds)}
       </td>
-      <td className="py-2.5 pr-4 tabular-nums">
+      <td className="f-data py-2.5 pr-4">
         {effort.average_watts ? `${Math.round(effort.average_watts)}W` : "-"}
       </td>
-      <td className="py-2.5 pr-4 tabular-nums">
-        {effort.average_grade !== null ? `${effort.average_grade.toFixed(1)}%` : "-"}
+      <td className="f-data py-2.5 pr-4">
+        {effort.average_grade !== null
+          ? `${effort.average_grade.toFixed(1)}%`
+          : "-"}
       </td>
       <td className="py-2.5 pr-4">
-        {catLabel && (
-          <span className="rounded-full bg-vb-sunken px-2 py-0.5 text-xs font-medium text-vb-text-dim">
-            {catLabel}
-          </span>
-        )}
+        {catLabel && <Badge variant="chalk">{catLabel}</Badge>}
       </td>
       <td className="py-2.5">
         <div className="flex gap-1.5">
           {hasKOM && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-vb-sage-tint px-2 py-0.5 text-xs font-medium text-vb-forest">
-              <Crown className="h-3 w-3" />
+            <Badge variant="flamme">
               {effort.kom_rank === 1 ? "KOM" : `${effort.kom_rank}nd`}
-            </span>
+            </Badge>
           )}
           {hasPR && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-vb-clay/40 px-2 py-0.5 text-xs font-medium text-vb-clay">
-              <Medal className="h-3 w-3" />
-              {effort.pr_rank === 1 ? "PR" : `${effort.pr_rank}${effort.pr_rank === 2 ? "nd" : effort.pr_rank === 3 ? "rd" : "th"} best`}
-            </span>
+            <Badge variant="outline">
+              {effort.pr_rank === 1
+                ? "PR"
+                : `${effort.pr_rank}${effort.pr_rank === 2 ? "nd" : effort.pr_rank === 3 ? "rd" : "th"} best`}
+            </Badge>
           )}
         </div>
       </td>

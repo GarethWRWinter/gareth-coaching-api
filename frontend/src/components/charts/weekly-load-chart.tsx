@@ -4,11 +4,16 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { SERIES } from "@/lib/palette";
+
+const MONO = "IBM Plex Mono, ui-monospace, SFMono-Regular, monospace";
+const TICK = { fontSize: 11, fill: SERIES.grey, fontFamily: MONO };
 
 interface WeeklyLoadData {
   week_start: string;
@@ -37,17 +42,19 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.[0]) return null;
   const d = payload[0].payload;
   return (
-    <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-3 text-sm shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
-      <p className="mb-1 font-medium text-vb-text">
+    <div className="rounded-sm border border-vb-border bg-vb-surface p-3 text-sm">
+      <p className="f-kicker mb-1 text-vb-text-muted">
         Week of {formatWeek(d.week_start)}
       </p>
-      <p className="text-vb-forest">TSS: {Math.round(d.total_tss)}</p>
-      <p className="text-vb-text-dim">Rides: {d.ride_count}</p>
-      <p className="text-vb-text-dim">
+      <p className="f-data font-medium text-vb-text">
+        TSS {Math.round(d.total_tss)}
+      </p>
+      <p className="text-xs text-vb-text-dim">Rides: {d.ride_count}</p>
+      <p className="text-xs text-vb-text-dim">
         Duration: {formatDuration(d.total_duration_seconds)}
       </p>
       {d.avg_intensity_factor && (
-        <p className="text-vb-clay">
+        <p className="text-xs text-vb-text-dim">
           Avg IF: {d.avg_intensity_factor.toFixed(2)}
         </p>
       )}
@@ -61,39 +68,35 @@ export function WeeklyLoadChart({ data }: WeeklyLoadChartProps) {
     label: formatWeek(w.week_start),
   }));
 
-  // Color bars by TSS intensity
-  const getBarColor = (tss: number) => {
-    if (tss >= 500) return "#A24E36"; // very high
-    if (tss >= 350) return "#D2855B"; // high
-    if (tss >= 200) return "#C7A458"; // moderate
-    return "#C3CDBC"; // low
-  };
-
   return (
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#E4DCCE" />
+        <CartesianGrid stroke={SERIES.hairline} vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fill: "#948D80", fontSize: 11 }}
-          stroke="#D6CFC1"
+          tick={TICK}
+          stroke={SERIES.hairline}
         />
         <YAxis
-          tick={{ fill: "#948D80", fontSize: 11 }}
-          stroke="#D6CFC1"
+          tick={TICK}
+          stroke={SERIES.hairline}
           label={{
             value: "TSS",
             angle: -90,
             position: "insideLeft",
-            style: { fill: "#948D80", fontSize: 11 },
+            style: { fill: SERIES.grey, fontSize: 11, fontFamily: MONO },
           }}
         />
-        <Tooltip content={<CustomTooltip />} />
-        <Bar
-          dataKey="total_tss"
-          radius={[4, 4, 0, 0]}
-          fill="#C3CDBC"
-        />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: SERIES.chalk }} />
+        {/* Ink bars; the latest week burns flamme */}
+        <Bar dataKey="total_tss" radius={[0, 0, 0, 0]}>
+          {chartData.map((entry, i) => (
+            <Cell
+              key={entry.week_start}
+              fill={i === chartData.length - 1 ? SERIES.flamme : SERIES.ink}
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );

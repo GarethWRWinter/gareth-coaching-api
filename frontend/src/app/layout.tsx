@@ -1,24 +1,32 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Schibsted_Grotesk, Caveat } from "next/font/google";
+import { Archivo, Inter_Tight, IBM_Plex_Mono, Caveat } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { QueryProvider } from "@/lib/query-provider";
 
-// ALMANAC type system:
-//  - display  → Bricolage Grotesque (characterful humanist grotesk, light weights)
-//  - sans     → Schibsted Grotesk (the workhorse, Arket-like humanist sans)
-//  - script   → Caveat (Marco's handwritten signature only)
-const bricolage = Bricolage_Grotesque({
-  weight: ["300", "400", "500", "600"],
+// FORMA type system:
+//  - display  → Archivo (the wordmark / headline face)
+//  - sans     → Inter Tight (the workhorse body face)
+//  - mono     → IBM Plex Mono (labels, kickers, data)
+//  - script   → Caveat (the coach's handwritten signature only)
+const archivo = Archivo({
+  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-archivo",
   display: "swap",
 });
 
-const schibsted = Schibsted_Grotesk({
-  weight: ["400", "500", "700"],
+const interTight = Inter_Tight({
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
-  variable: "--font-schibsted",
+  variable: "--font-inter-tight",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -30,8 +38,8 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  title: "Marco",
-  description: "Your AI cycling coach",
+  title: "FORMA",
+  description: "A cycling coach with a memory",
 };
 
 export default function RootLayout({
@@ -42,7 +50,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${schibsted.variable} ${caveat.variable}`}
+      className={`${archivo.variable} ${interTight.variable} ${plexMono.variable} ${caveat.variable}`}
     >
       <body className="min-h-screen bg-vb-bg font-sans text-vb-text antialiased">
         <QueryProvider>

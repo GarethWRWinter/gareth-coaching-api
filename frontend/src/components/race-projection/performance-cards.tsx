@@ -47,7 +47,7 @@ export function PerformanceCards({ projection, daysUntil }: PerformanceCardsProp
             </p>
           </div>
 
-          <p className="text-3xl font-display font-light tracking-[-0.01em] text-vb-text">
+          <p className="text-3xl font-display font-semibold tracking-[-0.01em] text-vb-text">
             {formatTime(current_performance.estimated_time_seconds)}
           </p>
 
@@ -89,7 +89,7 @@ export function PerformanceCards({ projection, daysUntil }: PerformanceCardsProp
               <p className="text-sm font-medium text-vb-forest">Race Day</p>
             </div>
 
-            <p className="text-3xl font-display font-light tracking-[-0.01em] text-vb-text">
+            <p className="text-3xl font-display font-semibold tracking-[-0.01em] text-vb-text">
               {formatTime(projected_performance.estimated_time_seconds)}
             </p>
 

@@ -81,8 +81,8 @@ export function FitnessTrajectoryChart({
         >
           <defs>
             <linearGradient id="ctlGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#36513F" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#36513F" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="#0B0B0C" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="#0B0B0C" stopOpacity={0.02} />
             </linearGradient>
           </defs>
 
@@ -95,18 +95,18 @@ export function FitnessTrajectoryChart({
           <XAxis
             dataKey="date"
             tickFormatter={formatShortDate}
-            tick={{ fontSize: 10, fill: "#948D80" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            tick={{ fontSize: 10, fill: "#9A9A94" }}
+            tickLine={{ stroke: "#D8D8D2" }}
+            axisLine={{ stroke: "#D8D8D2" }}
             interval="preserveStartEnd"
             minTickGap={40}
           />
 
           <YAxis
             domain={[minCtl, maxCtl]}
-            tick={{ fontSize: 10, fill: "#948D80" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            tick={{ fontSize: 10, fill: "#9A9A94" }}
+            tickLine={{ stroke: "#D8D8D2" }}
+            axisLine={{ stroke: "#D8D8D2" }}
             width={35}
             tickFormatter={(v: number) => v.toFixed(0)}
           />
@@ -116,7 +116,7 @@ export function FitnessTrajectoryChart({
             <ReferenceLine
               key={m.date}
               x={m.date}
-              stroke={m.label === "Race Day" ? "#BB6647" : "#D6CFC1"}
+              stroke={m.label === "Race Day" ? "#FF3D00" : "#D8D8D2"}
               strokeDasharray={m.label === "Race Day" ? "0" : "4 4"}
               strokeWidth={m.label === "Race Day" ? 1.5 : 1}
               label={
@@ -124,7 +124,7 @@ export function FitnessTrajectoryChart({
                   ? {
                       value: m.label,
                       position: "top",
-                      fill: m.label === "Race Day" ? "#BB6647" : "#948D80",
+                      fill: m.label === "Race Day" ? "#FF3D00" : "#9A9A94",
                       fontSize: 10,
                       fontWeight: m.label === "Race Day" ? 600 : 400,
                     }
@@ -136,13 +136,13 @@ export function FitnessTrajectoryChart({
           <Area
             type="monotone"
             dataKey="ctl"
-            stroke="#36513F"
+            stroke="#0B0B0C"
             strokeWidth={2}
             fill="url(#ctlGradient)"
             dot={false}
             activeDot={{
               r: 4,
-              fill: "#36513F",
+              fill: "#0B0B0C",
               stroke: "#FBF7F0",
               strokeWidth: 2,
             }}

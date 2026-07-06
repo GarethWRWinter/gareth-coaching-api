@@ -1,4 +1,4 @@
-// Coach Marco "Race Radio" — template-based coaching message engine
+// Coach Forma "Race Radio" — template-based coaching message engine
 // Directeur Sportif + spin class instructor voice
 
 export type CoachTrigger =
@@ -39,11 +39,11 @@ interface MessageTemplate {
 // {variable} placeholders get interpolated with context values
 const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
   workout_start: [
-    { text: "Let's go! Easy spin to start, let your legs open up." },
+    { text: "Let's go. Easy spin to start, let your legs open up." },
     { text: "Time to ride. Settle in and let the warm-up do its job." },
-    { text: "Here we go. Focus on smooth pedalling and getting your breathing relaxed." },
-    { text: "Alright, let's get to work. Nice and easy to begin." },
-    { text: "Welcome to the pain cave. Easy start, big finish." },
+    { text: "Here we go. Smooth pedalling, relaxed breathing, nothing heroic yet." },
+    { text: "Right, to work. Every great ride starts with an easy ten minutes." },
+    { text: "Roll out. Easy start, big finish. That's how the classics are won." },
   ],
 
   pre_step_change: [
@@ -146,41 +146,41 @@ const MESSAGE_POOLS: Record<CoachTrigger, MessageTemplate[]> = {
   ],
 
   long_effort_check: [
-    { text: "Check your form, drop your shoulders, relax your grip, smooth circles." },
-    { text: "This {zoneName} work is building your aerobic engine. Every pedal stroke counts." },
+    { text: "Check your form. Drop the shoulders, relax the grip, smooth circles." },
+    { text: "This {zoneName} work is building your engine. Every pedal stroke is a deposit." },
     { text: "How's your breathing? Rhythmic and controlled. In through the nose if you can." },
-    { text: "Stay present. Don't think about the finish, own this moment right now." },
-    { text: "Relax your jaw, unclench your hands. Tension wastes energy." },
-    { text: "You're doing great. This is exactly the kind of work that builds race fitness." },
+    { text: "Stay present. Don't think about the finish, own this kilometre." },
+    { text: "Relax your jaw, unclench your hands. Tension is watts you're not using." },
+    { text: "This is exactly the work that wins the last hour of a race." },
     {
-      text: "Zone 2 is where champions are built. Low drama, high value. Keep turning those pedals.",
+      text: "Zone 2 built every engine worth having. Low drama, high value. Keep turning.",
       stepTypes: ["steady_state"],
     },
-    { text: "Remember to drink. Small sips, stay ahead of dehydration." },
-    { text: "Think about your pedal stroke. Push over the top, pull through the bottom." },
-    { text: "This is the work your competitors aren't doing. Bank it." },
+    { text: "Drink. Small sips, stay ahead of it. The pros drink before they're thirsty." },
+    { text: "Think about the pedal stroke. Over the top, through the bottom." },
+    { text: "This is the work your rivals are skipping. Bank it." },
   ],
 
   power_too_high: [
-    { text: "Power is running high. Ease back to {targetWatts}W, save your matches for later." },
-    { text: "You're above target. Dial it back to {targetWatts}W. Discipline is strength." },
-    { text: "Too hot! Bring it down to {targetWatts}W. We want to finish strong, not just start strong." },
-    { text: "Control the effort. {targetWatts}W is the target. Going harder isn't better here." },
+    { text: "Power is running hot. Ease back to {targetWatts}W, save the matches for later." },
+    { text: "Above target. Back to {targetWatts}W. Discipline now, fireworks later." },
+    { text: "Too hot. {targetWatts}W. Every race is lost by someone who felt great early." },
+    { text: "Control it. {targetWatts}W is the number. Harder isn't better here." },
   ],
 
   power_too_low: [
-    { text: "Power is dropping. Dig in, {stepRemaining} seconds to go. You've got this." },
-    { text: "Come on, bring it back to {targetWatts}W. Find your rhythm again." },
-    { text: "Don't let it slip. {targetWatts}W. Focus on the next 30 seconds, nothing else." },
-    { text: "I need you at {targetWatts}W. Recommit. This is where you grow." },
+    { text: "Power is slipping. Dig in, {stepRemaining} seconds. You've got this." },
+    { text: "Bring it back to {targetWatts}W. Find the rhythm again." },
+    { text: "Don't let it go. {targetWatts}W. Just the next 30 seconds, nothing else." },
+    { text: "I need {targetWatts}W from you. Recommit. This bit is the whole point." },
   ],
 
   workout_complete: [
-    { text: "That was a solid session! Get your recovery drink in within 30 minutes." },
-    { text: "Workout complete! Great work today. Stretch, refuel, and rest up." },
-    { text: "Done! That's another session in the bank. Your future self will thank you." },
-    { text: "Brilliant effort! Now it's recovery time. The gains happen when you rest." },
-    { text: "Session complete. You showed up and got it done, that's what champions do." },
+    { text: "That's done, and it counts. Recovery drink inside 30 minutes." },
+    { text: "Session banked. Stretch, refuel, feet up. I'm already writing the next one." },
+    { text: "Done. Every file like that makes the plan smarter. Well ridden." },
+    { text: "Good work. The gains happen while you rest, so go do that part properly." },
+    { text: "That's another brick in the wall. See you at the next one." },
   ],
 };
 

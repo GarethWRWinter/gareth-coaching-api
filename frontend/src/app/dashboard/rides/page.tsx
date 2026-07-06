@@ -6,6 +6,17 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { rides } from "@/lib/api";
 import { formatDate, formatDuration, formatPower, formatTSS } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Kicker } from "@/components/ui/kicker";
+import { EmptyState } from "@/components/ui/empty-state";
+
+const SOURCE_LABELS: Record<string, string> = {
+  strava: "Strava",
+  fit_upload: "Upload",
+  in_app: "In-app",
+  dropbox: "Dropbox",
+};
 
 export default function RidesPage() {
   const queryClient = useQueryClient();
@@ -43,16 +54,14 @@ export default function RidesPage() {
   return (
     <div className="space-y-10">
       {/* ============ MASTHEAD ============ */}
-      <header className="flex items-end justify-between gap-6 border-b border-vb-border-subtle pb-5">
+      <header className="f-rise flex items-end justify-between gap-6 border-b-2 border-vb-border-strong pb-5">
         <div>
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Archive
-          </p>
-          <h1 className="font-display text-5xl font-light leading-[1.04] tracking-[-0.02em] md:text-6xl">
-            Rides
+          <Kicker className="mb-2">The training log</Kicker>
+          <h1 className="f-display text-5xl leading-[0.95] md:text-6xl">
+            Rides.
           </h1>
-          <p className="mt-3 text-xs text-vb-text-muted">
-            {data?.total ?? ", "} total · page {page}
+          <p className="f-data mt-3 text-xs text-vb-text-muted">
+            {data?.total ?? "-"} rides on record · page {page}
             {totalPages > 0 && ` of ${totalPages}`}
           </p>
         </div>
@@ -65,61 +74,63 @@ export default function RidesPage() {
             onChange={handleUpload}
             className="hidden"
           />
-          <button
+          <Button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Upload className="h-3.5 w-3.5" />
-            {uploading ? "Uploading…" : "Upload FIT"}
-          </button>
+            {uploading ? "Reading the file…" : "Upload FIT"}
+          </Button>
         </div>
       </header>
 
       {error && (
-        <div className="rounded-md border border-vb-clay/40 border-l-[3px] border-l-vb-clay bg-vb-surface px-4 py-3 text-sm text-vb-text">
+        <div className="border border-vb-border-subtle border-l-[3px] border-l-vb-red bg-vb-surface px-4 py-3 text-sm text-vb-text">
           {error}
         </div>
       )}
 
       {/* ============ RIDES LIST ============ */}
       {isLoading ? (
-        <div className="rounded-md border border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
-          Loading rides…
+        <div className="border border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
+          Forma is fetching your rides…
         </div>
       ) : data?.rides.length === 0 ? (
-        <div className="rounded-md border border-vb-border-subtle px-5 py-10 text-center text-sm text-vb-text-dim">
-          No rides yet. Upload a FIT file, or connect Strava in Settings and
-          Marco will pull in your history, every ride feeding your power profile.
-        </div>
+        <EmptyState
+          kicker="The log is open"
+          title="No rides yet, and I'd love to see what you can do."
+          action={
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Upload a FIT file
+            </Button>
+          }
+        >
+          Upload a FIT file, or connect Strava in Settings and Forma reads
+          every ride you have ever logged, overnight. Each one sharpens your
+          power profile.
+        </EmptyState>
       ) : (
         <>
           {/* Column rubric, visible on lg+ only, gives editorial structure */}
           <div className="hidden border-b border-vb-border-subtle pb-2 lg:grid lg:grid-cols-[1fr_90px_90px_90px_90px_70px_60px] lg:gap-6">
-            <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Ride
-            </span>
-            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+            <span className="f-kicker text-vb-text-muted">Ride</span>
+            <span className="f-kicker text-right text-vb-text-muted">
               Time
             </span>
-            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+            <span className="f-kicker text-right text-vb-text-muted">
               Distance
             </span>
-            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Avg
-            </span>
-            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              NP
-            </span>
-            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              TSS
-            </span>
-            <span className="text-right text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              IF
-            </span>
+            <span className="f-kicker text-right text-vb-text-muted">Avg</span>
+            <span className="f-kicker text-right text-vb-text-muted">NP</span>
+            <span className="f-kicker text-right text-vb-text-muted">TSS</span>
+            <span className="f-kicker text-right text-vb-text-muted">IF</span>
           </div>
 
-          <ul>
+          <ul className="f-stagger">
             {data?.rides.map((ride, idx) => (
               <li
                 key={ride.id}
@@ -129,24 +140,27 @@ export default function RidesPage() {
               >
                 <Link
                   href={`/dashboard/rides/${ride.id}`}
-                  className="block py-4 transition-colors hover:bg-vb-surface hover:px-3 hover:-mx-3 lg:grid lg:grid-cols-[1fr_90px_90px_90px_90px_70px_60px] lg:items-baseline lg:gap-6"
+                  className="block py-4 transition-colors hover:-mx-3 hover:bg-vb-surface hover:px-3 lg:grid lg:grid-cols-[1fr_90px_90px_90px_90px_70px_60px] lg:items-baseline lg:gap-6"
                 >
                   {/* Title + rubric */}
                   <div className="min-w-0">
-                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                      {formatDate(ride.ride_date)}
-                      {ride.source === "strava" && " · Strava"}
-                      {ride.source === "fit_upload" && " · Upload"}
-                      {ride.source === "in_app" && " · In-app"}
-                      {ride.source === "dropbox" && " · Dropbox"}
+                    <p className="mb-1 flex items-center gap-2">
+                      <span className="f-kicker text-vb-text-muted">
+                        {formatDate(ride.ride_date)}
+                      </span>
+                      {ride.source && SOURCE_LABELS[ride.source] && (
+                        <Badge variant="outline">
+                          {SOURCE_LABELS[ride.source]}
+                        </Badge>
+                      )}
                     </p>
-                    <p className="truncate font-sans text-base font-medium text-vb-text">
+                    <p className="truncate text-base font-medium text-vb-text">
                       {ride.title}
                     </p>
                   </div>
 
                   {/* Compact numbers row, visible always, repositioned on lg */}
-                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums text-vb-text lg:hidden">
+                  <div className="f-data mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-vb-text lg:hidden">
                     {ride.duration_seconds != null && (
                       <NumWithLabel
                         n={formatDuration(ride.duration_seconds)}
@@ -171,33 +185,33 @@ export default function RidesPage() {
                   </div>
 
                   {/* Desktop columns */}
-                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="f-data hidden text-right text-sm text-vb-text lg:inline">
                     {ride.duration_seconds
                       ? formatDuration(ride.duration_seconds)
-                      : ", "}
+                      : "-"}
                   </span>
-                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="f-data hidden text-right text-sm text-vb-text lg:inline">
                     {ride.distance_meters
                       ? `${(ride.distance_meters / 1000).toFixed(1)} km`
-                      : ", "}
+                      : "-"}
                   </span>
-                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="f-data hidden text-right text-sm text-vb-text lg:inline">
                     {ride.average_power
                       ? `${Math.round(ride.average_power)}`
-                      : ", "}
+                      : "-"}
                   </span>
-                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="f-data hidden text-right text-sm text-vb-text lg:inline">
                     {ride.normalized_power
                       ? `${Math.round(ride.normalized_power)}`
-                      : ", "}
+                      : "-"}
                   </span>
-                  <span className="hidden text-right text-sm font-medium text-vb-text tabular-nums lg:inline">
-                    {ride.tss ? Math.round(ride.tss) : ", "}
+                  <span className="f-data hidden text-right text-sm font-semibold text-vb-text lg:inline">
+                    {ride.tss ? Math.round(ride.tss) : "-"}
                   </span>
-                  <span className="hidden text-right text-sm text-vb-text tabular-nums lg:inline">
+                  <span className="f-data hidden text-right text-sm text-vb-text lg:inline">
                     {ride.intensity_factor
                       ? ride.intensity_factor.toFixed(2)
-                      : ", "}
+                      : "-"}
                   </span>
                 </Link>
               </li>
@@ -209,23 +223,25 @@ export default function RidesPage() {
       {/* ============ PAGINATION ============ */}
       {data && data.total > 20 && (
         <div className="flex items-center justify-between gap-4 border-t border-vb-border-subtle pt-5">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="rounded-sm border border-vb-border px-4 py-2 text-sm font-medium text-vb-forest transition-colors hover:bg-vb-surface disabled:cursor-not-allowed disabled:border-vb-border-subtle disabled:text-vb-text-muted disabled:hover:bg-transparent"
           >
             ← Previous
-          </button>
-          <span className="text-xs text-vb-text-muted">
+          </Button>
+          <span className="f-data text-xs text-vb-text-muted">
             Page {page} of {totalPages}
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setPage((p) => p + 1)}
             disabled={page * 20 >= data.total}
-            className="rounded-sm border border-vb-border px-4 py-2 text-sm font-medium text-vb-forest transition-colors hover:bg-vb-surface disabled:cursor-not-allowed disabled:border-vb-border-subtle disabled:text-vb-text-muted disabled:hover:bg-transparent"
           >
             Next →
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -235,7 +251,7 @@ export default function RidesPage() {
 // Small mobile-friendly "value + label" inline helper.
 function NumWithLabel({ n, label }: { n: string | number; label: string }) {
   return (
-    <span className="tabular-nums">
+    <span className="f-data">
       {n}
       <span className="ml-0.5 text-[10px] uppercase tracking-[0.12em] text-vb-text-dim">
         {label}

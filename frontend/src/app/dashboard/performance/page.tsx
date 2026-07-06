@@ -142,7 +142,7 @@ export default function PerformancePage() {
         <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
           Analysis
         </p>
-        <h1 className="mt-1.5 font-display text-4xl font-light leading-[1.04] tracking-[-0.01em] text-vb-text md:text-5xl">
+        <h1 className="mt-1.5 font-display text-4xl font-extrabold leading-[1.04] tracking-[-0.01em] text-vb-text md:text-5xl">
           Performance
         </h1>
         <p className="mt-3 text-sm text-vb-text-dim">
@@ -179,7 +179,7 @@ export default function PerformancePage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
             Form (TSB)
           </p>
-          <p className={`mt-2 font-display text-2xl font-light tracking-[-0.02em] tabular-nums ${tsbColor}`}>
+          <p className={`mt-2 font-display text-2xl font-semibold tracking-[-0.02em] tabular-nums ${tsbColor}`}>
             {Math.round(fitness?.current_tsb ?? 0)}
           </p>
         </div>
@@ -216,7 +216,7 @@ export default function PerformancePage() {
 
       {/* PMC Chart */}
       <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+        <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
           Performance Management Chart
         </h2>
         {pmcLoading ? (
@@ -236,7 +236,7 @@ export default function PerformancePage() {
 
       {/* Weekly Training Load */}
       <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+        <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
           Weekly Training Load
         </h2>
         {weeklyLoad && weeklyLoad.weeks.length > 0 ? (
@@ -259,7 +259,7 @@ export default function PerformancePage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Power Duration Curve */}
         <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+          <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
             Power Duration Curve
           </h2>
           {powerProfile && powerProfile.points.some((p) => p.best_power > 0) ? (
@@ -275,7 +275,7 @@ export default function PerformancePage() {
 
         {/* Rider Profile Radar */}
         <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+          <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
             Rider Profile
           </h2>
           {fitness && fitness.profile_scores && fitness.profile_scores.length > 0 ? (
@@ -295,7 +295,7 @@ export default function PerformancePage() {
 
       {/* Power Zones */}
       <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+        <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
           Power Zones
         </h2>
         {zones?.power_zones ? (
@@ -309,7 +309,7 @@ export default function PerformancePage() {
 
       {/* FTP History */}
       <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+        <h2 className="mb-4 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
           FTP History
         </h2>
         {ftpHistory && ftpHistory.history.length > 0 ? (
@@ -327,7 +327,7 @@ export default function PerformancePage() {
       {/* Fitness Details (ramp rate, fitness level) */}
       {fitness && fitness.rider_type !== "unknown" && (
         <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-3 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+          <h2 className="mb-3 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
             Training Status
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -335,7 +335,7 @@ export default function PerformancePage() {
               <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
                 Fitness Level
               </p>
-              <p className="mt-1 font-display text-lg font-light capitalize text-vb-text">
+              <p className="mt-1 font-display text-lg font-semibold capitalize text-vb-text">
                 {fitness.fitness_level.replace("_", " ")}
               </p>
             </div>
@@ -343,7 +343,7 @@ export default function PerformancePage() {
               <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
                 W/kg
               </p>
-              <p className="mt-1 font-display text-lg font-light tabular-nums text-vb-text">
+              <p className="mt-1 font-display text-lg font-semibold tabular-nums text-vb-text">
                 {fitness.w_per_kg?.toFixed(2) ?? "-"}
               </p>
             </div>
@@ -351,7 +351,7 @@ export default function PerformancePage() {
               <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
                 Ramp Rate
               </p>
-              <p className="mt-1 font-display text-lg font-light tabular-nums text-vb-text">
+              <p className="mt-1 font-display text-lg font-semibold tabular-nums text-vb-text">
                 {fitness.ramp_rate.toFixed(1)}{" "}
                 <span className="text-sm font-sans text-vb-text-dim">TSS/day/wk</span>
               </p>

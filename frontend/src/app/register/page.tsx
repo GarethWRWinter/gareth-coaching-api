@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { FormaMark } from "@/components/ui/forma-mark";
+import { Kicker } from "@/components/ui/kicker";
+import { Input } from "@/components/ui/input";
+import { Button, Arrow } from "@/components/ui/button";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -25,7 +29,10 @@ export default function RegisterPage() {
       await register(email, password, name || undefined);
       router.push("/onboarding");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Registration failed";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "That didn't go through. Check the details and try again.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -34,82 +41,73 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen items-start justify-center bg-vb-bg px-6 pt-24">
-      <div className="w-full max-w-md">
+      <div className="f-rise w-full max-w-md">
         {/* Masthead */}
-        <div className="mb-12 border-b border-vb-border-subtle pb-6">
-          <h1 className="font-display text-6xl font-light leading-none tracking-[-0.02em]">
-            MARCO
+        <div className="mb-12 border-b-2 border-vb-border-strong pb-6">
+          <h1 className="f-display text-6xl leading-none tracking-[-0.03em]">
+            <FormaMark />
           </h1>
-          <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-            Your coach · Every ride remembered
-          </p>
+          <Kicker className="mt-3">Your coach · Every ride remembered</Kicker>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
+          <Kicker dot flamme className="mb-2">
             Get started
-          </p>
-          <h2 className="font-display text-4xl font-light leading-[0.95] tracking-[-0.02em]">
-            Meet the<br />
+          </Kicker>
+          <h2 className="f-display text-4xl leading-[0.95]">
+            Meet the
+            <br />
             coach.
           </h2>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-vb-text-dim">
-            Sport science. Mindset. A memory that never forgets a ride.
+            A coach who remembers every ride and builds your future from it.
             £19.99 a month, a free Strava account is all you need.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="border-l-[3px] border-vb-clay bg-vb-surface px-4 py-3 text-sm text-vb-text">
+            <div className="border-l-[3px] border-vb-red bg-vb-surface px-4 py-3 text-sm text-vb-text">
               {error}
             </div>
           )}
 
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-vb-text">
-              Full Name
-            </label>
-            <input
+            <label className="f-kicker mb-2 block text-vb-text">Full name</label>
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoComplete="name"
-              className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
-              placeholder="Gareth Winter"
+              placeholder="Alex Rivera"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-vb-text">
-              Email
-            </label>
-            <input
+            <label className="f-kicker mb-2 block text-vb-text">Email</label>
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.12em] text-vb-text">
-              Password
-            </label>
+            <label className="f-kicker mb-2 block text-vb-text">Password</label>
             <div className="relative">
-              <input
+              <Input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
                 autoComplete="new-password"
-                className="block h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 pr-11 font-sans text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 placeholder="At least 8 characters"
+                className="pr-11"
               />
               <button
                 type="button"
@@ -126,21 +124,14 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="group block w-full rounded-sm bg-vb-forest px-6 py-3.5 text-[13px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {loading ? "Creating account…" : "Create account →"}
-          </button>
+          <Button type="submit" variant="flamme" size="lg" disabled={loading} className="w-full">
+            {loading ? "Creating account…" : <>Create account <Arrow /></>}
+          </Button>
         </form>
 
         <p className="mt-10 border-t border-vb-border-subtle pt-6 text-sm text-vb-text-dim">
           Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-medium uppercase tracking-[0.08em] text-vb-forest hover:text-vb-forest-soft"
-          >
+          <Link href="/login" className="f-kicker text-vb-red hover:text-vb-red-dim">
             Log in →
           </Link>
         </p>

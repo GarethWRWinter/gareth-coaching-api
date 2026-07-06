@@ -4,69 +4,36 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Calendar,
   ChevronLeft,
   ChevronRight,
   Plus,
-  Download,
   Check,
   X,
   Trophy,
 } from "lucide-react";
-import { training, exports_, goals, users } from "@/lib/api";
+import { training, goals, users } from "@/lib/api";
 import { formatDuration, formatDate, cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { ZONE_BLOCKS, ZONES, SERIES } from "@/lib/palette";
+import { restLine } from "@/lib/voice";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Kicker } from "@/components/ui/kicker";
+import { DataTile } from "@/components/ui/data-tile";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CoachNote } from "@/components/ui/coach-note";
 import type { Workout, GoalEvent } from "@/lib/api";
 
-// Each workout renders as a full zone-colour block. The colour IS the intensity
-// (warm earth scale, low→high), with text auto-contrasted per block.
-const ZONE_STYLES: Record<
-  string,
-  { bg: string; fg: string; dark: boolean; label: string }
-> = {
-  recovery:   { bg: "#7C95A3", fg: "#FFFFFF", dark: true,  label: "Recovery · Z1" },
-  endurance:  { bg: "#9FB295", fg: "#1C2A1C", dark: false, label: "Endurance · Z2" },
-  tempo:      { bg: "#C7A458", fg: "#3A2E10", dark: false, label: "Tempo · Z3" },
-  sweet_spot: { bg: "#C28F4E", fg: "#3A2A10", dark: false, label: "Sweet spot" },
-  threshold:  { bg: "#C0714A", fg: "#FFFFFF", dark: true,  label: "Threshold · Z4" },
-  vo2max:     { bg: "#B0573A", fg: "#FFFFFF", dark: true,  label: "VO₂ · Z5" },
-  sprint:     { bg: "#95442E", fg: "#FFFFFF", dark: true,  label: "Sprint · Z6" },
-  rest:       { bg: "#ECE8DE", fg: "#615B50", dark: false, label: "Rest" },
+// Plan-phase ramp, cold to hot as the season sharpens toward race day.
+// Colours come from the palette only; flamme marks race day itself.
+const PHASE_COLORS: Record<string, { bg: string; dark: boolean }> = {
+  base:       { bg: ZONES.z1, dark: true },
+  build:      { bg: ZONES.z3, dark: false },
+  peak:       { bg: ZONES.z4, dark: true },
+  taper:      { bg: SERIES.grey, dark: true },
+  race:       { bg: SERIES.flamme, dark: true },
+  recovery:   { bg: ZONES.z2, dark: true },
+  transition: { bg: SERIES.hairline, dark: false },
 };
-
-// Plan-phase palette for the proportional timeline. Warmer as the plan
-// sharpens toward race day, dusty blue for the taper.
-const PHASE_COLORS: Record<string, { bg: string; fg: string }> = {
-  base:       { bg: "#9FB295", fg: "#1C2A1C" },
-  build:      { bg: "#C7A458", fg: "#3A2E10" },
-  peak:       { bg: "#C0714A", fg: "#FFFFFF" },
-  taper:      { bg: "#7C95A3", fg: "#FFFFFF" },
-  race:       { bg: "#BB6647", fg: "#FFFFFF" },
-  recovery:   { bg: "#C3CDBC", fg: "#23211C" },
-  transition: { bg: "#C3CDBC", fg: "#23211C" },
-};
-
-// Rest-day copy — cosmetic empty-state only (not AI-facing). Session names now
-// come from the backend (workout.title) so the calendar, the detail page, and
-// Marco all use one canonical name.
-const REST_LINES = [
-  "Rest, you've earned it",
-  "Rest day. Resist the urge.",
-  "Feet up",
-  "Recover like you mean it",
-  "Rest",
-];
-
-function stableIndex(seed: string, len: number): number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++)
-    h = (Math.imul(h, 31) + seed.charCodeAt(i)) >>> 0;
-  return len > 0 ? h % len : 0;
-}
-
-function restLine(dateStr: string): string {
-  return REST_LINES[stableIndex(dateStr, REST_LINES.length)];
-}
 
 function getWeekDates(offset: number): { start: Date; dates: Date[] } {
   const today = new Date();
@@ -89,6 +56,7 @@ function formatWeekDate(d: Date): string {
 export default function TrainingPage() {
   const queryClient = useQueryClient();
   const { user, refreshUser } = useAuth();
+  const coachName = user?.coach_name || "Forma";
   const [weekOffset, setWeekOffset] = useState(0);
   const [showGenerate, setShowGenerate] = useState(false);
   const [genModel, setGenModel] = useState("traditional");
@@ -215,61 +183,47 @@ export default function TrainingPage() {
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="f-rise space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           {activePlan && (
-            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
-              {currentPhase
-                ? `${currentPhase.phase_type.replace(/_/g, " ")} phase`
-                : activePlan.name}
+            <Kicker className="mb-2">
+              <span className="text-vb-red">
+                {currentPhase
+                  ? `${currentPhase.phase_type.replace(/_/g, " ")} phase`
+                  : activePlan.name}
+              </span>
               {planWeek ? ` · week ${planWeek} of ${activePlan.total_weeks}` : ""}
               {nextUpcomingGoal?.days_until != null &&
               nextUpcomingGoal.days_until > 0
                 ? ` · ${nextUpcomingGoal.days_until} days to ${nextUpcomingGoal.event_name}`
                 : ""}
-            </p>
+            </Kicker>
           )}
-          <h1 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Training</h1>
-          {hasActivePlan ? (
-            <p className="mt-1 text-sm text-vb-text-dim">{activePlan?.name}</p>
-          ) : (
+          <h1 className="f-display text-3xl text-vb-text md:text-4xl">
+            {hasActivePlan ? activePlan?.name : "Training"}
+          </h1>
+          {!hasActivePlan && (
             <p className="mt-1 text-sm text-vb-text-dim">
-              No active plan, let&apos;s build one around your goal.
+              No plan yet. Let&apos;s build one around your goal.
             </p>
           )}
         </div>
-        <button
-          onClick={() => setShowGenerate(!showGenerate)}
-          className="flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2.5 text-sm font-medium text-white hover:bg-vb-forest-soft"
-        >
-          <Plus className="h-4 w-4" /> Generate Plan
-        </button>
+        <Button onClick={() => setShowGenerate(!showGenerate)}>
+          <Plus className="h-4 w-4" /> Build my season
+        </Button>
       </div>
 
       {/* Prompt: user has an upcoming goal but no active plan */}
       {!hasActivePlan && nextUpcomingGoal && !showGenerate && (
-        <div className="rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-forest bg-vb-surface p-4 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-vb-sage-tint">
-                <Trophy className="h-5 w-5 text-vb-forest" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-vb-text">
-                  Build a plan for {nextUpcomingGoal.event_name}
-                </p>
-                <p className="mt-1 text-xs text-vb-text-dim">
-                  {formatDate(nextUpcomingGoal.event_date)}
-                  {nextUpcomingGoal.days_until != null && nextUpcomingGoal.days_until > 0 && (
-                    <> &middot; {nextUpcomingGoal.days_until} days away</>
-                  )}
-                  {" "}&middot; We&apos;ll create a periodised plan that peaks on race day.
-                </p>
-              </div>
-            </div>
-            <button
+        <CoachNote
+          kicker={`A plan for ${nextUpcomingGoal.event_name}`}
+          coachName={coachName}
+          action={
+            <Button
+              variant="flamme"
+              size="sm"
               onClick={() =>
                 generateMutation.mutate({
                   periodization_model: "traditional",
@@ -277,68 +231,69 @@ export default function TrainingPage() {
                 })
               }
               disabled={generateMutation.isPending}
-              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
-              {generateMutation.isPending ? "Generating..." : "Generate Plan"}
-            </button>
-          </div>
-        </div>
+              {generateMutation.isPending ? "Building…" : "Build my season"}
+            </Button>
+          }
+        >
+          {formatDate(nextUpcomingGoal.event_date)}
+          {nextUpcomingGoal.days_until != null &&
+            nextUpcomingGoal.days_until > 0 && (
+              <> &middot; {nextUpcomingGoal.days_until} days away</>
+            )}
+          . I&apos;ll build the season backwards from race day and peak you
+          right on it.
+        </CoachNote>
       )}
 
       {/* Prompt: user has no active plan and no upcoming goal */}
       {!hasActivePlan && !nextUpcomingGoal && !showGenerate && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-4 sm:p-5">
-          <p className="text-sm font-medium text-vb-text">
-            Ready to start training?
-          </p>
-          <p className="mt-1 text-xs text-vb-text-dim">
-            Set a goal event first so your plan peaks on race day, or generate a
-            generic 12-week plan to start building fitness now.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              href="/dashboard/goals"
-              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
-            >
-              Add a goal
-            </Link>
-            <button
-              onClick={() => setShowGenerate(true)}
-              className="rounded-sm border border-vb-border px-4 py-2 text-sm font-medium text-vb-forest hover:bg-vb-surface-raised"
-            >
-              Generate generic plan
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          kicker="No plan yet"
+          title="What are we aiming at?"
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Link
+                href="/dashboard/goals"
+                className={buttonVariants({ variant: "flamme" })}
+              >
+                Add a goal
+              </Link>
+              <Button variant="ghost" onClick={() => setShowGenerate(true)}>
+                Build a 12-week block
+              </Button>
+            </div>
+          }
+        >
+          Give me a date and I&apos;ll build the season backwards from it. Or
+          start a 12-week block now and we&apos;ll aim it later.
+        </EmptyState>
       )}
 
       {/* Generate Plan Dialog */}
       {showGenerate && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h3 className="text-sm font-medium text-vb-text">
-            Generate Training Plan
-          </h3>
-          <p className="mt-1 text-xs text-vb-text-dim">
+        <div className="f-rise rounded-sm border border-vb-border-subtle bg-vb-surface p-5">
+          <Kicker>Build my season</Kicker>
+          <p className="mt-2 text-sm text-vb-text-dim">
             {nextUpcomingGoal
-              ? `Creates a periodised plan peaking on ${nextUpcomingGoal.event_name} (${formatDate(nextUpcomingGoal.event_date)}).`
-              : "Creates a 12-week periodised plan based on your profile."}
+              ? `A periodised season peaking on ${nextUpcomingGoal.event_name}, ${formatDate(nextUpcomingGoal.event_date)}.`
+              : "A 12-week periodised block, built around your profile."}
           </p>
           <div className="mt-4 flex flex-wrap items-end gap-3 sm:gap-4">
             <div className="min-w-[180px] flex-1">
-              <label className="mb-1.5 block text-xs font-medium text-vb-text-dim">
-                Periodization Model
-              </label>
+              <Kicker className="mb-1.5">Periodisation model</Kicker>
               <select
                 value={genModel}
                 onChange={(e) => setGenModel(e.target.value)}
-                className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text"
+                className="h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus-visible:border-vb-red focus-visible:outline-none"
               >
                 <option value="traditional">Traditional</option>
                 <option value="polarized">Polarized</option>
                 <option value="sweet_spot">Sweet Spot</option>
               </select>
             </div>
-            <button
+            <Button
+              variant="flamme"
               onClick={() =>
                 generateMutation.mutate({
                   periodization_model: genModel,
@@ -346,16 +301,12 @@ export default function TrainingPage() {
                 })
               }
               disabled={generateMutation.isPending}
-              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
-              {generateMutation.isPending ? "Generating..." : "Generate"}
-            </button>
-            <button
-              onClick={() => setShowGenerate(false)}
-              className="rounded-sm border border-vb-border px-4 py-2 text-sm text-vb-forest hover:bg-vb-surface-raised"
-            >
+              {generateMutation.isPending ? "Building…" : "Generate"}
+            </Button>
+            <Button variant="ghost" onClick={() => setShowGenerate(false)}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -364,15 +315,16 @@ export default function TrainingPage() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => setShowSchedule(!showSchedule)}
-          className="text-xs text-vb-text-dim hover:text-vb-forest transition-colors"
+          className="f-kicker text-vb-text-muted transition-colors hover:text-vb-red"
         >
           {showSchedule ? "Hide schedule" : "Adjust availability"}
         </button>
       </div>
       {showSchedule && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-4">
+        <div className="f-rise rounded-sm border border-vb-border-subtle bg-vb-surface p-4">
           <p className="mb-3 text-xs text-vb-text-dim">
-            Set your training schedule. Hard days get intensity sessions, rest days have no training. Click to cycle: Easy → Rest → Hard.
+            Which days can hurt? Hard days take the intensity, rest days stay
+            clear. Click to cycle: Easy, Rest, Hard.
           </p>
           <div className="grid grid-cols-7 gap-2">
             {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => {
@@ -380,7 +332,7 @@ export default function TrainingPage() {
               const isRest = restDays.includes(idx);
               return (
                 <div key={day} className="text-center">
-                  <p className="mb-1 text-[10px] font-medium text-vb-text-muted">{day}</p>
+                  <p className="f-kicker mb-1.5 text-vb-text-muted">{day}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -394,12 +346,12 @@ export default function TrainingPage() {
                       }
                     }}
                     className={cn(
-                      "w-full rounded-sm py-2 text-xs font-medium transition-colors",
+                      "f-press w-full rounded-sm py-2 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors",
                       isHard
-                        ? "bg-vb-clay/15 text-vb-clay border border-vb-clay/40"
+                        ? "border border-vb-red bg-vb-red text-white"
                         : isRest
-                          ? "bg-vb-sunken text-vb-text-muted border border-vb-border-subtle"
-                          : "bg-vb-sage-tint text-vb-forest border border-vb-forest/30"
+                          ? "border border-vb-border-subtle bg-vb-bg text-vb-text-muted"
+                          : "border border-vb-border bg-vb-sunken text-vb-text-dim"
                     )}
                   >
                     {isHard ? "Hard" : isRest ? "Rest" : "Easy"}
@@ -408,8 +360,9 @@ export default function TrainingPage() {
               );
             })}
           </div>
-          <div className="mt-3 flex items-center gap-2">
-            <button
+          <div className="mt-4 flex items-center gap-3">
+            <Button
+              size="sm"
               onClick={async () => {
                 setScheduleSaving(true);
                 try {
@@ -424,12 +377,11 @@ export default function TrainingPage() {
                 }
               }}
               disabled={scheduleSaving}
-              className="rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
-              {scheduleSaving ? "Saving..." : "Save Schedule"}
-            </button>
+              {scheduleSaving ? "Saving…" : "Save schedule"}
+            </Button>
             <p className="text-[10px] text-vb-text-muted">
-              Re-generate your plan after saving to apply changes
+              Rebuild your plan after saving and the week reshapes around it
             </p>
           </div>
         </div>
@@ -439,17 +391,17 @@ export default function TrainingPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => setWeekOffset((w) => w - 1)}
-          className="rounded-sm border border-vb-border-subtle p-2 text-vb-text-dim hover:bg-vb-surface"
+          className="f-press rounded-sm border border-vb-border-subtle p-2 text-vb-text-dim hover:border-vb-border-strong"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="text-center">
-          <p className="text-sm font-medium text-vb-text">
+          <p className="f-data text-sm font-semibold text-vb-text">
             {dates[0].toLocaleDateString("en-GB", {
               day: "numeric",
               month: "short",
             })}{" "}
-            -{" "}
+            to{" "}
             {dates[6].toLocaleDateString("en-GB", {
               day: "numeric",
               month: "short",
@@ -459,7 +411,7 @@ export default function TrainingPage() {
           {weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="text-xs text-vb-forest hover:text-vb-forest-soft"
+              className="text-xs text-vb-red hover:text-vb-red-dim"
             >
               Back to this week
             </button>
@@ -467,7 +419,7 @@ export default function TrainingPage() {
         </div>
         <button
           onClick={() => setWeekOffset((w) => w + 1)}
-          className="rounded-sm border border-vb-border-subtle p-2 text-vb-text-dim hover:bg-vb-surface"
+          className="f-press rounded-sm border border-vb-border-subtle p-2 text-vb-text-dim hover:border-vb-border-strong"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -475,37 +427,20 @@ export default function TrainingPage() {
 
       {/* Week summary: the shape of the week at a glance */}
       {weekActive.length > 0 && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-5 py-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="flex items-end gap-8">
-              <div>
-                <p className="font-display text-2xl font-semibold leading-none tabular-nums text-vb-text">
-                  {weekActive.length}
-                </p>
-                <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
-                  Sessions
-                </p>
-              </div>
-              <div>
-                <p className="font-display text-2xl font-semibold leading-none tabular-nums text-vb-text">
-                  {formatDuration(weekSeconds)}
-                </p>
-                <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
-                  On the bike
-                </p>
-              </div>
-              <div>
-                <p className="font-display text-2xl font-semibold leading-none tabular-nums text-vb-text">
-                  {weekTss}
-                </p>
-                <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-vb-text-muted">
-                  TSS
-                </p>
-              </div>
-            </div>
-            <p className="text-xs tabular-nums text-vb-text-dim">
-              {weekDone} of {weekActive.length} done
-            </p>
+        <div>
+          <div className="f-stagger grid grid-cols-3 gap-2 sm:gap-3">
+            <DataTile
+              label="Sessions"
+              value={weekActive.length}
+              sub={`${weekDone} of ${weekActive.length} done`}
+            />
+            <DataTile
+              label="On the bike"
+              value={weekSeconds / 3600}
+              decimals={1}
+              unit="h"
+            />
+            <DataTile label="TSS" value={weekTss} />
           </div>
           {(() => {
             const segs = weekActive.map((w) => ({
@@ -517,19 +452,19 @@ export default function TrainingPage() {
             }));
             const total = segs.reduce((s, x) => s + x.dur, 0) || 1;
             return (
-              <div className="mt-4 flex h-2.5 gap-[3px]">
+              <div className="mt-2 flex h-2 gap-[3px]">
                 {segs.map(({ w, dur }) => {
-                  const zz = ZONE_STYLES[w.workout_type] ?? ZONE_STYLES.rest;
+                  const zz = ZONE_BLOCKS[w.workout_type] ?? ZONE_BLOCKS.rest;
                   const done = w.status === "completed" || !!w.actual_ride;
                   return (
                     <div
                       key={w.id}
-                      className="rounded-full transition-opacity"
+                      className="transition-opacity"
                       title={w.title}
                       style={{
                         width: `${(dur / total) * 100}%`,
                         backgroundColor: zz.bg,
-                        opacity: done ? 1 : 0.5,
+                        opacity: done ? 1 : 0.45,
                       }}
                     />
                   );
@@ -542,7 +477,7 @@ export default function TrainingPage() {
 
       {/* Week Grid */}
       <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 sm:pb-0">
-      <div className="grid min-w-[700px] grid-cols-7 gap-2 sm:min-w-0">
+      <div className="f-stagger grid min-w-[700px] grid-cols-7 gap-2 sm:min-w-0">
         {dates.map((date, i) => {
           const dateStr = formatWeekDate(date);
           const isToday = dateStr === today;
@@ -554,10 +489,12 @@ export default function TrainingPage() {
           );
           const primary = activeWorkouts[0];
           const z = primary
-            ? ZONE_STYLES[primary.workout_type] ?? ZONE_STYLES.rest
+            ? ZONE_BLOCKS[primary.workout_type] ?? ZONE_BLOCKS.rest
             : null;
           const colored = !!z;
-          const chipBg = z?.dark
+          // Light text means a dark block; ZONE_BLOCKS.recovery.fg is white.
+          const zDark = z?.fg === ZONE_BLOCKS.recovery.fg;
+          const chipBg = zDark
             ? "rgba(255,255,255,0.22)"
             : "rgba(0,0,0,0.09)";
 
@@ -565,40 +502,44 @@ export default function TrainingPage() {
             <div
               key={dateStr}
               className={cn(
-                "flex min-h-[176px] flex-col rounded-md p-3",
+                "flex min-h-[176px] flex-col rounded-sm p-3",
+                colored && primary && "f-lift",
                 !colored &&
                   (isToday
-                    ? "border border-vb-forest bg-vb-sage-tint/40"
+                    ? "border border-vb-border-strong bg-vb-surface"
                     : "border border-vb-border-subtle bg-vb-surface")
               )}
-              style={{
-                ...(colored ? { backgroundColor: z!.bg, color: z!.fg } : {}),
-                ...(isToday
-                  ? { outline: "2px solid #36513F", outlineOffset: "2px" }
-                  : {}),
-              }}
+              style={colored ? { backgroundColor: z!.bg, color: z!.fg } : {}}
             >
               {/* Day header */}
               <div className="mb-2 flex items-center justify-between">
                 <span
                   className={cn(
-                    "text-xs",
-                    isToday ? "font-semibold" : "font-medium",
-                    !colored && (isToday ? "text-vb-forest" : "text-vb-text-dim")
+                    "f-kicker flex items-center gap-1.5",
+                    !colored && (isToday ? "text-vb-text" : "text-vb-text-muted")
                   )}
-                  style={colored ? { opacity: 0.82 } : undefined}
+                  style={colored ? { color: z!.fg, opacity: 0.85 } : undefined}
                 >
+                  {isToday && (
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "inline-block h-1.5 w-1.5 rounded-full",
+                        colored ? "bg-white" : "bg-vb-red"
+                      )}
+                    />
+                  )}
                   {isToday ? "Today" : dayLabels[i]}
                 </span>
                 <span
                   className={cn(
-                    "text-xs tabular-nums",
+                    "f-data text-xs",
                     !colored &&
                       (isToday
-                        ? "text-vb-forest font-semibold"
+                        ? "font-semibold text-vb-text"
                         : "text-vb-text-muted")
                   )}
-                  style={colored ? { opacity: 0.82 } : undefined}
+                  style={colored ? { opacity: 0.85 } : undefined}
                 >
                   {date.getDate()}
                 </span>
@@ -612,25 +553,28 @@ export default function TrainingPage() {
                   className={cn(
                     "mb-1.5 block rounded-sm p-2",
                     !colored &&
-                      "border border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface"
+                      "border border-vb-border-subtle border-l-[3px] border-l-vb-red bg-vb-surface"
                   )}
                   style={colored ? { backgroundColor: chipBg } : undefined}
                 >
                   <div className="flex items-center gap-1.5">
                     <Trophy
-                      className={cn("h-3 w-3 shrink-0", !colored && "text-vb-clay")}
+                      className={cn("h-3 w-3 shrink-0", !colored && "text-vb-red")}
                     />
                     <p
                       className={cn(
                         "truncate text-xs font-medium",
-                        !colored && "text-vb-clay"
+                        !colored && "text-vb-text"
                       )}
                     >
                       {goal.event_name}
                     </p>
                   </div>
                   <p
-                    className={cn("mt-1 text-[10px]", !colored && "text-vb-text-muted")}
+                    className={cn(
+                      "mt-1 font-mono text-[9px] uppercase tracking-[0.1em]",
+                      !colored && "text-vb-text-muted"
+                    )}
                     style={colored ? { opacity: 0.8 } : undefined}
                   >
                     {goal.priority.replace(/_/g, " ").toUpperCase()} ·{" "}
@@ -649,18 +593,18 @@ export default function TrainingPage() {
                     <div className="flex items-start justify-between gap-1.5">
                       <div className="min-w-0">
                         <p
-                          className="text-[10px] font-semibold uppercase tracking-[0.11em]"
+                          className="font-mono text-[9px] font-semibold uppercase tracking-[0.12em]"
                           style={{ opacity: 0.72 }}
                         >
                           {z!.label}
                         </p>
-                        <p className="mt-0.5 font-display text-[15px] font-normal leading-[1.12] tracking-[-0.01em]">
+                        <p className="f-display mt-0.5 text-[15px] leading-[1.12]">
                           {primary.title}
                         </p>
                       </div>
                       {primary.execution_score != null && (
                         <span
-                          className="shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold tabular-nums"
+                          className="f-data shrink-0 rounded-sm px-1.5 py-0.5 text-[9px] font-semibold"
                           style={{ backgroundColor: chipBg }}
                         >
                           {primary.execution_score.toFixed(1)}
@@ -673,7 +617,7 @@ export default function TrainingPage() {
                     (primary.planned_duration_seconds ||
                       primary.planned_tss) && (
                       <p
-                        className="mt-1.5 text-[11px] font-medium tabular-nums"
+                        className="f-data mt-1.5 text-[11px] font-medium"
                         style={{ opacity: 0.85 }}
                       >
                         {primary.planned_duration_seconds
@@ -689,7 +633,7 @@ export default function TrainingPage() {
                     )
                   ) : (
                     <p
-                      className="mt-1.5 text-[11px] font-medium tabular-nums"
+                      className="f-data mt-1.5 text-[11px] font-medium"
                       style={{ opacity: 0.95 }}
                     >
                       ✓{" "}
@@ -714,7 +658,7 @@ export default function TrainingPage() {
                           })
                         }
                         title="Mark completed"
-                        className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
+                        className="f-press flex h-[22px] w-[22px] items-center justify-center rounded-sm"
                         style={{ backgroundColor: chipBg, color: z!.fg }}
                       >
                         <Check className="h-3 w-3" />
@@ -727,7 +671,7 @@ export default function TrainingPage() {
                           })
                         }
                         title="Skip"
-                        className="flex h-[22px] w-[22px] items-center justify-center rounded-[5px]"
+                        className="f-press flex h-[22px] w-[22px] items-center justify-center rounded-sm"
                         style={{ backgroundColor: chipBg, color: z!.fg }}
                       >
                         <X className="h-3 w-3" />
@@ -745,12 +689,12 @@ export default function TrainingPage() {
 
                   {/* Additional workouts (rare) */}
                   {activeWorkouts.slice(1).map((w) => {
-                    const wz = ZONE_STYLES[w.workout_type] ?? ZONE_STYLES.rest;
+                    const wz = ZONE_BLOCKS[w.workout_type] ?? ZONE_BLOCKS.rest;
                     return (
                       <Link
                         key={w.id}
                         href={`/dashboard/training/${w.id}`}
-                        className="mt-2 block truncate rounded-sm px-2 py-1.5 text-[11px] font-medium"
+                        className="f-lift mt-2 block truncate rounded-sm px-2 py-1.5 text-[11px] font-medium"
                         style={{ backgroundColor: wz.bg, color: wz.fg }}
                       >
                         {wz.label.split(" · ")[0]} · {w.title}
@@ -759,7 +703,7 @@ export default function TrainingPage() {
                   })}
                 </div>
               ) : dayGoals.length === 0 ? (
-                <p className="my-auto text-center text-[11px] text-vb-text-muted">
+                <p className="my-auto text-center text-[11px] italic text-vb-text-muted">
                   {restLine(dateStr)}
                 </p>
               ) : null}
@@ -771,13 +715,16 @@ export default function TrainingPage() {
 
       {/* Plan timeline: proportional phases with a you-are-here marker */}
       {activePlan && planPhases.length > 0 && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+        <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-5">
           <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">
-              The road to {nextUpcomingGoal?.event_name ?? "race day"}
-            </h2>
-            <p className="text-xs tabular-nums text-vb-text-muted">
-              {formatDate(activePlan.start_date)} -{" "}
+            <div>
+              <Kicker className="mb-1">The season</Kicker>
+              <h2 className="f-display text-xl text-vb-text">
+                The road to {nextUpcomingGoal?.event_name ?? "race day"}
+              </h2>
+            </div>
+            <p className="f-data text-xs text-vb-text-muted">
+              {formatDate(activePlan.start_date)} to{" "}
               {formatDate(activePlan.end_date)}
             </p>
           </div>
@@ -795,7 +742,7 @@ export default function TrainingPage() {
             );
             return (
               <div className="relative">
-                <div className="flex h-10 gap-[3px] overflow-hidden rounded-md">
+                <div className="flex h-9 gap-[2px] overflow-hidden">
                   {phases.map((ph) => {
                     const w =
                       ((new Date(ph.end_date).getTime() -
@@ -819,8 +766,10 @@ export default function TrainingPage() {
                         }}
                       >
                         <span
-                          className="truncate px-2 text-[10px] font-semibold uppercase tracking-[0.1em]"
-                          style={{ color: pc.fg }}
+                          className={cn(
+                            "truncate px-2 font-mono text-[9px] font-semibold uppercase tracking-[0.12em]",
+                            pc.dark ? "text-white" : "text-vb-text"
+                          )}
                         >
                           {ph.phase_type.replace(/_/g, " ")}
                         </span>
@@ -830,7 +779,7 @@ export default function TrainingPage() {
                 </div>
                 {/* You are here */}
                 <div
-                  className="pointer-events-none absolute -top-1.5 bottom-[-6px] w-[2px] rounded-full bg-vb-text"
+                  className="pointer-events-none absolute -top-1.5 bottom-[-6px] w-[2px] bg-vb-red"
                   style={{ left: `${todayPct}%` }}
                 />
               </div>
@@ -838,11 +787,11 @@ export default function TrainingPage() {
           })()}
           {currentPhase && (
             <p className="mt-4 text-xs text-vb-text-dim">
-              <span className="font-semibold capitalize text-vb-text">
+              <span className="font-mono font-semibold uppercase tracking-[0.08em] text-vb-text">
                 {currentPhase.phase_type.replace(/_/g, " ")}
               </span>
               {" · "}
-              {formatDate(currentPhase.start_date)} -{" "}
+              {formatDate(currentPhase.start_date)} to{" "}
               {formatDate(currentPhase.end_date)}
               {currentPhase.focus ? <> · {currentPhase.focus}</> : null}
               {" · "}

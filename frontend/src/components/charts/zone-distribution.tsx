@@ -12,35 +12,24 @@ import {
   LabelList,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { zoneColor } from "@/lib/utils";
+import { ZONES, SERIES } from "@/lib/palette";
+
+const MONO = "IBM Plex Mono, ui-monospace, SFMono-Regular, monospace";
+const TICK = { fontSize: 11, fill: SERIES.grey, fontFamily: MONO };
 
 interface ZoneDistributionProps {
   zones: Record<string, { low: number; high: number }>;
   className?: string;
 }
 
-const ZONE_COLORS: Record<string, string> = {
-  Z1: "#8AA3B0",
-  Z2: "#9FB295",
-  Z3: "#C7A458",
-  Z4: "#D2855B",
-  Z5: "#C06A48",
-  Z6: "#A24E36",
-  Z7: "#7E3A28",
-};
-
 function getZoneBarColor(zoneName: string): string {
-  // Try direct lookup first (e.g. "Z1", "Z2")
-  if (ZONE_COLORS[zoneName]) return ZONE_COLORS[zoneName];
-
-  // Try extracting the number from names like "Zone 1", "zone1"
+  // Extract the zone number from names like "Z1", "Zone 1", "zone1"
   const match = zoneName.match(/(\d+)/);
   if (match) {
-    const num = parseInt(match[1], 10);
-    return zoneColor(num);
+    const key = `z${match[1]}` as keyof typeof ZONES;
+    if (ZONES[key]) return ZONES[key];
   }
-
-  return "#948D80";
+  return SERIES.grey;
 }
 
 interface ZoneBarData {
@@ -64,10 +53,10 @@ function ZoneTooltipContent({
   const data = payload[0].payload;
 
   return (
-    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
-      <p className="mb-1 text-xs font-medium text-vb-text-dim">{data.zone}</p>
-      <p className="text-sm font-mono font-medium text-vb-text">
-        {data.low} &ndash; {data.high === Infinity ? "max" : data.high}W
+    <div className="rounded-sm border border-vb-border bg-vb-surface px-3 py-2">
+      <p className="f-kicker mb-1 text-vb-text-muted">{data.zone}</p>
+      <p className="f-data text-sm font-medium text-vb-text">
+        {data.low} to {data.high === Infinity ? "max" : data.high}W
       </p>
     </div>
   );
@@ -99,9 +88,14 @@ export function ZoneDistribution({ zones, className }: ZoneDistributionProps) {
   );
 
   return (
-    <div className={cn("rounded-md border border-vb-border-subtle bg-vb-surface p-4", className)}>
-      <h3 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-        Power Zones
+    <div
+      className={cn(
+        "rounded-sm border border-vb-border-subtle bg-vb-surface p-4",
+        className
+      )}
+    >
+      <h3 className="f-kicker mb-4 text-vb-text-muted">
+        Where the efforts live
       </h3>
       <ResponsiveContainer width="100%" height={chartData.length * 48 + 40}>
         <BarChart
@@ -110,32 +104,28 @@ export function ZoneDistribution({ zones, className }: ZoneDistributionProps) {
           margin={{ top: 5, right: 40, left: 10, bottom: 5 }}
           barCategoryGap="20%"
         >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#E4DCCE"
-            horizontal={false}
-          />
+          <CartesianGrid stroke={SERIES.hairline} horizontal={false} />
           <XAxis
             type="number"
-            stroke="#D6CFC1"
-            tick={{ fontSize: 11, fill: "#948D80" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            stroke={SERIES.hairline}
+            tick={TICK}
+            tickLine={{ stroke: SERIES.hairline }}
+            axisLine={{ stroke: SERIES.hairline }}
             domain={[0, Math.ceil(maxWatt / 50) * 50]}
             tickFormatter={(v: number) => `${v}W`}
           />
           <YAxis
             type="category"
             dataKey="zone"
-            stroke="#D6CFC1"
-            tick={{ fontSize: 12, fill: "#211E1A", fontWeight: 500 }}
+            stroke={SERIES.hairline}
+            tick={{ fontSize: 11, fill: SERIES.ink, fontFamily: MONO, fontWeight: 600 }}
             tickLine={false}
-            axisLine={{ stroke: "#D6CFC1" }}
+            axisLine={{ stroke: SERIES.hairline }}
             width={40}
           />
           <Tooltip
             content={<ZoneTooltipContent />}
-            cursor={{ fill: "#BCB3A3" }}
+            cursor={{ fill: SERIES.chalk }}
           />
 
           {/* Invisible base bar to offset from the low value */}
@@ -151,13 +141,14 @@ export function ZoneDistribution({ zones, className }: ZoneDistributionProps) {
           <Bar
             dataKey="range"
             stackId="zone"
-            radius={[0, 4, 4, 0]}
+            radius={[0, 0, 0, 0]}
           >
             <LabelList
               dataKey="label"
               position="right"
-              fill="#948D80"
-              fontSize={11}
+              fill={SERIES.grey}
+              fontSize={10}
+              fontFamily={MONO}
             />
             {chartData.map((entry) => (
               <Cell key={entry.zone} fill={entry.color} />

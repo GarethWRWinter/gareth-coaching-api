@@ -97,7 +97,7 @@ export function useCoachRadio(options: UseCoachRadioOptions): UseCoachRadioRetur
 
       setCurrentMessage(msg);
 
-      // TTS via ElevenLabs (same voice as Coach Marco chat)
+      // TTS via ElevenLabs (same voice as Coach Forma chat)
       if (!muted) {
         // Stop any currently playing audio
         if (audioRef.current) {

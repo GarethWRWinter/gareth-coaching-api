@@ -3,14 +3,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import {
-  Save,
-  Link2,
-  Unlink,
-  RefreshCw,
   Plus,
   Trash2,
+  RefreshCw,
   FolderSync,
-  HardDrive,
   Pencil,
   Upload,
   ExternalLink,
@@ -19,11 +15,16 @@ import {
   X,
 } from "lucide-react";
 import { users, strava, dropbox, goals as goalsApi, metrics } from "@/lib/api";
-import { COACH_AVATARS, COACH_TONES, normalizeAvatarKey } from "@/lib/coach";
+import { COACH_TONES, normalizeAvatarKey } from "@/lib/coach";
 import { useAuth } from "@/lib/auth-context";
 import { formatDate, cn } from "@/lib/utils";
 import type { GoalEvent, StravaStatus } from "@/lib/api";
 import Link from "next/link";
+import { Button, Arrow } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Kicker } from "@/components/ui/kicker";
+import { Badge } from "@/components/ui/badge";
+import { SectionHeader } from "@/components/ui/section-header";
 
 const EVENT_TYPES = [
   { value: "road_race", label: "Road Race" },
@@ -40,9 +41,9 @@ const EVENT_TYPES = [
 ];
 
 const PRIORITIES = [
-  { value: "a_race", label: "A Race (Primary)" },
-  { value: "b_race", label: "B Race (Secondary)" },
-  { value: "c_race", label: "C Race (Low Priority)" },
+  { value: "a_race", label: "A race (the big one)" },
+  { value: "b_race", label: "B race (matters)" },
+  { value: "c_race", label: "C race (training day)" },
 ];
 
 interface GoalFormData {
@@ -83,6 +84,12 @@ function formatDurationMinutes(minutes: number): string {
   if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
   return `${m}m`;
 }
+
+// f-kicker styled form label
+const labelClasses = "f-kicker mb-2 block text-vb-text-muted";
+// select / textarea share the kit Input look (Input covers <input> only)
+const fieldClasses =
+  "w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red";
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -224,7 +231,7 @@ export default function SettingsPage() {
     mutationFn: () => strava.sync(),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["rides"] });
-      alert(`Synced ${data.synced} rides from Strava`);
+      alert(`${data.synced} rides in from Strava`);
     },
   });
 
@@ -233,7 +240,7 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["rides"] });
       queryClient.invalidateQueries({ queryKey: ["dropbox-status"] });
-      alert(`Synced ${data.synced} ride(s) from Dropbox`);
+      alert(`${data.synced} ride file(s) in from Dropbox`);
     },
   });
 
@@ -262,17 +269,14 @@ export default function SettingsPage() {
     uploadGpx.mutate({ goalId, file });
   }
 
-  const inputClasses =
-    "w-full rounded-sm border border-vb-border bg-vb-surface px-2.5 py-1.5 text-sm text-vb-text focus:border-vb-forest focus:outline-none";
-
   return (
     <div className="mx-auto max-w-3xl space-y-10">
       {/* ============ MASTHEAD ============ */}
-      <header className="border-b border-vb-border-subtle pb-5">
-        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-forest">
+      <header className="f-rise border-b border-vb-border-subtle pb-5">
+        <Kicker flamme className="mb-2">
           The desk
-        </p>
-        <h1 className="font-display text-5xl font-light leading-[1.04] tracking-[-0.02em] md:text-6xl">
+        </Kicker>
+        <h1 className="f-display text-5xl leading-[1.04] md:text-6xl">
           Settings.
         </h1>
       </header>
@@ -281,85 +285,71 @@ export default function SettingsPage() {
       <CoachSection />
 
       {/* Profile */}
-      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Profile</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <section className="rounded-sm border border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="f-display text-2xl text-vb-text">Profile</h2>
+        <p className="mt-1 text-sm text-vb-text-dim">
+          The engine, roughly. We&apos;ll refine it as you ride.
+        </p>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Full Name
-            </label>
-            <input
+            <label className={labelClasses}>Full name</label>
+            <Input
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Weight (kg)
-            </label>
-            <input
+            <label className={labelClasses}>Weight (kg)</label>
+            <Input
               type="number"
               step="0.1"
               value={form.weight_kg}
               onChange={(e) => setForm({ ...form, weight_kg: e.target.value })}
-              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              FTP (watts)
-            </label>
-            <input
+            <label className={labelClasses}>FTP (watts)</label>
+            <Input
               type="number"
               value={form.ftp}
               onChange={(e) => setForm({ ...form, ftp: e.target.value })}
-              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Max HR (bpm)
-            </label>
-            <input
+            <label className={labelClasses}>Max HR (bpm)</label>
+            <Input
               type="number"
               value={form.max_hr}
               onChange={(e) => setForm({ ...form, max_hr: e.target.value })}
-              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Resting HR (bpm)
-            </label>
-            <input
+            <label className={labelClasses}>Resting HR (bpm)</label>
+            <Input
               type="number"
               value={form.resting_hr}
               onChange={(e) => setForm({ ...form, resting_hr: e.target.value })}
-              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              Weekly Hours Available
-            </label>
-            <input
+            <label className={labelClasses}>Hours a week for the bike</label>
+            <Input
               type="number"
               step="0.5"
               value={form.weekly_hours_available}
               onChange={(e) =>
                 setForm({ ...form, weekly_hours_available: e.target.value })
               }
-              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
         </div>
 
         {/* Training Schedule */}
-        <div className="mt-6">
-          <h3 className="mb-3 text-sm font-medium text-vb-text">Training Schedule</h3>
-          <p className="mb-3 text-xs text-vb-text-dim">
-            Select your hard training days (weekends, etc.) and rest days. Intensity sessions will be scheduled on hard days.
+        <div className="mt-8">
+          <h3 className="f-display text-lg text-vb-text">Which days can hurt?</h3>
+          <p className="mt-1 mb-4 text-xs leading-relaxed text-vb-text-dim">
+            Tap a day to cycle it through easy, rest and hard. Hard days carry
+            the intensity, easy days carry the miles.
           </p>
           <div className="grid grid-cols-7 gap-2">
             {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => {
@@ -367,7 +357,7 @@ export default function SettingsPage() {
               const isRest = form.rest_days.includes(idx);
               return (
                 <div key={day} className="text-center">
-                  <p className="mb-1.5 text-[10px] font-medium text-vb-text-muted">{day}</p>
+                  <p className="f-kicker mb-1.5 text-[10px] text-vb-text-muted">{day}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -393,12 +383,12 @@ export default function SettingsPage() {
                       }
                     }}
                     className={cn(
-                      "w-full rounded-sm py-2 text-xs font-medium transition-colors",
+                      "f-press w-full rounded-sm py-2 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors",
                       isHard
-                        ? "bg-vb-clay/15 text-vb-clay border border-vb-clay/40"
+                        ? "border border-vb-text bg-vb-text text-white"
                         : isRest
-                          ? "bg-vb-sunken text-vb-text-muted border border-vb-border-subtle"
-                          : "bg-vb-sage-tint text-vb-forest border border-vb-border-subtle"
+                          ? "border border-vb-border-subtle bg-vb-sunken text-vb-text-muted"
+                          : "border border-vb-border bg-vb-surface text-vb-text-dim hover:border-vb-border-strong"
                     )}
                   >
                     {isHard ? "Hard" : isRest ? "Rest" : "Easy"}
@@ -407,86 +397,78 @@ export default function SettingsPage() {
               );
             })}
           </div>
-          <p className="mt-2 text-[10px] text-vb-text-muted">
-            Click to cycle: Easy → Rest → Hard. Hard days get intensity sessions (threshold, VO2max). Easy days get endurance/recovery.
+          <p className="mt-2 text-[11px] text-vb-text-muted">
+            Hard days get the threshold and VO2 work. Easy days build the engine.
           </p>
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
-          <button
+        <div className="mt-6 flex items-center gap-3">
+          <Button
+            size="sm"
             onClick={() => saveProfile.mutate()}
             disabled={saveProfile.isPending}
-            className="flex items-center gap-2 rounded-sm border border-vb-forest bg-vb-forest px-4 py-2 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Save className="h-4 w-4" />
-            {saveProfile.isPending ? "Saving..." : "Save Profile"}
-          </button>
-          {saved && (
-            <span className="text-sm text-vb-forest">Saved!</span>
-          )}
+            {saveProfile.isPending ? "Saving…" : "Save profile"}
+          </Button>
+          {saved && <span className="f-kicker text-vb-success">Saved</span>}
         </div>
       </section>
 
       {/* FTP Test */}
-      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">FTP Test</h2>
+      <section className="rounded-sm border border-vb-border-subtle bg-vb-surface p-6">
+        <h2 className="f-display text-2xl text-vb-text">FTP test</h2>
         <p className="mt-2 text-sm text-vb-text-dim">
-          Enter your 20-minute average power to calculate FTP (95% of 20-min avg)
+          Ride 20 minutes as hard as you dare and give Forma the average.
+          FTP is 95% of it, the classic test.
         </p>
         <div className="mt-4 flex items-end gap-3">
           <div className="flex-1">
-            <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-              20-min Avg Power (W)
-            </label>
-            <input
+            <label className={labelClasses}>20-minute average power (w)</label>
+            <Input
               type="number"
               value={ftpTestPower}
               onChange={(e) => setFtpTestPower(e.target.value)}
               placeholder="e.g. 280"
-              className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
             />
           </div>
-          <button
+          <Button
             onClick={() => submitFTPTest.mutate()}
             disabled={!ftpTestPower || submitFTPTest.isPending}
-            className="rounded-sm border border-vb-forest bg-vb-forest px-4 py-2 text-[12px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft disabled:cursor-not-allowed disabled:opacity-40"
           >
             Calculate
-          </button>
+          </Button>
         </div>
         {ftpResult && (
-          <p className="mt-2 text-sm font-medium text-vb-forest">
+          <p className="f-data mt-3 text-sm font-semibold text-vb-text">
             {ftpResult}
           </p>
         )}
       </section>
 
       {/* Goals */}
-      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
+      <section className="rounded-sm border border-vb-border-subtle bg-vb-surface p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Goal Events</h2>
+            <h2 className="f-display text-2xl text-vb-text">Goals</h2>
             <p className="mt-0.5 text-xs text-vb-text-muted">
-              <Link href="/dashboard/goals" className="font-medium uppercase tracking-[0.08em] text-vb-forest hover:text-vb-forest-soft">
-                View full goals page
+              <Link
+                href="/dashboard/goals"
+                className="f-kicker text-vb-text-dim transition-colors hover:text-vb-red"
+              >
+                Full goals page →
               </Link>
             </p>
           </div>
-          <button
-            onClick={openAddGoal}
-            className="flex items-center gap-1.5 rounded-sm border border-vb-forest bg-vb-forest px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-white transition-colors hover:bg-vb-forest-soft"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Goal
-          </button>
+          <Button size="sm" onClick={openAddGoal}>
+            <Plus className="h-3.5 w-3.5" /> Add goal
+          </Button>
         </div>
 
         {/* Goal Form (Add / Edit) */}
         {showGoalForm && (
-          <div className="mt-4 rounded-md border border-vb-border-subtle bg-vb-bg p-4">
+          <div className="mt-4 rounded-sm border border-vb-border-subtle bg-vb-bg p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-medium text-vb-text">
-                {editingGoalId ? "Edit Goal" : "New Goal"}
-              </h3>
+              <Kicker>{editingGoalId ? "Edit goal" : "New goal"}</Kicker>
               <button
                 onClick={() => {
                   setShowGoalForm(false);
@@ -501,45 +483,37 @@ export default function SettingsPage() {
             <div className="grid gap-3 sm:grid-cols-2">
               {/* Event Name */}
               <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Event Name *
-                </label>
-                <input
+                <label className={labelClasses}>Event name *</label>
+                <Input
                   value={goalForm.event_name}
                   onChange={(e) =>
                     setGoalForm({ ...goalForm, event_name: e.target.value })
                   }
                   placeholder="e.g. Mallorca 312, Tour of Wessex"
-                  className={inputClasses}
                 />
               </div>
 
               {/* Date */}
               <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Event Date *
-                </label>
-                <input
+                <label className={labelClasses}>Event date *</label>
+                <Input
                   type="date"
                   value={goalForm.event_date}
                   onChange={(e) =>
                     setGoalForm({ ...goalForm, event_date: e.target.value })
                   }
-                  className={inputClasses}
                 />
               </div>
 
               {/* Type */}
               <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Event Type
-                </label>
+                <label className={labelClasses}>Event type</label>
                 <select
                   value={goalForm.event_type}
                   onChange={(e) =>
                     setGoalForm({ ...goalForm, event_type: e.target.value })
                   }
-                  className={inputClasses}
+                  className={fieldClasses}
                 >
                   {EVENT_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -551,15 +525,13 @@ export default function SettingsPage() {
 
               {/* Priority */}
               <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Priority
-                </label>
+                <label className={labelClasses}>Priority</label>
                 <select
                   value={goalForm.priority}
                   onChange={(e) =>
                     setGoalForm({ ...goalForm, priority: e.target.value })
                   }
-                  className={inputClasses}
+                  className={fieldClasses}
                 >
                   {PRIORITIES.map((p) => (
                     <option key={p.value} value={p.value}>
@@ -571,10 +543,8 @@ export default function SettingsPage() {
 
               {/* Target Duration */}
               <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Target Duration (minutes)
-                </label>
-                <input
+                <label className={labelClasses}>Target duration (minutes)</label>
+                <Input
                   type="number"
                   value={goalForm.target_duration_minutes}
                   onChange={(e) =>
@@ -584,68 +554,63 @@ export default function SettingsPage() {
                     })
                   }
                   placeholder="e.g. 240 (4 hours)"
-                  className={inputClasses}
                 />
               </div>
 
               {/* Route URL */}
               <div>
-                <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Route / Event URL
-                </label>
-                <input
+                <label className={labelClasses}>Route or event URL</label>
+                <Input
                   type="url"
                   value={goalForm.route_url}
                   onChange={(e) =>
                     setGoalForm({ ...goalForm, route_url: e.target.value })
                   }
                   placeholder="https://strava.com/routes/... or event website"
-                  className={inputClasses}
                 />
               </div>
             </div>
 
             {/* Notes - full width */}
             <div className="mt-3">
-              <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Notes
-              </label>
+              <label className={labelClasses}>Notes</label>
               <textarea
                 value={goalForm.notes}
                 onChange={(e) =>
                   setGoalForm({ ...goalForm, notes: e.target.value })
                 }
-                placeholder="Course details, goals, specific targets..."
+                placeholder="The course, the climbs, what a good day looks like..."
                 rows={3}
-                className={`${inputClasses} resize-none`}
+                className={`${fieldClasses} resize-none`}
               />
             </div>
 
-            <div className="mt-3 flex gap-2">
-              <button
+            <div className="mt-4 flex gap-2">
+              <Button
+                size="sm"
                 onClick={() => saveGoal.mutate()}
                 disabled={
                   !goalForm.event_name ||
                   !goalForm.event_date ||
                   saveGoal.isPending
                 }
-                className="rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 {saveGoal.isPending
-                  ? "Saving..."
+                  ? "Saving…"
                   : editingGoalId
-                    ? "Update Goal"
-                    : "Save Goal"}
-              </button>
-              <button
+                    ? "Update goal"
+                    : "Save goal"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
                 onClick={() => {
                   setShowGoalForm(false);
                   setEditingGoalId(null);
                 }}
-                className="rounded-sm border border-vb-border px-3 py-1.5 text-xs text-vb-text-dim hover:bg-vb-surface-raised"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -668,8 +633,9 @@ export default function SettingsPage() {
         {/* Goal List */}
         <div className="mt-4 divide-y divide-vb-border-subtle">
           {goalsData?.goals.length === 0 && (
-            <p className="py-4 text-center text-sm text-vb-text-muted">
-              No goals set. Add an event to start training with purpose.
+            <p className="py-4 text-center text-sm text-vb-text-dim">
+              Nothing on the calendar yet. Give Forma a date to build the
+              season backwards from.
             </p>
           )}
           {goalsData?.goals.map((goal) => (
@@ -678,11 +644,11 @@ export default function SettingsPage() {
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/dashboard/goals/${goal.id}`}
-                    className="text-sm font-medium text-vb-text hover:text-vb-forest"
+                    className="text-sm font-medium text-vb-text transition-colors hover:text-vb-red"
                   >
                     {goal.event_name}
                   </Link>
-                  <p className="mt-0.5 text-xs text-vb-text-dim">
+                  <p className="f-data mt-0.5 text-xs text-vb-text-dim">
                     {formatDate(goal.event_date)} &middot;{" "}
                     <span className="capitalize">
                       {goal.event_type.replace(/_/g, " ")}
@@ -701,14 +667,14 @@ export default function SettingsPage() {
 
                   {/* Route data */}
                   {goal.route_data && !goal.route_data.error && (
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-vb-forest">
+                    <p className="f-data mt-0.5 flex items-center gap-1 text-xs text-vb-text-dim">
                       <MapPin className="h-3 w-3" />
                       {goal.route_data.total_distance_km &&
                         `${goal.route_data.total_distance_km}km`}
                       {goal.route_data.elevation_gain_m &&
-                        ` \u00B7 ${goal.route_data.elevation_gain_m}m climbing`}
+                        ` · ${goal.route_data.elevation_gain_m}m climbing`}
                       {(goal.route_data.title || goal.route_data.name) &&
-                        ` \u00B7 ${goal.route_data.title || goal.route_data.name}`}
+                        ` · ${goal.route_data.title || goal.route_data.name}`}
                     </p>
                   )}
 
@@ -718,7 +684,7 @@ export default function SettingsPage() {
                       href={goal.route_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-0.5 inline-flex items-center gap-1 text-xs text-vb-text-muted hover:text-vb-forest"
+                      className="mt-0.5 inline-flex items-center gap-1 text-xs text-vb-text-muted transition-colors hover:text-vb-red"
                     >
                       <ExternalLink className="h-3 w-3" />
                       Event link
@@ -727,7 +693,7 @@ export default function SettingsPage() {
 
                   {/* GPX badge */}
                   {goal.gpx_file_path && (
-                    <span className="ml-2 inline-flex items-center gap-1 text-xs text-vb-forest">
+                    <span className="ml-2 inline-flex items-center gap-1 text-xs text-vb-text-dim">
                       <Mountain className="h-3 w-3" />
                       GPX uploaded
                     </span>
@@ -743,7 +709,7 @@ export default function SettingsPage() {
 
                 <div className="ml-3 flex shrink-0 items-center gap-1.5">
                   {goal.days_until != null && goal.days_until > 0 && (
-                    <span className="rounded-full bg-vb-sage-tint px-2 py-0.5 text-xs text-vb-forest">
+                    <span className="f-data bg-vb-sunken px-2 py-0.5 text-xs text-vb-text-dim">
                       {goal.days_until}d
                     </span>
                   )}
@@ -754,7 +720,7 @@ export default function SettingsPage() {
                       gpxInputRef.current?.click();
                     }}
                     disabled={uploadGpx.isPending && gpxUploadingId === goal.id}
-                    className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-surface-raised hover:text-vb-forest"
+                    className="rounded-sm p-1.5 text-vb-text-muted transition-colors hover:bg-vb-sunken hover:text-vb-text"
                     title="Upload GPX file"
                   >
                     <Upload className="h-3.5 w-3.5" />
@@ -762,7 +728,7 @@ export default function SettingsPage() {
                   {/* Edit */}
                   <button
                     onClick={() => openEditGoal(goal)}
-                    className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-surface-raised hover:text-vb-text"
+                    className="rounded-sm p-1.5 text-vb-text-muted transition-colors hover:bg-vb-sunken hover:text-vb-text"
                     title="Edit goal"
                   >
                     <Pencil className="h-3.5 w-3.5" />
@@ -774,7 +740,7 @@ export default function SettingsPage() {
                         deleteGoal.mutate(goal.id);
                       }
                     }}
-                    className="rounded-sm p-1.5 text-vb-text-muted hover:bg-vb-surface-raised hover:text-vb-clay"
+                    className="rounded-sm p-1.5 text-vb-text-muted transition-colors hover:bg-vb-sunken hover:text-vb-red"
                     title="Delete goal"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -786,28 +752,38 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ============ DATA IN ============ */}
+      <SectionHeader kicker="Data in" title="Where your rides come from" />
+
       {/* Strava Integration */}
-      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">Strava</h2>
+      <section className="rounded-sm border border-vb-border-subtle bg-vb-surface p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="f-display text-2xl text-vb-text">Strava</h2>
+          {stravaStatus?.connected && <Badge variant="ink">Linked</Badge>}
+        </div>
         {stravaStatus?.connected ? (
-          <div className="mt-3 space-y-3">
-            <div className="flex items-center gap-2 text-sm text-vb-forest">
-              <Link2 className="h-4 w-4" /> Connected (Athlete #
-              {stravaStatus.athlete_id})
-            </div>
+          <div className="mt-4 space-y-3">
+            <p className="f-data text-xs text-vb-text-muted">
+              Athlete #{stravaStatus.athlete_id}
+            </p>
 
             {/* Backfill Progress */}
             {stravaStatus.backfill?.status === "running" && (
-              <div className="rounded-md border border-vb-border-subtle bg-vb-sage-tint p-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-vb-forest">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Importing ride history...
-                </div>
+              <div className="border border-vb-border-subtle bg-vb-sunken p-4">
+                <Kicker dot flamme>
+                  Reading your history
+                </Kicker>
                 {stravaStatus.backfill.total ? (
                   <>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-vb-sunken">
+                    <p className="f-data mt-3 text-2xl font-semibold leading-none text-vb-text">
+                      {stravaStatus.backfill.progress}
+                      <span className="text-vb-text-muted">
+                        {" "}/ {stravaStatus.backfill.total}
+                      </span>
+                    </p>
+                    <div className="mt-3 h-1 w-full overflow-hidden bg-vb-border-subtle">
                       <div
-                        className="h-full rounded-full bg-vb-forest transition-all duration-500"
+                        className="h-full bg-vb-red transition-all duration-500"
                         style={{
                           width: `${Math.round(
                             (stravaStatus.backfill.progress /
@@ -817,198 +793,210 @@ export default function SettingsPage() {
                         }}
                       />
                     </div>
-                    <p className="mt-1 text-xs text-vb-text-dim">
-                      {stravaStatus.backfill.progress} / {stravaStatus.backfill.total} activities processed
+                    <p className="mt-2 text-xs text-vb-text-dim">
+                      rides read, remembered, working for you
                     </p>
                   </>
                 ) : (
-                  <p className="mt-1 text-xs text-vb-text-dim">
-                    Scanning your Strava history...
+                  <p className="mt-2 text-xs text-vb-text-dim">
+                    Scanning everything you&apos;ve ever logged…
                   </p>
                 )}
               </div>
             )}
 
             {stravaStatus.backfill?.status === "completed" && (
-              <div className="rounded-md border border-vb-border-subtle bg-vb-sage-tint p-3">
-                <p className="text-sm text-vb-forest">
-                  History import complete, {stravaStatus.backfill.total} activities processed
+              <div className="border border-vb-border-subtle bg-vb-sunken p-4">
+                <p className="text-sm text-vb-text">
+                  History in.{" "}
+                  <span className="f-data font-semibold">
+                    {stravaStatus.backfill.total}
+                  </span>{" "}
+                  activities read and remembered.
                 </p>
                 {stravaStatus.backfill.completed_at && (
-                  <p className="mt-0.5 text-xs text-vb-text-muted">
-                    Completed {formatDate(stravaStatus.backfill.completed_at)}
+                  <p className="f-data mt-0.5 text-xs text-vb-text-muted">
+                    Finished {formatDate(stravaStatus.backfill.completed_at)}
                   </p>
                 )}
-                <button
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="mt-3"
                   onClick={async () => {
                     await strava.startBackfill(true);
                     queryClient.invalidateQueries({ queryKey: ["strava-status"] });
                   }}
-                  className="mt-2 rounded-sm border border-vb-border bg-vb-surface px-3 py-1 text-xs font-medium text-vb-forest hover:bg-vb-surface-raised"
                 >
                   Re-import from Strava
-                </button>
+                </Button>
               </div>
             )}
 
             {stravaStatus.backfill?.status === "paused" && (
-              <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-vb-clay">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Paused, waiting for Strava 15-min rate limit to reset
-                </div>
-                <p className="mt-1 text-xs text-vb-text-dim">
+              <div className="border border-vb-border bg-vb-sunken p-4">
+                <Kicker>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Paused, Strava&apos;s 15-minute limit
+                </Kicker>
+                <p className="mt-2 text-xs text-vb-text-dim">
                   {stravaStatus.backfill.total
-                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed, resuming in ~15 minutes`
-                    : "Resuming in ~15 minutes"}
+                    ? `${stravaStatus.backfill.progress} of ${stravaStatus.backfill.total} in. Back on it in about 15 minutes.`
+                    : "Back on it in about 15 minutes."}
                 </p>
               </div>
             )}
 
             {stravaStatus.backfill?.status === "paused_daily" && (
-              <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-vb-clay">
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  Paused, Strava daily limit reached
-                </div>
-                <p className="mt-1 text-xs text-vb-text-dim">
+              <div className="border border-vb-border bg-vb-sunken p-4">
+                <Kicker>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Paused, Strava&apos;s daily limit
+                </Kicker>
+                <p className="mt-2 text-xs text-vb-text-dim">
                   {stravaStatus.backfill.total
-                    ? `${stravaStatus.backfill.progress} / ${stravaStatus.backfill.total} processed. Strava allows 1,000 requests/day, your backfill will auto-resume at midnight UTC.`
-                    : "Strava allows 1,000 requests/day, your backfill will auto-resume at midnight UTC."}
+                    ? `${stravaStatus.backfill.progress} of ${stravaStatus.backfill.total} in. Strava allows 1,000 requests a day, Forma resumes at midnight UTC.`
+                    : "Strava allows 1,000 requests a day, Forma resumes at midnight UTC."}
                 </p>
               </div>
             )}
 
             {stravaStatus.backfill?.status === "failed" && (
-              <div className="rounded-md border border-vb-clay/30 bg-vb-clay/10 p-3">
-                <p className="text-sm text-vb-clay">
-                  History import failed, {stravaStatus.backfill.progress || 0} of{" "}
-                  {stravaStatus.backfill.total || "?"} processed before error
+              <div className="border border-vb-red/40 bg-vb-surface p-4">
+                <Kicker flamme>Import stopped</Kicker>
+                <p className="mt-2 text-sm text-vb-text-dim">
+                  It got through {stravaStatus.backfill.progress || 0} of{" "}
+                  {stravaStatus.backfill.total || "?"} before the error. Not
+                  your fault. Retry and it picks up where it left off.
                 </p>
-                <button
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="mt-3"
                   onClick={async () => {
                     await strava.startBackfill();
                     queryClient.invalidateQueries({ queryKey: ["strava-status"] });
                   }}
-                  className="mt-2 rounded-sm bg-vb-clay px-3 py-1 text-xs font-medium text-white hover:opacity-90"
                 >
-                  Retry Import
-                </button>
+                  Retry import
+                </Button>
               </div>
             )}
 
             {!stravaStatus.backfill?.status && (
-              <div className="rounded-md border border-vb-border-subtle bg-vb-bg p-3">
+              <div className="border border-vb-border-subtle bg-vb-bg p-4">
                 <p className="text-sm text-vb-text-dim">
-                  Import your full Strava history to give the coach maximum context.
+                  Give Forma your full history and every ride you&apos;ve ever
+                  logged starts working for you.
                 </p>
-                <button
+                <Button
+                  size="sm"
+                  className="mt-3"
                   onClick={async () => {
                     await strava.startBackfill();
                     queryClient.invalidateQueries({ queryKey: ["strava-status"] });
                   }}
-                  className="mt-2 flex items-center gap-1.5 rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Import Full History
-                </button>
+                  Import full history
+                </Button>
               </div>
             )}
 
             {stravaStatus.last_sync_at && (
-              <p className="text-xs text-vb-text-muted">
-                Last synced: {formatDate(stravaStatus.last_sync_at)}
+              <p className="f-data text-xs text-vb-text-muted">
+                Last synced {formatDate(stravaStatus.last_sync_at)}
               </p>
             )}
 
             <div className="flex gap-2">
-              <button
+              <Button
+                size="sm"
                 onClick={() => syncStrava.mutate()}
                 disabled={syncStrava.isPending}
-                className="flex items-center gap-1.5 rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${syncStrava.isPending ? "animate-spin" : ""}`}
                 />
-                {syncStrava.isPending ? "Syncing..." : "Sync Recent"}
-              </button>
-              <button
+                {syncStrava.isPending ? "Syncing…" : "Sync recent"}
+              </Button>
+              <Button
+                size="sm"
+                variant="quiet"
                 onClick={async () => {
                   await strava.disconnect();
                   queryClient.invalidateQueries({
                     queryKey: ["strava-status"],
                   });
                 }}
-                className="flex items-center gap-1.5 rounded-sm border border-vb-clay px-3 py-1.5 text-xs text-vb-clay hover:bg-vb-clay/10"
               >
-                <Unlink className="h-3.5 w-3.5" /> Disconnect
-              </button>
+                Disconnect
+              </Button>
             </div>
           </div>
         ) : (
-          <div className="mt-3">
-            <p className="text-sm text-vb-text-dim">
-              Connect Strava to automatically sync your rides and import your full training history.
+          <div className="mt-4 border border-dashed border-vb-border p-5">
+            <p className="text-sm leading-relaxed text-vb-text-dim">
+              Connect Strava and Forma reads every ride you&apos;ve ever
+              logged, overnight.
             </p>
-            <button
+            <Button
+              variant="flamme"
+              className="mt-4"
               onClick={async () => {
                 const { auth_url } = await strava.getAuthUrl();
                 window.location.href = auth_url;
               }}
-              className="mt-3 flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
             >
-              <Link2 className="h-4 w-4" /> Connect Strava
-            </button>
+              Connect Strava
+              <Arrow />
+            </Button>
           </div>
         )}
       </section>
 
       {/* Dropbox Integration */}
-      <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
-        <h2 className="flex items-center gap-2 font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
-          <HardDrive className="h-5 w-5 text-vb-forest" />
-          Dropbox
-        </h2>
+      <section className="rounded-sm border border-vb-border-subtle bg-vb-surface p-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="f-display text-2xl text-vb-text">Dropbox</h2>
+          {dropboxStatus?.connected && <Badge variant="ink">Linked</Badge>}
+        </div>
         {dropboxStatus?.connected ? (
-          <div className="mt-3 space-y-3">
-            <div className="flex items-center gap-2 text-sm text-vb-forest">
-              <Link2 className="h-4 w-4" /> Connected
-              {dropboxStatus.account_id &&
-                ` (${dropboxStatus.account_id})`}
-            </div>
+          <div className="mt-4 space-y-3">
+            {dropboxStatus.account_id && (
+              <p className="f-data text-xs text-vb-text-muted">
+                {dropboxStatus.account_id}
+              </p>
+            )}
 
             {/* Folder path */}
-            <div className="rounded-md border border-vb-border-subtle bg-vb-bg p-3">
+            <div className="border border-vb-border-subtle bg-vb-bg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-vb-text-muted">
-                    Sync Folder
-                  </p>
+                  <Kicker className="mb-1">Sync folder</Kicker>
                   {editingFolder ? (
                     <div className="mt-1 flex gap-2">
-                      <input
+                      <Input
                         value={folderPath}
                         onChange={(e) => setFolderPath(e.target.value)}
                         placeholder="/cycling"
-                        className="rounded-sm border border-vb-border bg-vb-surface px-2 py-1 text-sm text-vb-text focus:border-vb-forest focus:outline-none"
+                        className="h-8 text-xs"
                       />
-                      <button
-                        onClick={() =>
-                          updateDropboxFolder.mutate(folderPath)
-                        }
-                        className="rounded-sm bg-vb-forest px-2 py-1 text-xs text-white hover:bg-vb-forest-soft"
+                      <Button
+                        size="sm"
+                        onClick={() => updateDropboxFolder.mutate(folderPath)}
                       >
                         Save
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => setEditingFolder(false)}
-                        className="rounded-sm border border-vb-border px-2 py-1 text-xs text-vb-text-dim"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <p className="mt-0.5 flex items-center gap-1 text-sm text-vb-text">
+                    <p className="f-data mt-0.5 flex items-center gap-1.5 text-sm text-vb-text">
                       <FolderSync className="h-3.5 w-3.5 text-vb-text-muted" />
                       {dropboxStatus.folder_path || "/cycling"}
                       <button
@@ -1018,7 +1006,7 @@ export default function SettingsPage() {
                           );
                           setEditingFolder(true);
                         }}
-                        className="ml-2 text-xs text-vb-forest hover:text-vb-forest-soft"
+                        className="f-kicker ml-2 text-vb-text-muted transition-colors hover:text-vb-red"
                       >
                         Change
                       </button>
@@ -1027,53 +1015,53 @@ export default function SettingsPage() {
                 </div>
               </div>
               {dropboxStatus.last_sync_at && (
-                <p className="mt-1 text-xs text-vb-text-muted">
-                  Last synced: {formatDate(dropboxStatus.last_sync_at)}
+                <p className="f-data mt-2 text-xs text-vb-text-muted">
+                  Last synced {formatDate(dropboxStatus.last_sync_at)}
                 </p>
               )}
             </div>
 
             <div className="flex gap-2">
-              <button
+              <Button
+                size="sm"
                 onClick={() => syncDropbox.mutate()}
                 disabled={syncDropbox.isPending}
-                className="flex items-center gap-1.5 rounded-sm bg-vb-forest px-3 py-1.5 text-xs font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
               >
                 <RefreshCw
                   className={`h-3.5 w-3.5 ${syncDropbox.isPending ? "animate-spin" : ""}`}
                 />
-                {syncDropbox.isPending
-                  ? "Syncing..."
-                  : "Sync FIT Files"}
-              </button>
-              <button
+                {syncDropbox.isPending ? "Syncing…" : "Sync FIT files"}
+              </Button>
+              <Button
+                size="sm"
+                variant="quiet"
                 onClick={async () => {
                   await dropbox.disconnect();
                   queryClient.invalidateQueries({
                     queryKey: ["dropbox-status"],
                   });
                 }}
-                className="flex items-center gap-1.5 rounded-sm border border-vb-clay px-3 py-1.5 text-xs text-vb-clay hover:bg-vb-clay/10"
               >
-                <Unlink className="h-3.5 w-3.5" /> Disconnect
-              </button>
+                Disconnect
+              </Button>
             </div>
           </div>
         ) : (
-          <div className="mt-3">
-            <p className="text-sm text-vb-text-dim">
-              Connect Dropbox to import FIT files from a folder. Drop your ride
-              files into a Dropbox folder and sync them here.
+          <div className="mt-4 border border-dashed border-vb-border p-5">
+            <p className="text-sm leading-relaxed text-vb-text-dim">
+              Drop FIT files into a Dropbox folder and Forma collects them
+              from there. Handy for head units that never met Strava.
             </p>
-            <button
+            <Button
+              variant="ghost"
+              className="mt-4"
               onClick={async () => {
                 const { auth_url } = await dropbox.getAuthUrl();
                 window.location.href = auth_url;
               }}
-              className="mt-3 flex items-center gap-2 rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft"
             >
-              <HardDrive className="h-4 w-4" /> Connect Dropbox
-            </button>
+              Connect Dropbox
+            </Button>
           </div>
         )}
       </section>
@@ -1081,18 +1069,18 @@ export default function SettingsPage() {
   );
 }
 
-// ============ Your coach — name, face, tone ============
+// ============ Your coach, name, face, tone ============
 
 function CoachSection() {
   const { user, refreshUser } = useAuth();
-  const [coachName, setCoachName] = useState(user?.coach_name ?? "Marco");
+  const [coachName, setCoachName] = useState(user?.coach_name ?? "Forma");
   const [avatar, setAvatar] = useState(normalizeAvatarKey(user?.coach_avatar));
   const [tone, setTone] = useState(user?.coach_tone ?? "balanced");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const dirty =
-    coachName !== (user?.coach_name ?? "Marco") ||
+    coachName !== (user?.coach_name ?? "Forma") ||
     avatar !== normalizeAvatarKey(user?.coach_avatar) ||
     tone !== (user?.coach_tone ?? "balanced");
 
@@ -1101,7 +1089,7 @@ function CoachSection() {
     setSaved(false);
     try {
       await users.updateProfile({
-        coach_name: coachName.trim() || "Marco",
+        coach_name: coachName.trim() || "Forma",
         coach_avatar: avatar,
         coach_tone: tone,
       });
@@ -1114,78 +1102,28 @@ function CoachSection() {
   }
 
   return (
-    <section className="rounded-md border border-vb-border-subtle bg-vb-surface p-6">
-      <h2 className="font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
-        Your coach
-      </h2>
+    <section className="rounded-sm border border-vb-border-subtle bg-vb-surface p-6">
+      <h2 className="f-display text-2xl text-vb-text">Your coach</h2>
       <p className="mt-1 text-sm text-vb-text-dim">
-        Same world-class coaching, your name for them, their face, and the way
-        they talk to you.
+        Forma is your coach. Choose the manner, keep the standard. The
+        coaching is world-class either way.
       </p>
 
-      {/* Name */}
-      <div className="mt-5 max-w-xs">
-        <label className="mb-2 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-          Coach&apos;s name
-        </label>
-        <input
-          type="text"
-          value={coachName}
-          maxLength={30}
-          onChange={(e) => setCoachName(e.target.value)}
-          className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:outline-none focus:ring-2 focus:ring-vb-forest"
-          placeholder="Marco"
-        />
-      </div>
-
-      {/* Avatar */}
+      {/* Tone, the primary personalisation */}
       <div className="mt-6">
-        <label className="mb-3 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-          Their face
+        <label className="f-kicker mb-3 block text-vb-text-muted">
+          How Forma talks to you
         </label>
-        <div className="grid grid-cols-5 gap-3 sm:grid-cols-10">
-          {COACH_AVATARS.map((a) => (
-            <button
-              key={a.key}
-              type="button"
-              onClick={() => {
-                setAvatar(a.key);
-                // Marco ↔ Maria pair with the face (internal metadata only) —
-                // never override a custom name the rider typed (PRD OQ2).
-                const n = coachName.trim();
-                if (n === "" || n === "Marco" || n === "Maria") {
-                  setCoachName(a.defaultName);
-                }
-              }}
-              className={cn(
-                "overflow-hidden rounded-full border-2 transition-all",
-                avatar === a.key
-                  ? "border-vb-forest ring-2 ring-vb-forest/30"
-                  : "border-vb-border-subtle opacity-70 hover:opacity-100"
-              )}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={a.src} alt="Coach portrait" className="aspect-square w-full object-cover" />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tone */}
-      <div className="mt-6">
-        <label className="mb-3 block text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-          How they talk to you
-        </label>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="f-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {COACH_TONES.map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => setTone(t.key)}
               className={cn(
-                "rounded-md border p-4 text-left transition-colors",
+                "f-press rounded-sm border p-4 text-left transition-colors",
                 tone === t.key
-                  ? "border-vb-forest bg-vb-sage-tint/40"
+                  ? "border-vb-red bg-vb-sunken"
                   : "border-vb-border-subtle bg-vb-surface hover:border-vb-border"
               )}
             >
@@ -1199,17 +1137,30 @@ function CoachSection() {
         </div>
       </div>
 
+      {/* Optional custom name, coach stays Forma by default */}
+      <div className="mt-6 max-w-xs">
+        <label className="f-kicker mb-2 block text-vb-text-muted">
+          Prefer another name? (optional)
+        </label>
+        <Input
+          type="text"
+          value={coachName}
+          maxLength={30}
+          onChange={(e) => setCoachName(e.target.value)}
+          placeholder="Forma"
+        />
+        <p className="mt-1.5 text-[11px] text-vb-text-muted">
+          Your coach stays Forma unless you change this.
+        </p>
+      </div>
+
       <div className="mt-5 flex items-center gap-3">
-        <button
-          onClick={save}
-          disabled={saving || !dirty}
-          className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
-        >
+        <Button size="sm" onClick={save} disabled={saving || !dirty}>
           {saving ? "Saving…" : "Save coach"}
-        </button>
+        </Button>
         {saved && (
-          <span className="text-xs text-vb-forest">
-            Done, {coachName.trim() || "Marco"} is ready.
+          <span className="f-kicker text-vb-success">
+            Done, {coachName.trim() || "Forma"} is ready.
           </span>
         )}
       </div>

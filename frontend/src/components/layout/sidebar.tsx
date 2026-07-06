@@ -6,16 +6,16 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { FormaMark } from "@/components/ui/forma-mark";
 
 /**
- * ALMANAC sidebar — a quiet masthead, a route-contour motif, and a calm
- * dotted nav. The active item is marked by a small forest dot, not a loud
- * underline. Editorial restraint over visual frills.
+ * FORMA sidebar, a bold masthead, mono nav, one flamme dot marking
+ * where you are. On mobile the top bar and drawer invert to carbon.
  */
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/dashboard/coach", label: "Coach Marco" },
+  { href: "/dashboard/coach", label: "Coach Forma" },
   { href: "/dashboard/brain", label: "Your Brain" },
   { href: "/dashboard/rides", label: "Rides" },
   { href: "/dashboard/performance", label: "Performance" },
@@ -27,7 +27,7 @@ const navItems = [
 function RouteMotif() {
   return (
     <svg
-      className="mt-4 block text-vb-forest/60"
+      className="mt-4 block text-vb-red/40"
       width="150"
       height="14"
       viewBox="0 0 150 14"
@@ -40,7 +40,7 @@ function RouteMotif() {
         strokeWidth="1.3"
         strokeLinecap="round"
       />
-      <circle cx="150" cy="6" r="2.2" fill="var(--color-vb-clay)" />
+      <circle cx="150" cy="6" r="2.2" className="fill-vb-red" />
     </svg>
   );
 }
@@ -67,17 +67,17 @@ export function Sidebar() {
       <div className="px-7 pt-10 pb-2">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-display text-[22px] font-medium leading-none tracking-[0.22em]">
-              MARCO
+            <h1 className="f-display text-[22px] leading-none text-vb-chalk md:text-vb-text">
+              <FormaMark />
             </h1>
-            <p className="mt-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-vb-text-muted">
-              Your coach · life &amp; legs
+            <p className="f-kicker mt-2.5 text-[10px] text-vb-chalk-dim md:text-vb-text-muted">
+              Your coach · Every ride remembered
             </p>
             <RouteMotif />
           </div>
           <button
             onClick={() => setMobileOpen(false)}
-            className="text-vb-text-muted hover:text-vb-text md:hidden"
+            className="text-vb-chalk-dim hover:text-vb-chalk md:hidden"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -98,20 +98,20 @@ export function Sidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3.5 rounded-sm px-3 py-2.5 text-[15px] transition-colors",
+                    "f-kicker flex items-center gap-3.5 rounded-sm px-3 py-2.5 transition-colors",
                     isActive
-                      ? "text-vb-text"
-                      : "text-vb-text-dim hover:text-vb-text"
+                      ? "text-vb-chalk md:text-vb-text"
+                      : "text-vb-chalk-dim hover:text-vb-chalk md:text-vb-text-muted md:hover:text-vb-text"
                   )}
                 >
                   <span
                     className={cn(
                       "h-1.5 w-1.5 rounded-full transition-colors",
-                      isActive ? "bg-vb-forest" : "bg-vb-border"
+                      isActive ? "bg-vb-red" : "bg-transparent"
                     )}
                   />
                   {item.href === "/dashboard/coach"
-                    ? `Coach ${user?.coach_name || "Marco"}`
+                    ? user?.coach_name || "Forma"
                     : item.label}
                 </Link>
               </li>
@@ -121,25 +121,28 @@ export function Sidebar() {
       </nav>
 
       {/* User footer */}
-      <div className="mx-5 mb-6 flex items-center justify-between gap-3 border-t border-vb-border-subtle pt-5">
+      <div className="mx-5 mb-6 flex items-center justify-between gap-3 border-t border-vb-carbon-raised pt-5 md:border-vb-border-subtle">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-forest font-display text-sm font-medium text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-carbon-raised font-display text-sm font-semibold text-vb-chalk md:bg-vb-text md:text-white">
             {(user?.full_name?.[0] || "R").toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium leading-none text-vb-text">
+            <p className="truncate text-sm font-medium leading-none text-vb-chalk md:text-vb-text">
               {user?.full_name?.split(" ")[0] || "Rider"}
             </p>
             {user?.ftp && (
-              <p className="mt-1 text-xs text-vb-text-muted">
-                FTP · <span className="text-vb-text-dim">{user.ftp}w</span>
+              <p className="f-data mt-1 text-xs text-vb-chalk-dim md:text-vb-text-muted">
+                FTP ·{" "}
+                <span className="text-vb-chalk md:text-vb-text-dim">
+                  {user.ftp}w
+                </span>
               </p>
             )}
           </div>
         </div>
         <button
           onClick={logout}
-          className="rounded-sm border border-vb-border-subtle p-2 text-vb-text-muted transition-colors hover:border-vb-border hover:text-vb-text"
+          className="rounded-sm border border-vb-carbon-raised p-2 text-vb-chalk-dim transition-colors hover:border-vb-chalk-dim hover:text-vb-chalk md:border-vb-border-subtle md:text-vb-text-muted md:hover:border-vb-border md:hover:text-vb-text"
           title="Log out"
           aria-label="Log out"
         >
@@ -151,16 +154,16 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile header bar */}
-      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-4 border-b border-vb-border-subtle bg-vb-bg px-4 md:hidden">
+      {/* Mobile header bar, carbon-inverted */}
+      <div className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-4 border-b border-vb-carbon-raised bg-vb-carbon px-4 text-vb-chalk md:hidden">
         <button
           onClick={() => setMobileOpen(true)}
-          className="text-vb-text"
+          className="text-vb-chalk"
           aria-label="Open menu"
         >
           <Menu className="h-6 w-6" />
         </button>
-        <span className="font-display text-lg font-medium tracking-[0.18em]">MARCO</span>
+        <FormaMark className="f-display text-lg text-vb-chalk" />
       </div>
 
       {/* Mobile overlay */}
@@ -171,10 +174,10 @@ export function Sidebar() {
         />
       )}
 
-      {/* Sidebar panel */}
+      {/* Sidebar panel, carbon drawer on mobile, paper column on desktop */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-vb-border-subtle bg-vb-bg transition-transform duration-300 ease-in-out md:static md:z-auto md:w-64 md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-vb-carbon text-vb-chalk transition-transform duration-300 ease-in-out md:static md:z-auto md:w-64 md:translate-x-0 md:border-r md:border-vb-border-subtle md:bg-vb-bg md:text-vb-text",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
