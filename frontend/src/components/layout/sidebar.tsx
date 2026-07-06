@@ -89,7 +89,7 @@ export function Sidebar() {
                     )}
                   />
                   {item.href === "/dashboard/coach"
-                    ? user?.coach_name || "Forma"
+                    ? `Coach ${user?.coach_name || "Forma"}`
                     : item.label}
                 </Link>
               </li>
