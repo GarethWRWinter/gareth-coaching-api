@@ -24,27 +24,6 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings" },
 ];
 
-function RouteMotif() {
-  return (
-    <svg
-      className="mt-4 block text-vb-red/40"
-      width="150"
-      height="14"
-      viewBox="0 0 150 14"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M0,10 C14,10 19,4 30,5 C43,6 47,11 60,10 C73,9 77,2 90,4 C103,6 109,10 122,9 C133,8 140,8 150,6"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-      <circle cx="150" cy="6" r="2.2" className="fill-vb-red" />
-    </svg>
-  );
-}
-
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -71,9 +50,8 @@ export function Sidebar() {
               <FormaMark />
             </h1>
             <p className="f-kicker mt-2.5 text-[10px] text-vb-chalk-dim md:text-vb-text-muted">
-              Your coach · Every ride remembered
+              Your coach · A memory for everything, an eye on race day
             </p>
-            <RouteMotif />
           </div>
           <button
             onClick={() => setMobileOpen(false)}

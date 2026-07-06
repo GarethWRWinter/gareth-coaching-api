@@ -44,7 +44,7 @@ export default function LoginPage() {
           <h1 className="f-display text-6xl leading-none tracking-[-0.03em]">
             <FormaMark />
           </h1>
-          <Kicker className="mt-3">Your coach · Every ride remembered</Kicker>
+          <Kicker className="mt-3">Your coach · A memory for everything, an eye on race day</Kicker>
         </div>
 
         {/* Header */}
