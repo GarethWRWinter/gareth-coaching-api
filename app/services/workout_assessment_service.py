@@ -1,7 +1,7 @@
 """
 Workout execution assessment — compares a planned workout to the actual
 ride that was ridden, produces a numeric quality score out of 10, and asks
-Coach Marco for supportive feedback and adjustments to the next few days.
+Coach Forma for supportive feedback and adjustments to the next few days.
 
 The numeric score is deterministic (no Claude call), so the UI can show it
 instantly. The written feedback is generated on demand by Claude and then

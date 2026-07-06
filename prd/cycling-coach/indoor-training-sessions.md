@@ -12,15 +12,15 @@ resolution: 5/7
 
 # Indoor Training Sessions
 
-> Part of [AI Cycling Coach (Marco)](../cycling-coach.md)
+> Part of [AI Cycling Coach (Forma)](../cycling-coach.md)
 
 ## Purpose
 
-Indoor Training Sessions delivers Pillar 3 — Marco rides with you. The training plan must be rideable *inside the app*, on a smart trainer, with live power, heart rate and cadence streaming, ERG control, in-ride coaching cues, and a complete ride record written to memory the moment the cooldown ends.
+Indoor Training Sessions delivers Pillar 3 — Forma rides with you. The training plan must be rideable *inside the app*, on a smart trainer, with live power, heart rate and cadence streaming, ERG control, in-ride coaching cues, and a complete ride record written to memory the moment the cooldown ends.
 
-This is not "build a better Zwift." Zwift, Wahoo Systm, TrainerRoad, Rouvy — all of them already do BLE pairing and ERG control well. The unique value is that **Marco is in the cockpit**. The trainer integration is the cost of admission. The actual feature is a coach who watches the rider in real time, encourages when they're nailing the target, gently nudges when they drift, and remembers this session next time they talk.
+This is not "build a better Zwift." Zwift, Wahoo Systm, TrainerRoad, Rouvy — all of them already do BLE pairing and ERG control well. The unique value is that **Forma is in the cockpit**. The trainer integration is the cost of admission. The actual feature is a coach who watches the rider in real time, encourages when they're nailing the target, gently nudges when they drift, and remembers this session next time they talk.
 
-Without the live ride, Marco can only ever react after the fact, with whatever Strava decides to share, hours later. With it, Marco coaches the most important hour of the rider's day — and writes that hour into memory the moment the rider unclips.
+Without the live ride, Forma can only ever react after the fact, with whatever Strava decides to share, hours later. With it, Forma coaches the most important hour of the rider's day — and writes that hour into memory the moment the rider unclips.
 
 **v1 device support:** Wahoo Kickr Core via FTMS, on desktop Chrome only (Web Bluetooth limitation). Native iOS companion follows in v1.1 — see Native iOS Companion epic.
 
@@ -28,7 +28,7 @@ Without the live ride, Marco can only ever react after the fact, with whatever S
 
 ### Founder dogfood (Milestone 1 exit)
 
-*"I open the app on my MacBook on the trainer mat. I pick today's planned threshold session. I click pair, the chooser opens, I select my Kickr Core. ERG locks on, I start the warm-up, and the watts are right. Marco speaks at the start of the first interval ('here we go — 290 for 8 minutes, smooth and steady'). I finish the cooldown, the ride saves automatically, and ten seconds later there's a Marco debrief on the ride detail page that references how I felt going in (which I'd told him in chat that morning). That's the moment Pillar 3 is real."*
+*"I open the app on my MacBook on the trainer mat. I pick today's planned threshold session. I click pair, the chooser opens, I select my Kickr Core. ERG locks on, I start the warm-up, and the watts are right. Forma speaks at the start of the first interval ('here we go — 290 for 8 minutes, smooth and steady'). I finish the cooldown, the ride saves automatically, and ten seconds later there's a Forma debrief on the ride detail page that references how I felt going in (which I'd told him in chat that morning). That's the moment Pillar 3 is real."*
 
 ### Closed beta on a friend's setup
 
@@ -63,17 +63,17 @@ Without the live ride, Marco can only ever react after the fact, with whatever S
 - Local buffer (IndexedDB) writes every frame. Survives tab close / refresh / network drop.
 - In-ride voice cues at: warm-up start, each interval start ("here we go — 290 for 8 minutes"), 30s before cooldown ("almost there, ease off in 30"), cooldown start, end-of-ride.
 
-### Marco-in-cockpit (Milestone 1: basic; Milestone 2: full)
+### Forma-in-cockpit (Milestone 1: basic; Milestone 2: full)
 
-- **M1:** Pre-scripted voice cues at fixed transitions. Marco "speaks" the lines but doesn't react.
-- **M2:** Marco can react to live data — if rider is consistently >10W under target for >30s, prompt: *"You're under target — anything wrong, or do we drop the interval?"*. Mid-session interaction via voice. Memory consulted for context.
+- **M1:** Pre-scripted voice cues at fixed transitions. Forma "speaks" the lines but doesn't react.
+- **M2:** Forma can react to live data — if rider is consistently >10W under target for >30s, prompt: *"You're under target — anything wrong, or do we drop the interval?"*. Mid-session interaction via voice. Memory consulted for context.
 
 ### Ride completion
 
 - On cooldown finish (or user manual stop) → confirmation modal *"Save this ride?"* (default Yes).
 - Local buffer flushes to backend: `POST /sessions/{id}/complete` with telemetry blob + FIT file (locally generated from the buffer).
 - Backend computes derived metrics (avg power, NP, TSS, IF) and creates `rides` row, links to `sessions` row.
-- `marco-core` triggered: ride debrief generation (Haiku, ~$0.006). Debrief written to `mem_facts` (Layer C) and surfaced on ride detail page.
+- `forma-core` triggered: ride debrief generation (Haiku, ~$0.006). Debrief written to `mem_facts` (Layer C) and surfaced on ride detail page.
 - User redirected to ride detail page with debrief visible.
 
 ### Reconnection / resilience
@@ -96,12 +96,12 @@ Without the live ride, Marco can only ever react after the fact, with whatever S
 - Step-based workout player with countdown UI.
 - Pre-scripted voice cues (warmup / interval start / cooldown).
 - Auto-save on completion, FIT generation, ride record creation.
-- Marco-authored ride debrief written to memory.
+- Forma-authored ride debrief written to memory.
 - Desktop Chrome, Edge, Brave only (any Chromium with Web Bluetooth).
 
 ### In scope (Milestone 2 follow-on)
 
-- Reactive Marco mid-ride (under-target detection, voice intervention).
+- Reactive Forma mid-ride (under-target detection, voice intervention).
 - Other smart trainers: Tacx Neo, Elite, Saris (also FTMS-compliant).
 - Native iOS companion (separate epic — Native iOS Companion).
 
@@ -119,7 +119,7 @@ Without the live ride, Marco can only ever react after the fact, with whatever S
 
 ## Dependencies
 
-- **`marco-core` skeleton (Memory Layer epic, M1 deliverable)** — for the post-ride debrief generation. Without it, the ride saves but no debrief.
+- **`forma-core` skeleton (Memory Layer epic, M1 deliverable)** — for the post-ride debrief generation. Without it, the ride saves but no debrief.
 - **`memory` schema (Memory Layer epic, M1 deliverable)** — for writing the debrief to Layer C.
 - **Multi-User & Auth secret-link mode (Multi-User & Auth epic, M1 deliverable)** — to share the experience with 2-3 close friends for early dogfood.
 - **Existing infra:** Postgres, Strava connection (for cross-checking ride creation), workout step data model (already built).
@@ -128,18 +128,18 @@ Without the live ride, Marco can only ever react after the fact, with whatever S
 
 ### M1 exit gate
 
-Gareth completes 5 consecutive planned sessions inside Marco with **no manual intervention**:
+Gareth completes 5 consecutive planned sessions inside Forma with **no manual intervention**:
 - Pairing succeeds first attempt in 5/5 sessions.
 - ERG holds target within ±3W for ≥95% of in-step time.
 - Telemetry capture: zero data gaps >5s.
 - Ride saves and creates a `rides` row with TSS/IF/NP within 10s of cooldown finish.
-- Marco debrief is generated and references at least one prior conversation or ride for each session.
+- Forma debrief is generated and references at least one prior conversation or ride for each session.
 
 ### Beta exit (≥3 closed-beta users)
 
 Each beta user, on their own Kickr Core, on Windows or Mac Chrome:
 - Completes onboarding pairing on first attempt without contacting support.
-- Median rider rates the experience ≥4/5 on a single in-app prompt: *"How was your session in Marco?"*.
+- Median rider rates the experience ≥4/5 on a single in-app prompt: *"How was your session in Forma?"*.
 - Reports zero data loss across 5+ sessions.
 
 ### Operational
@@ -166,9 +166,9 @@ IndexedDB write path, refresh-survivable session state, FIT file synthesis from 
 
 Pre-recorded ElevenLabs cues OR live-synthesised cues for fixed transitions. Reuse existing voice infra.
 
-### F5 — Ride save + Marco debrief pipeline
+### F5 — Ride save + Forma debrief pipeline
 
-`POST /sessions/{id}/complete` endpoint, ride record creation, `marco-core` debrief generation, memory write.
+`POST /sessions/{id}/complete` endpoint, ride record creation, `forma-core` debrief generation, memory write.
 
 ### F6 — Reconnection + resilience
 
@@ -177,6 +177,6 @@ BLE dropout detection, auto-reconnect, tab-refresh resume flow, network-loss tol
 ## Open Questions
 
 - **OQ1:** FIT file generation — client-side (TypeScript FIT library) or server-side (Python from telemetry blob)? Client-side is faster but the FIT spec is finicky. Server-side is the safer first pass.
-- **OQ2:** Voice cues in M1 — pre-rendered audio files (cheaper, lower latency) or live synthesis (more flexible, paves way for reactive Marco in M2)? Probably pre-rendered for the 5-6 fixed cues, live for anything reactive in M2.
-- **OQ3:** What's the right behaviour if the user's planned session is e.g. 90 minutes but they only have 45 minutes? Do we offer "shorten to fit" via Marco, or just let them stop early and Marco notes it post-ride? M1: stop-early; M2: offer-shorten.
+- **OQ2:** Voice cues in M1 — pre-rendered audio files (cheaper, lower latency) or live synthesis (more flexible, paves way for reactive Forma in M2)? Probably pre-rendered for the 5-6 fixed cues, live for anything reactive in M2.
+- **OQ3:** What's the right behaviour if the user's planned session is e.g. 90 minutes but they only have 45 minutes? Do we offer "shorten to fit" via Forma, or just let them stop early and Forma notes it post-ride? M1: stop-early; M2: offer-shorten.
 - **OQ4:** ERG smoothing — Wahoo's ERG can hunt around the target on cadence changes. Do we filter / smooth client-side, or trust the trainer? Trust for v1; revisit if it feels jumpy.

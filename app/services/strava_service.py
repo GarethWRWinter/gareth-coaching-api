@@ -300,7 +300,7 @@ async def sync_activities(
     except Exception:
         logger.exception("Auto-link module failed to load")
 
-    # Auto-generate Coach Marco debriefs for each new ride (fire-and-forget).
+    # Auto-generate Coach Forma debriefs for each new ride (fire-and-forget).
     try:
         from app.services.coach_insights_service import generate_ride_debrief
         for r in synced_rides:
@@ -317,7 +317,7 @@ async def sync_activities(
 
                         extract_memories(
                             db, user,
-                            f"Ride: {r.title}\n\nMarco's debrief:\n{r.debrief_text}",
+                            f"Ride: {r.title}\n\nForma's debrief:\n{r.debrief_text}",
                             source="debrief", source_ref=str(r.id),
                         )
                 except Exception:

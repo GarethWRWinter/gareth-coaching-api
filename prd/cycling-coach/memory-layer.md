@@ -14,7 +14,7 @@ reference: 'TIE Memory v2 — Taxonomy & App Lenses (blinklife.com/vishen/p/memo
 
 # Memory Layer (Pillar 2) — The Brain
 
-> Part of [AI Cycling Coach (Marco)](../cycling-coach.md)
+> Part of [AI Cycling Coach (Forma)](../cycling-coach.md)
 >
 > **v2** — rearchitected after studying TIE Memory v2 (BlinkLife). The core change: Layer C is no
 > longer a flat pile of embedded sentences — it is a **typed entity graph** whose relationships are
@@ -23,13 +23,13 @@ reference: 'TIE Memory v2 — Taxonomy & App Lenses (blinklife.com/vishen/p/memo
 
 ## Purpose
 
-Memory is the moat. Every other Marco capability — coaching tone, plan adaptation, in-ride cues,
-post-ride debriefs, race reports — depends on Marco knowing who the user is across months and years.
+Memory is the moat. Every other Forma capability — coaching tone, plan adaptation, in-ride cues,
+post-ride debriefs, race reports — depends on Forma knowing who the user is across months and years.
 
 v2 adds the deeper claim: **"knows you better than you know yourself" doesn't come from recalling
 facts; it comes from traversing connections between them.** A coach who can follow the thread from
 your son's Tuesday school runs to your missed intervals — and re-plan around it — is a companion,
-not a chatbot. Marco is a **life coach and a cycling coach**: the whole life feeds the training.
+not a chatbot. Forma is a **life coach and a cycling coach**: the whole life feeds the training.
 
 ## Architecture decision: build, not buy
 
@@ -77,13 +77,13 @@ Value —GROUNDS→ Goal —SURFACES→ LearningGap —ADDRESSED_BY→ Insight �
 Edge types: `GROUNDS, SERVES, SURFACES, ADDRESSED_BY, BECAME, INVOLVES, CONSTRAINS, ABOUT`.
 
 The **closed loop is the signature coaching move**: gap found in March → advice → habit → the data
-proves it worked → Marco says so. `Insight.status` means Marco never re-suggests what failed and can
+proves it worked → Forma says so. `Insight.status` means Forma never re-suggests what failed and can
 celebrate what stuck. **Plans are wiring, not a type** — a plan is the traversal of a Goal's edges;
 nothing to drift out of sync.
 
 ### Layers A/B/D/E (unchanged roles, one source of truth)
 
-- **A — structured state** (rides, PMC, FTP…) and **B — event log** stay as-is: Marco's objective
+- **A — structured state** (rides, PMC, FTP…) and **B — event log** stay as-is: Forma's objective
   ground truth, *referenced* by entities via `source_ref`, never duplicated into the graph.
 - **D — semantic profile / E — coach arc** remain cache-friendly prompt prefixes, now **derived by
   traversing the graph**, not rewriting a fact pile.
@@ -108,7 +108,7 @@ proof of the moat. Reference: `mockups/memory-graph-almanac.html` (approved).
   English, provenance, **Hide** (hide-not-delete lives here).
 - **Time scrubber ▶** — replay the year; nodes appear when the memory was born. The relationship
   made visible ("+9 this week").
-- **Marco's reading of your brain** — the graph narrated in Marco's voice, signed by hand.
+- **Forma's reading of your brain** — the graph narrated in Forma's voice, signed by hand.
 - Empty state: "Your brain starts with your first conversation."
 
 ## Write & read paths
@@ -116,7 +116,7 @@ proof of the moat. Reference: `mockups/memory-graph-almanac.html` (approved).
 - **Extraction:** after each coach conversation turn and each ride debrief, a Haiku call with the
   taxonomy prompt returns entities + edges (JSON). Dedup on (type, normalized label) similarity;
   existing entities are enriched, not duplicated. Failures are **logged loudly** — never swallowed.
-- **Retrieval (`get_context`)**: compact text block for Marco's prompts — recent + high-degree +
+- **Retrieval (`get_context`)**: compact text block for Forma's prompts — recent + high-degree +
   goal-adjacent entities, hidden facts included but flagged *never quote verbatim*.
 - Hidden ≠ deleted: `hidden_at` set; excluded from Brain view; retained for coaching safety
   (medical soft-warning per v1). Hard-delete only via GDPR account deletion.
@@ -125,7 +125,7 @@ proof of the moat. Reference: `mockups/memory-graph-almanac.html` (approved).
 
 - Recall eval ≥ 90% on the 50-question held-out set; **extraction eval**: labelled fixture set in CI
   (docstrings are prompts — test them like prompts).
-- Marco references at least one cross-life thread per week of active use (the companion metric).
+- Forma references at least one cross-life thread per week of active use (the companion metric).
 - Retrieval p95 ≤ 200ms; zero cross-user leakage (RLS + tests, per v1).
 - Brain page renders 1K+ nodes at 60fps (canvas).
 
@@ -136,4 +136,4 @@ proof of the moat. Reference: `mockups/memory-graph-almanac.html` (approved).
   `get_context` without schema change (column reserved).
 - **OQ2:** consolidation policy at 10K+ entities (age-out into D-layer profile) — revisit at 1K.
 - **OQ3:** Insight.status transitions — automatic (workout-completion + debrief evidence) vs
-  Marco-confirmed. Start manual/heuristic, automate at M2.
+  Forma-confirmed. Start manual/heuristic, automate at M2.

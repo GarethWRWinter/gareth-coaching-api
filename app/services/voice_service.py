@@ -22,7 +22,7 @@ def _get_headers() -> dict[str, str]:
 
 
 def _get_voice_settings() -> dict:
-    """Standard voice settings for Coach Marco's voice."""
+    """Standard voice settings for Coach Forma's voice."""
     return {
         "stability": 0.6,  # Slightly varied for naturalness
         "similarity_boost": 0.8,  # Stay close to base voice

@@ -183,7 +183,7 @@ def get_workout_assessment(
 ):
     """
     Score the actual ride against the planned workout and return supportive
-    feedback from Coach Marco plus suggested adjustments to upcoming days.
+    feedback from Coach Forma plus suggested adjustments to upcoming days.
 
     The numeric score is always recomputed; the written feedback is cached on
     the workout row and only regenerated when `force=true` or when no cached

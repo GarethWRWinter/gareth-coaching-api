@@ -1,5 +1,5 @@
 """
-Coach Insights Service — Marco's proactive presence across the app.
+Coach Insights Service — Forma's proactive presence across the app.
 
 Three types of insight:
 1. Daily nudge — contextual coaching card on the dashboard

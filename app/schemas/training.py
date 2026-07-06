@@ -71,7 +71,7 @@ class WorkoutResponse(BaseModel):
     def _apply_canonical_name(self) -> "WorkoutResponse":
         # Single source of truth for the session name. The structural template
         # name remains in `description`; this is the name shown everywhere and
-        # the one Marco refers to.
+        # the one Forma refers to.
         if self.workout_type != "rest":
             self.title = session_display_name(self.workout_type, self.id)
         return self

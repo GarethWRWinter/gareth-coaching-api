@@ -1,4 +1,4 @@
-"""Memory taxonomy — the canonical entity types of Marco's brain.
+"""Memory taxonomy — the canonical entity types of Forma's brain.
 
 The definitions below are LOAD-BEARING: they are rendered directly into the
 extraction LLM's prompt (docstrings-are-prompts, per TIE Memory v2). The
@@ -88,7 +88,7 @@ ENTITY_TYPES: dict[str, dict] = {
     },
     "procedural": {
         "prompt": (
-            "How the user wants Marco to behave — preferences and rules about the "
+            "How the user wants Forma to behave — preferences and rules about the "
             "coaching itself. 'Be direct, no fluff', 'don't message on Sundays', "
             "'explain the why behind sessions'. strength=hard means always obey; "
             "soft means default."
