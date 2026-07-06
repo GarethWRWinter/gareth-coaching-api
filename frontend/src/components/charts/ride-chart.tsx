@@ -11,6 +11,10 @@ import {
   CartesianGrid,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { SERIES } from "@/lib/palette";
+
+const MONO = "IBM Plex Mono, ui-monospace, SFMono-Regular, monospace";
+const TICK = { fontSize: 11, fill: SERIES.grey, fontFamily: MONO };
 
 interface RideDataPoint {
   elapsed_seconds: number;
@@ -46,8 +50,8 @@ function RideTooltipContent({
   if (!active || !payload || label == null) return null;
 
   return (
-    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
-      <p className="mb-1.5 text-xs font-medium text-vb-text-dim">
+    <div className="rounded-sm border border-vb-border bg-vb-surface px-3 py-2">
+      <p className="f-kicker mb-1.5 text-vb-text-muted">
         {formatElapsedTime(label)}
       </p>
       {payload.map((entry) => {
@@ -55,7 +59,7 @@ function RideTooltipContent({
         const unit =
           entry.name === "Power"
             ? "W"
-            : entry.name === "Heart Rate"
+            : entry.name === "Heart rate"
               ? " bpm"
               : " rpm";
         return (
@@ -65,12 +69,12 @@ function RideTooltipContent({
           >
             <span className="flex items-center gap-1.5">
               <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
+                className="inline-block h-2 w-2 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
               <span className="text-vb-text-dim">{entry.name}</span>
             </span>
-            <span className="font-mono font-medium text-vb-text">
+            <span className="f-data font-medium text-vb-text">
               {Math.round(entry.value)}
               {unit}
             </span>
@@ -87,27 +91,28 @@ export function RideChart({ data, className }: RideChartProps) {
   const tickInterval = maxSeconds > 3600 ? 600 : maxSeconds > 600 ? 60 : 30;
 
   return (
-    <div className={cn("rounded-md border border-vb-border-subtle bg-vb-surface p-4", className)}>
-      <h3 className="mb-4 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-        Ride Data
+    <div
+      className={cn(
+        "rounded-sm border border-vb-border-subtle bg-vb-surface p-4",
+        className
+      )}
+    >
+      <h3 className="f-kicker mb-4 text-vb-text-muted">
+        Power · Heart rate · Cadence
       </h3>
       <ResponsiveContainer width="100%" height={350}>
         <ComposedChart
           data={data}
           margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
         >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#E4DCCE"
-            vertical={false}
-          />
+          <CartesianGrid stroke={SERIES.hairline} vertical={false} />
           <XAxis
             dataKey="elapsed_seconds"
             tickFormatter={formatElapsedTime}
-            stroke="#D6CFC1"
-            tick={{ fontSize: 11, fill: "#948D80" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            stroke={SERIES.hairline}
+            tick={TICK}
+            tickLine={{ stroke: SERIES.hairline }}
+            axisLine={{ stroke: SERIES.hairline }}
             interval="preserveStartEnd"
             minTickGap={50}
             type="number"
@@ -118,10 +123,10 @@ export function RideChart({ data, className }: RideChartProps) {
           <YAxis
             yAxisId="power"
             orientation="left"
-            stroke="#D6CFC1"
-            tick={{ fontSize: 11, fill: "#36513F" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            stroke={SERIES.hairline}
+            tick={TICK}
+            tickLine={{ stroke: SERIES.hairline }}
+            axisLine={{ stroke: SERIES.hairline }}
             tickFormatter={(v: number) => `${v}W`}
             domain={[0, "auto"]}
           />
@@ -130,10 +135,10 @@ export function RideChart({ data, className }: RideChartProps) {
           <YAxis
             yAxisId="hr"
             orientation="right"
-            stroke="#D6CFC1"
-            tick={{ fontSize: 11, fill: "#BB6647" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            stroke={SERIES.hairline}
+            tick={TICK}
+            tickLine={{ stroke: SERIES.hairline }}
+            axisLine={{ stroke: SERIES.hairline }}
             tickFormatter={(v: number) => `${v}`}
             domain={[0, "auto"]}
           />
@@ -147,12 +152,17 @@ export function RideChart({ data, className }: RideChartProps) {
 
           <Tooltip
             content={<RideTooltipContent />}
-            cursor={{ stroke: "#BCB3A3", strokeDasharray: "4 4" }}
+            cursor={{ stroke: SERIES.grey, strokeDasharray: "4 4" }}
           />
           <Legend
-            wrapperStyle={{ paddingTop: 12, fontSize: 12 }}
+            wrapperStyle={{
+              paddingTop: 12,
+              fontSize: 11,
+              fontFamily: MONO,
+              color: SERIES.grey,
+            }}
             iconType="circle"
-            iconSize={8}
+            iconSize={7}
           />
 
           <Line
@@ -160,23 +170,23 @@ export function RideChart({ data, className }: RideChartProps) {
             type="monotone"
             dataKey="power"
             name="Power"
-            stroke="#36513F"
+            stroke={SERIES.ink}
             strokeWidth={1.5}
             dot={false}
             connectNulls={false}
-            activeDot={{ r: 3, fill: "#36513F" }}
+            activeDot={{ r: 3, fill: SERIES.ink }}
           />
 
           <Line
             yAxisId="hr"
             type="monotone"
             dataKey="heart_rate"
-            name="Heart Rate"
-            stroke="#BB6647"
+            name="Heart rate"
+            stroke={SERIES.amber}
             strokeWidth={1.5}
             dot={false}
             connectNulls={false}
-            activeDot={{ r: 3, fill: "#BB6647" }}
+            activeDot={{ r: 3, fill: SERIES.amber }}
           />
 
           <Line
@@ -184,12 +194,12 @@ export function RideChart({ data, className }: RideChartProps) {
             type="monotone"
             dataKey="cadence"
             name="Cadence"
-            stroke="#7C95A3"
+            stroke={SERIES.grey}
             strokeWidth={1}
             strokeOpacity={0.7}
             dot={false}
             connectNulls={false}
-            activeDot={{ r: 3, fill: "#7C95A3" }}
+            activeDot={{ r: 3, fill: SERIES.grey }}
           />
         </ComposedChart>
       </ResponsiveContainer>

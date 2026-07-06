@@ -46,10 +46,10 @@ function durationBand(seconds: number): {
   }
   if (seconds <= 1800) {
     return {
-      color: "text-[#7C95A3]",
-      bgColor: "bg-[#7C95A3]/10",
+      color: "text-[#4A6FA5]",
+      bgColor: "bg-[#4A6FA5]/10",
       borderColor: "border-vb-border-subtle",
-      icon: <Wind className="h-3.5 w-3.5 text-[#7C95A3]" />,
+      icon: <Wind className="h-3.5 w-3.5 text-[#4A6FA5]" />,
     };
   }
   return {
@@ -196,7 +196,7 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
           Anaerobic / VO2max
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-[#7C95A3]" />
+          <span className="inline-block h-2 w-2 rounded-full bg-[#4A6FA5]" />
           Threshold
         </span>
         <span className="flex items-center gap-1">

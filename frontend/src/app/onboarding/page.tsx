@@ -2,69 +2,65 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
-import {
-  Bike,
-  ChevronRight,
-  Check,
-  Calendar,
-  Trophy,
-  Link2,
-  Upload,
-  MapPin,
-} from "lucide-react";
+import { Check, Link2, Upload, MapPin } from "lucide-react";
 import { onboarding, users, goals, training } from "@/lib/api";
-import { COACH_AVATARS, COACH_TONES } from "@/lib/coach";
+import { COACH_TONES } from "@/lib/coach";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { Button, Arrow } from "@/components/ui/button";
+import { Kicker } from "@/components/ui/kicker";
+import { ProgressSteps } from "@/components/ui/progress-steps";
+import { CoachNote } from "@/components/ui/coach-note";
+import { Input } from "@/components/ui/input";
 
 const GOALS = [
   {
     value: "build_fitness",
-    label: "Build General Fitness",
-    desc: "Improve overall health and endurance",
+    label: "Get fitter, full stop",
+    desc: "A stronger engine and longer days out. No finish line required",
   },
   {
     value: "target_event",
-    label: "Train for an Event",
-    desc: "Prepare for a specific race or sportive",
+    label: "Aim at an event",
+    desc: "A date on the calendar, and a season built backwards from it",
   },
   {
     value: "improve_ftp",
-    label: "Increase FTP",
-    desc: "Push your functional threshold power higher",
+    label: "Raise my FTP",
+    desc: "More watts at threshold. The number that moves everything else",
   },
   {
     value: "race",
-    label: "Race Competitively",
-    desc: "Train to compete and podium",
+    label: "Race, properly",
+    desc: "Be there when it kicks off at the front, not watching it go",
   },
   {
     value: "learn_skills",
-    label: "Learn & Improve Skills",
-    desc: "Pacing, nutrition, bike handling",
+    label: "Ride smarter",
+    desc: "Pacing, fuelling, handling. The craft of the sport",
   },
 ];
 
 const PREFERENCES = [
-  { value: "indoor", label: "Indoor (Trainer)" },
+  { value: "indoor", label: "Indoor (trainer)" },
   { value: "outdoor", label: "Outdoor" },
   { value: "both", label: "Both" },
 ];
 
 const EVENT_TYPES = [
-  { value: "road_race", label: "Road Race" },
+  { value: "road_race", label: "Road race" },
   { value: "crit", label: "Criterium" },
-  { value: "time_trial", label: "Time Trial" },
+  { value: "time_trial", label: "Time trial" },
   { value: "gran_fondo", label: "Gran Fondo" },
   { value: "sportive", label: "Sportive" },
   { value: "gravel", label: "Gravel" },
-  { value: "mtb", label: "Mountain Bike" },
+  { value: "mtb", label: "Mountain bike" },
 ];
 
 const PRIORITIES = [
-  { value: "a_race", label: "A Race", desc: "Your main target event" },
-  { value: "b_race", label: "B Race", desc: "Important but not the top priority" },
-  { value: "c_race", label: "C Race", desc: "Training race or lower priority" },
+  { value: "a_race", label: "A race", desc: "The day the whole season points at" },
+  { value: "b_race", label: "B race", desc: "Matters, but we won't taper for it" },
+  { value: "c_race", label: "C race", desc: "Training with a number on your back" },
 ];
 
 export default function OnboardingPage() {
@@ -99,7 +95,8 @@ export default function OnboardingPage() {
   const [ftp, setFtp] = useState("");
   const [weight, setWeight] = useState("");
 
-  // Coach choice — fully user-controlled: any face, any name, any tone.
+  // Coach is Forma; the rider shapes manner (tone) + face. Name is optional
+  // and defaults to Forma.
   const [coachAvatar, setCoachAvatar] = useState("");
   const [coachName, setCoachName] = useState("");
   const [coachTone, setCoachTone] = useState("balanced");
@@ -162,7 +159,7 @@ export default function OnboardingPage() {
       if (weight) profileData.weight_kg = parseFloat(weight);
       profileData.preferred_hard_days = hardDays;
       profileData.rest_days = restDays;
-      // Coach choice — only persist what the rider actually chose.
+      // Coach choice: only persist what the rider actually chose.
       const coachData: Record<string, string> = {};
       if (coachAvatar) coachData.coach_avatar = coachAvatar;
       if (coachName.trim()) coachData.coach_name = coachName.trim();
@@ -209,7 +206,7 @@ export default function OnboardingPage() {
         });
       } catch (planErr) {
         console.error("Plan generation failed during onboarding:", planErr);
-        // Don't block onboarding — user can generate manually from the
+        // Don't block onboarding; user can generate manually from the
         // training page if something went wrong here.
       }
 
@@ -233,130 +230,115 @@ export default function OnboardingPage() {
     return step;
   })();
 
+  const fieldLabel = "mb-1.5 block text-sm font-medium text-vb-text";
+  const chip = (selected: boolean) =>
+    cn(
+      "f-press rounded-sm border px-3 py-2 text-xs font-medium transition-colors",
+      selected
+        ? "border-vb-red bg-vb-surface text-vb-text"
+        : "border-vb-border-subtle bg-vb-surface text-vb-text-dim hover:border-vb-border"
+    );
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-vb-bg px-4">
+    <div className="flex min-h-screen items-center justify-center bg-vb-bg px-4 py-12">
       <div className="w-full max-w-lg">
         {/* Progress */}
-        <div className="mb-8 flex items-center justify-center gap-2">
-          {Array.from({ length: totalSteps }).map((_, s) => (
-            <div
-              key={s}
-              className={cn(
-                "h-1.5 w-16 rounded-full transition-colors",
-                s <= currentProgress ? "bg-vb-forest" : "bg-vb-sunken"
-              )}
-            />
-          ))}
-        </div>
+        <ProgressSteps total={totalSteps} current={currentProgress} className="mb-10" />
 
         {/* Step 0: Goal Selection */}
         {step === 0 && (
-          <div>
-            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
-              What&apos;s your main goal?
+          <div className="f-rise">
+            <Kicker>First things first</Kicker>
+            <h2 className="f-display mt-2 text-3xl text-vb-text">
+              What are we aiming at?
             </h2>
-            <p className="mt-2 text-center text-sm text-vb-text-dim">
-              We&apos;ll tailor your experience around this
+            <p className="mt-2 text-sm text-vb-text-dim">
+              Everything Forma builds starts from this answer.
             </p>
 
-            <div className="mt-8 space-y-3">
+            <div className="f-stagger mt-8 space-y-3">
               {GOALS.map((g) => (
                 <button
                   key={g.value}
                   onClick={() => setGoal(g.value)}
                   className={cn(
-                    "flex w-full items-center gap-4 rounded-md border p-4 text-left transition-colors",
+                    "f-lift f-press flex w-full items-center gap-4 rounded-sm border bg-vb-surface p-4 text-left transition-colors",
                     goal === g.value
-                      ? "border-vb-forest bg-vb-sage-tint"
-                      : "border-vb-border-subtle bg-vb-surface hover:border-vb-border"
+                      ? "border-vb-red"
+                      : "border-vb-border-subtle"
                   )}
                 >
-                  <div
+                  <span
+                    aria-hidden="true"
                     className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
-                      goal === g.value
-                        ? "border-vb-forest bg-vb-forest"
-                        : "border-vb-border"
+                      "h-2.5 w-2.5 shrink-0 rounded-full transition-colors",
+                      goal === g.value ? "bg-vb-red" : "border border-vb-border"
                     )}
-                  >
-                    {goal === g.value && (
-                      <Check className="h-3 w-3 text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-vb-text">{g.label}</p>
-                    <p className="text-xs text-vb-text-dim">{g.desc}</p>
-                  </div>
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-vb-text">
+                      {g.label}
+                    </span>
+                    <span className="block text-xs text-vb-text-dim">
+                      {g.desc}
+                    </span>
+                  </span>
                 </button>
               ))}
             </div>
 
-            <button
+            <Button
               onClick={handleNext}
               disabled={!goal}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
+              className="mt-8 w-full"
             >
-              Continue <ChevronRight className="h-4 w-4" />
-            </button>
+              Continue <Arrow />
+            </Button>
           </div>
         )}
 
         {/* Step 1: Event Details (only when target_event selected) */}
         {step === 1 && isEventGoal && (
-          <div>
-            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
-              Tell us about your event
+          <div className="f-rise">
+            <Kicker>The target</Kicker>
+            <h2 className="f-display mt-2 text-3xl text-vb-text">
+              Tell me about race day
             </h2>
-            <p className="mt-2 text-center text-sm text-vb-text-dim">
-              The more detail you give, the better your AI coach can prepare you
+            <p className="mt-2 text-sm text-vb-text-dim">
+              The more Forma knows about the day, the sharper the plan gets.
             </p>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-8 space-y-5">
               {/* Event Name */}
               <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-vb-text-dim">
-                  <Trophy className="h-4 w-4 text-vb-clay" />
-                  Event Name
-                </label>
-                <input
+                <label className={fieldLabel}>What&apos;s it called?</label>
+                <Input
                   type="text"
                   value={eventName}
                   onChange={(e) => setEventName(e.target.value)}
                   placeholder="e.g. Etape du Tour, London to Brighton"
-                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
 
               {/* Event Date */}
               <div>
-                <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-vb-text-dim">
-                  <Calendar className="h-4 w-4 text-vb-forest" />
-                  Event Date
-                </label>
-                <input
+                <label className={fieldLabel}>When is it?</label>
+                <Input
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
 
               {/* Event Type */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
-                  Event Type
-                </label>
+                <label className={fieldLabel}>What kind of day is it?</label>
                 <div className="grid grid-cols-2 gap-2">
                   {EVENT_TYPES.map((t) => (
                     <button
                       key={t.value}
                       onClick={() => setEventType(t.value)}
-                      className={cn(
-                        "rounded-sm border px-3 py-2 text-xs font-medium transition-colors",
-                        eventType === t.value
-                          ? "border-vb-forest bg-vb-sage-tint text-vb-forest"
-                          : "border-vb-border-subtle text-vb-text-dim hover:border-vb-border"
-                      )}
+                      className={chip(eventType === t.value)}
                     >
                       {t.label}
                     </button>
@@ -366,20 +348,13 @@ export default function OnboardingPage() {
 
               {/* Priority */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
-                  Priority
-                </label>
+                <label className={fieldLabel}>How much does it matter?</label>
                 <div className="flex gap-2">
                   {PRIORITIES.map((p) => (
                     <button
                       key={p.value}
                       onClick={() => setEventPriority(p.value)}
-                      className={cn(
-                        "flex-1 rounded-sm border py-2 text-center text-xs font-medium transition-colors",
-                        eventPriority === p.value
-                          ? "border-vb-forest bg-vb-sage-tint text-vb-forest"
-                          : "border-vb-border-subtle text-vb-text-dim hover:border-vb-border"
-                      )}
+                      className={cn(chip(eventPriority === p.value), "flex-1 text-center")}
                       title={p.desc}
                     >
                       {p.label}
@@ -390,41 +365,43 @@ export default function OnboardingPage() {
 
               {/* Expected Duration */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
-                  Expected Duration (minutes, optional)
+                <label className={fieldLabel}>
+                  How long will you be out there?{" "}
+                  <span className="font-normal text-vb-text-muted">
+                    (minutes, optional)
+                  </span>
                 </label>
-                <input
+                <Input
                   type="number"
                   value={eventDuration}
                   onChange={(e) => setEventDuration(e.target.value)}
                   placeholder="e.g. 180"
-                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
               </div>
 
               {/* Route / Challenge Info Section */}
-              <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-4">
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-vb-text">
-                  <MapPin className="h-4 w-4 text-vb-forest" />
-                  Route &amp; Challenge Details
+              <div className="rounded-sm border border-vb-border-subtle bg-vb-surface p-4">
+                <h3 className="mb-1 flex items-center gap-2 text-sm font-medium text-vb-text">
+                  <MapPin className="h-4 w-4 text-vb-red" />
+                  Show Forma the course
                 </h3>
-                <p className="mb-3 text-xs text-vb-text-dim">
-                  Help your AI coach understand the challenge. Share a route URL
-                  or upload a GPX file.
+                <p className="mb-4 text-xs text-vb-text-dim">
+                  A route link or a GPX file, and Forma reads the climbs before
+                  you do.
                 </p>
 
                 {/* Route URL */}
                 <div className="mb-3">
                   <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-vb-text-dim">
                     <Link2 className="h-3.5 w-3.5" />
-                    Strava Route / Segment / Race Website URL
+                    Strava route, segment or race website
                   </label>
-                  <input
+                  <Input
                     type="url"
                     value={routeUrl}
                     onChange={(e) => setRouteUrl(e.target.value)}
                     placeholder="e.g. https://www.strava.com/routes/123456"
-                    className="w-full rounded-sm border border-vb-border bg-vb-sunken px-3 py-2 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
+                    className="bg-vb-sunken"
                   />
                 </div>
 
@@ -432,7 +409,7 @@ export default function OnboardingPage() {
                 <div>
                   <label className="mb-1.5 flex items-center gap-2 text-xs font-medium text-vb-text-dim">
                     <Upload className="h-3.5 w-3.5" />
-                    Upload GPX Route File
+                    Or a GPX file of the route
                   </label>
                   <input
                     ref={gpxInputRef}
@@ -444,10 +421,10 @@ export default function OnboardingPage() {
                   <button
                     onClick={() => gpxInputRef.current?.click()}
                     className={cn(
-                      "w-full rounded-sm border border-dashed py-3 text-center text-xs transition-colors",
+                      "f-press w-full rounded-sm border border-dashed py-3 text-center text-xs transition-colors",
                       gpxFile
-                        ? "border-vb-forest/50 bg-vb-sage-tint text-vb-forest"
-                        : "border-vb-border text-vb-text-dim hover:border-vb-border hover:text-vb-text"
+                        ? "border-vb-red text-vb-red"
+                        : "border-vb-border text-vb-text-dim hover:border-vb-border-strong hover:text-vb-text"
                     )}
                   >
                     {gpxFile ? (
@@ -456,7 +433,7 @@ export default function OnboardingPage() {
                         {gpxFile.name}
                       </span>
                     ) : (
-                      "Click to select a .gpx file"
+                      "Choose a .gpx file"
                     )}
                   </button>
                 </div>
@@ -464,48 +441,51 @@ export default function OnboardingPage() {
 
               {/* Notes */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
-                  Notes about the challenge (optional)
+                <label className={fieldLabel}>
+                  Anything else Forma should know?{" "}
+                  <span className="font-normal text-vb-text-muted">(optional)</span>
                 </label>
                 <textarea
                   value={eventNotes}
                   onChange={(e) => setEventNotes(e.target.value)}
                   placeholder="e.g. 3 big climbs in the last 50km, expect headwinds on the coast..."
                   rows={2}
-                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
+                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red"
                 />
               </div>
             </div>
 
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={handleBack}
-                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
-              >
+            <div className="mt-8 flex gap-3">
+              <Button variant="ghost" onClick={handleBack} className="px-6">
                 Back
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setStep(2)}
                 disabled={!eventName || !eventDate || !eventType}
-                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
+                className="flex-1"
               >
-                Continue <ChevronRight className="h-4 w-4" />
-              </button>
+                Continue <Arrow />
+              </Button>
             </div>
           </div>
         )}
 
         {/* Step 2: Experience */}
         {step === 2 && (
-          <div>
-            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
-              Tell us about your cycling
+          <div className="f-rise">
+            <Kicker>Your riding life</Kicker>
+            <h2 className="f-display mt-2 text-3xl text-vb-text">
+              How much bike is in your life?
             </h2>
+            <p className="mt-2 text-sm text-vb-text-dim">
+              Honest answers build honest plans. Forma works with the week you
+              actually have.
+            </p>
 
-            <div className="mt-8 space-y-5">
+            <div className="mt-8 space-y-6">
               <div>
-                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
-                  How many hours per week can you train?
+                <label className={fieldLabel}>
+                  How many hours a week can you give it?
                 </label>
                 <div className="flex items-center gap-4">
                   <input
@@ -515,17 +495,17 @@ export default function OnboardingPage() {
                     step="1"
                     value={weeklyHours}
                     onChange={(e) => setWeeklyHours(e.target.value)}
-                    className="flex-1 accent-vb-forest"
+                    className="flex-1 accent-vb-red"
                   />
-                  <span className="w-16 text-right font-display text-lg font-light text-vb-text">
+                  <span className="f-data w-16 text-right text-xl font-semibold text-vb-text">
                     {weeklyHours}h
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
-                  Years of cycling experience
+                <label className={fieldLabel}>
+                  How long have you been riding?
                 </label>
                 <div className="flex items-center gap-4">
                   <input
@@ -535,29 +515,22 @@ export default function OnboardingPage() {
                     step="1"
                     value={yearsCycling}
                     onChange={(e) => setYearsCycling(e.target.value)}
-                    className="flex-1 accent-vb-forest"
+                    className="flex-1 accent-vb-red"
                   />
-                  <span className="w-16 text-right font-display text-lg font-light text-vb-text">
+                  <span className="f-data w-16 text-right text-xl font-semibold text-vb-text">
                     {yearsCycling}y
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
-                  Where do you prefer to ride?
-                </label>
+                <label className={fieldLabel}>Where do you ride?</label>
                 <div className="flex gap-3">
                   {PREFERENCES.map((p) => (
                     <button
                       key={p.value}
                       onClick={() => setPreference(p.value)}
-                      className={cn(
-                        "flex-1 rounded-sm border py-2.5 text-sm font-medium transition-colors",
-                        preference === p.value
-                          ? "border-vb-forest bg-vb-sage-tint text-vb-forest"
-                          : "border-vb-border-subtle text-vb-text-dim hover:border-vb-border"
-                      )}
+                      className={cn(chip(preference === p.value), "flex-1 py-2.5 text-sm")}
                     >
                       {p.label}
                     </button>
@@ -566,11 +539,10 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-vb-text-dim">
-                  Your training schedule
-                </label>
+                <label className={fieldLabel}>Which days can hurt?</label>
                 <p className="mb-3 text-xs text-vb-text-dim">
-                  Tap to set each day. Hard days get intensity sessions, rest days have no training.
+                  Tap each day. Hard days carry the intensity, rest days stay
+                  empty, easy days soak up the rest.
                 </p>
                 <div className="grid grid-cols-7 gap-2">
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, idx) => {
@@ -578,7 +550,9 @@ export default function OnboardingPage() {
                     const isRest = restDays.includes(idx);
                     return (
                       <div key={day} className="text-center">
-                        <p className="mb-1 text-[10px] font-medium text-vb-text-muted">{day}</p>
+                        <p className="f-data mb-1 text-[10px] uppercase tracking-[0.12em] text-vb-text-muted">
+                          {day}
+                        </p>
                         <button
                           type="button"
                           onClick={() => {
@@ -592,12 +566,12 @@ export default function OnboardingPage() {
                             }
                           }}
                           className={cn(
-                            "w-full rounded-sm py-2.5 text-xs font-medium transition-colors",
+                            "f-press w-full rounded-sm border py-2.5 text-xs font-medium transition-colors",
                             isHard
-                              ? "bg-vb-clay/15 text-vb-clay border border-vb-clay/40"
+                              ? "border-vb-red bg-vb-red text-white"
                               : isRest
-                                ? "bg-vb-sunken text-vb-text-muted border border-vb-border-subtle"
-                                : "bg-vb-sage-tint text-vb-forest border border-vb-forest/30"
+                                ? "border-vb-border-subtle bg-vb-bg text-vb-text-muted"
+                                : "border-vb-border-subtle bg-vb-sunken text-vb-text"
                           )}
                         >
                           {isHard ? "Hard" : isRest ? "Rest" : "Easy"}
@@ -610,181 +584,160 @@ export default function OnboardingPage() {
             </div>
 
             <div className="mt-8 flex gap-3">
-              <button
-                onClick={handleBack}
-                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
-              >
+              <Button variant="ghost" onClick={handleBack} className="px-6">
                 Back
-              </button>
-              <button
-                onClick={() => setStep(3)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft"
-              >
-                Continue <ChevronRight className="h-4 w-4" />
-              </button>
+              </Button>
+              <Button onClick={() => setStep(3)} className="flex-1">
+                Continue <Arrow />
+              </Button>
             </div>
           </div>
         )}
 
         {/* Step 3: Physical stats */}
         {step === 3 && (
-          <div>
-            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
-              Physical stats (optional)
+          <div className="f-rise">
+            <Kicker>The numbers</Kicker>
+            <h2 className="f-display mt-2 text-3xl text-vb-text">
+              The engine, roughly.
             </h2>
-            <p className="mt-2 text-center text-sm text-vb-text-dim">
-              These help us calculate your power-to-weight ratio and zones
+            <p className="mt-2 text-sm text-vb-text-dim">
+              Skip anything you don&apos;t know. We&apos;ll measure the rest.
             </p>
 
-            <div className="mt-8 space-y-4">
+            <div className="mt-8 space-y-5">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
-                  FTP (Functional Threshold Power)
-                </label>
-                <input
+                <label className={fieldLabel}>FTP, if you know it</label>
+                <Input
                   type="number"
                   value={ftp}
                   onChange={(e) => setFtp(e.target.value)}
                   placeholder="e.g. 250"
-                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
-                <p className="mt-1 text-xs text-vb-text-muted">
-                  Don&apos;t know? You can do an FTP test later.
+                <p className="mt-1.5 text-xs text-vb-text-muted">
+                  No idea? Fine. Forma will find it on the road.
                 </p>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
-                  Body Weight (kg)
-                </label>
-                <input
+                <label className={fieldLabel}>Weight (kg)</label>
+                <Input
                   type="number"
                   step="0.1"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
                   placeholder="e.g. 75"
-                  className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
                 />
+                <p className="mt-1.5 text-xs text-vb-text-muted">
+                  Watts per kilo is the sport&apos;s honest currency.
+                </p>
               </div>
             </div>
 
             {error && (
-              <p className="mt-4 text-center text-sm text-vb-clay">{error}</p>
+              <p className="mt-4 text-sm text-vb-red">{error}</p>
             )}
 
             <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => setStep(2)}
-                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
-              >
+              <Button variant="ghost" onClick={() => setStep(2)} className="px-6">
                 Back
-              </button>
-              <button
-                onClick={() => setStep(4)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft"
-              >
-                Next, meet your coach
-              </button>
+              </Button>
+              <Button onClick={() => setStep(4)} className="flex-1">
+                Next, meet Forma <Arrow />
+              </Button>
             </div>
           </div>
         )}
 
         {/* Step 4: Meet your coach, any face, any name, any tone */}
         {step === 4 && (
-          <div>
-            <h2 className="text-center font-display text-2xl font-light tracking-[-0.02em] text-vb-text">
-              Meet your coach.
+          <div className="f-rise">
+            <Kicker dot flamme>Your coach</Kicker>
+            <h2 className="f-display mt-2 text-3xl text-vb-text">
+              Meet Forma.
             </h2>
-            <p className="mt-2 text-center text-sm text-vb-text-dim">
-              Choose the face, the name and the voice that suits you, the
-              coaching is world-class either way.
+            <p className="mt-2 text-sm text-vb-text-dim">
+              Forma is your coach, and adapts to you. Shape how Forma shows up,
+              the coaching is world-class either way. You can fine-tune this
+              any time.
             </p>
 
             <div className="mt-8">
-              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Their face
-              </p>
-              <div className="grid grid-cols-5 gap-3">
-                {COACH_AVATARS.map((a) => (
-                  <button
-                    key={a.key}
-                    type="button"
-                    onClick={() => {
-                      setCoachAvatar(a.key);
-                      const n = coachName.trim();
-                      if (n === "" || n === "Marco" || n === "Maria") {
-                        setCoachName(a.defaultName);
-                      }
-                    }}
-                    className={cn(
-                      "overflow-hidden rounded-full border-2 transition-all",
-                      coachAvatar === a.key
-                        ? "border-vb-forest ring-2 ring-vb-forest/30"
-                        : "border-vb-border-subtle opacity-75 hover:opacity-100"
-                    )}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={a.src} alt="Coach portrait" className="aspect-square w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className="mb-1.5 block text-sm font-medium text-vb-text-dim">
-                Their name
-              </label>
-              <input
-                type="text"
-                value={coachName}
-                maxLength={30}
-                onChange={(e) => setCoachName(e.target.value)}
-                placeholder="Marco, Maria, or anything you like"
-                className="w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2.5 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-forest focus:outline-none focus:ring-1 focus:ring-vb-forest"
-              />
-            </div>
-
-            <div className="mt-6">
-              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                How they talk to you
-              </p>
-              <div className="grid grid-cols-2 gap-2">
+              <Kicker className="mb-3">How Forma coaches you</Kicker>
+              <div className="f-stagger grid grid-cols-2 gap-2">
                 {COACH_TONES.map((t) => (
                   <button
                     key={t.key}
                     type="button"
                     onClick={() => setCoachTone(t.key)}
                     className={cn(
-                      "rounded-md border p-3 text-left transition-colors",
+                      "f-lift f-press rounded-sm border bg-vb-surface p-3 text-left transition-colors",
                       coachTone === t.key
-                        ? "border-vb-forest bg-vb-sage-tint/40"
-                        : "border-vb-border-subtle bg-vb-surface hover:border-vb-border"
+                        ? "border-vb-red"
+                        : "border-vb-border-subtle"
                     )}
                   >
-                    <p className="text-xs font-medium text-vb-text">{t.label}</p>
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-vb-text">
+                      {coachTone === t.key && (
+                        <span
+                          aria-hidden="true"
+                          className="inline-block h-1.5 w-1.5 rounded-full bg-vb-red"
+                        />
+                      )}
+                      {t.label}
+                    </p>
                     <p className="mt-0.5 text-[11px] leading-snug text-vb-text-dim">{t.description}</p>
                   </button>
                 ))}
               </div>
             </div>
 
+            <details className="mt-8">
+              <summary className="f-kicker cursor-pointer list-none text-vb-text-muted hover:text-vb-text-dim">
+                Prefer another name? (optional)
+              </summary>
+              <Input
+                type="text"
+                value={coachName}
+                maxLength={30}
+                onChange={(e) => setCoachName(e.target.value)}
+                placeholder="Forma"
+                className="mt-2"
+              />
+              <p className="mt-1.5 text-[11px] text-vb-text-muted">
+                Your coach stays Forma unless you change this.
+              </p>
+            </details>
+
+            <CoachNote
+              className="mt-8"
+              kicker="Before you go"
+              coachName={coachName.trim() || "Forma"}
+            >
+              Right. Give me these answers and I&apos;ll write week one before
+              you&apos;ve closed the laptop.
+            </CoachNote>
+
             {error && (
-              <p className="mt-4 text-center text-sm text-vb-clay">{error}</p>
+              <p className="mt-4 text-sm text-vb-red">{error}</p>
             )}
 
             <div className="mt-8 flex gap-3">
-              <button
-                onClick={() => setStep(3)}
-                className="rounded-sm border border-vb-border px-6 py-3 text-sm text-vb-forest hover:bg-vb-surface"
-              >
+              <Button variant="ghost" onClick={() => setStep(3)} className="px-6">
                 Back
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="flamme"
+                size="lg"
                 onClick={handleFinish}
                 disabled={loading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-vb-forest py-3 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
+                className="flex-1"
               >
-                {loading ? "Setting up..." : "Start Training"}
-              </button>
+                {loading ? "Writing week one…" : (
+                  <>
+                    Start training <Arrow />
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         )}

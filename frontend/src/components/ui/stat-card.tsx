@@ -64,7 +64,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
             )}
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-display text-2xl font-light tracking-[-0.02em] tabular-nums text-vb-text">
+            <span className="font-display text-2xl font-semibold tracking-[-0.02em] tabular-nums text-vb-text">
               {value}
             </span>
             {unit && <span className="text-sm text-vb-text-muted">{unit}</span>}
@@ -89,7 +89,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
             <div className="mb-1.5 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Bot className="h-3.5 w-3.5 text-vb-forest" />
-                <span className="text-xs font-medium text-vb-forest">Coach Marco</span>
+                <span className="text-xs font-medium text-vb-forest">Coach Forma</span>
               </div>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowExplain(false); }}

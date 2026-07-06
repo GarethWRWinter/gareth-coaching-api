@@ -48,7 +48,7 @@ class UserResponse(BaseModel):
     weekly_hours_available: float | None = None
     preferred_hard_days: list[int] | None = None
     rest_days: list[int] | None = None
-    coach_name: str = "Marco"
+    coach_name: str = "Forma"
     coach_avatar: str = "m1_climber"
     coach_tone: str = "balanced"
 

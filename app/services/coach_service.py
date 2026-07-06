@@ -94,7 +94,7 @@ When a rider has recently completed a goal event, proactively offer to debrief:
 - Use analogies and stories to make training concepts tangible
 """
 
-# Marco's full education (app/core/coach_skills.py) + the app playbook.
+# Forma's full education (app/core/coach_skills.py) + the app playbook.
 COACH_SYSTEM_PROMPT = compose_education() + "\n\n" + COACH_APP_PLAYBOOK
 
 
@@ -106,7 +106,7 @@ def _system_blocks(user: User, dynamic: str) -> list:
     time-to-first-token).
     """
     education = compose_education(
-        getattr(user, "coach_name", None) or "Marco",
+        getattr(user, "coach_name", None) or "Forma",
         getattr(user, "coach_tone", None),
     )
     return [
@@ -858,7 +858,7 @@ async def stream_response(
         extract_memories(
             db,
             user,
-            f"Rider: {user_message}\n\nMarco: {full_response}",
+            f"Rider: {user_message}\n\nForma: {full_response}",
             source="chat",
             source_ref=session.id,
         )
@@ -1052,7 +1052,7 @@ async def stream_voice_response(
 
         extract_memories(
             db, user,
-            f"Rider: {user_message}\n\nMarco: {full_response}",
+            f"Rider: {user_message}\n\nForma: {full_response}",
             source="chat", source_ref=session.id,
         )
     except Exception:
@@ -1106,7 +1106,7 @@ def get_non_streaming_response(
 
         extract_memories(
             db, user,
-            f"Rider: {user_message}\n\nMarco: {content}",
+            f"Rider: {user_message}\n\nForma: {content}",
             source="chat", source_ref=session.id,
         )
     except Exception:

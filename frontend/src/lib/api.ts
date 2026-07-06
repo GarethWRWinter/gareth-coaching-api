@@ -280,7 +280,7 @@ export const rides = {
   /**
    * Save an in-app workout recording (from the in-app session player).
    * Backend computes derived metrics (avg power, NP, IF, TSS, ...) and
-   * triggers a Marco debrief in the background.
+   * triggers a Forma debrief in the background.
    */
   record: (body: {
     title: string;
@@ -1016,7 +1016,7 @@ async function downloadFile(path: string, filename: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-// --- Coach Insights (Marco's proactive presence) ---
+// --- Coach Insights (Forma's proactive presence) ---
 
 export interface CoachNudge {
   nudge: string;

@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _generate_debrief_bg(db: Session, user: User, ride):
-    """Background task to generate a Coach Marco debrief for a new ride."""
+    """Background task to generate a Coach Forma debrief for a new ride."""
     try:
         from app.services.coach_insights_service import generate_ride_debrief
         # NB: generate_ride_debrief is synchronous — awaiting it was the bug
@@ -45,7 +45,7 @@ async def _generate_debrief_bg(db: Session, user: User, ride):
             extract_memories(
                 db,
                 user,
-                f"Ride: {ride.title}\n\nMarco's debrief:\n{ride.debrief_text}",
+                f"Ride: {ride.title}\n\nForma's debrief:\n{ride.debrief_text}",
                 source="debrief",
                 source_ref=str(ride.id),
             )
@@ -79,7 +79,7 @@ def upload_fit_file(
     if ride.tss and ride.ride_date:
         recalculate_from_date(db, current_user.id, ride.ride_date.date())
 
-    # Auto-generate Coach Marco debrief in background
+    # Auto-generate Coach Forma debrief in background
     background_tasks.add_task(_generate_debrief_bg, db, current_user, ride)
 
     return ride
@@ -105,7 +105,7 @@ def record_ride(
     if ride.tss and ride.ride_date:
         recalculate_from_date(db, current_user.id, ride.ride_date.date())
 
-    # Auto-generate Coach Marco debrief in background
+    # Auto-generate Coach Forma debrief in background
     background_tasks.add_task(_generate_debrief_bg, db, current_user, ride)
 
     return ride

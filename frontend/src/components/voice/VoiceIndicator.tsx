@@ -77,7 +77,7 @@ export function VoiceIndicator({
           <p className="text-xs text-vb-text-dim">Processing...</p>
         )}
         {mode === "speaking" && (
-          <p className="text-xs text-vb-forest">Coach Marco is speaking...</p>
+          <p className="text-xs text-vb-forest">Coach Forma is speaking...</p>
         )}
       </div>
     </div>

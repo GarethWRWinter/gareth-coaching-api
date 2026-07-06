@@ -4,37 +4,37 @@
  * Avatars are hand-drawn expressive line portraits (public/coaches/*.webp).
  * Deliberately unlabelled: no archetypes, no descriptors — the rider decides
  * for themselves what they see in each face. `defaultName` is internal
- * metadata only (drives the Marco/Maria name suggestion), never displayed.
+ * metadata only (drives the default name suggestion), never displayed.
  */
 
 export interface CoachAvatar {
   key: string;
   src: string;
   /** Internal: name suggested when this face is picked. Never shown as a label. */
-  defaultName: "Marco" | "Maria";
+  defaultName: string;
 }
 
 export const COACH_AVATARS: CoachAvatar[] = [
-  { key: "coach_01", src: "/coaches/coach_01.webp", defaultName: "Marco" },
-  { key: "coach_02", src: "/coaches/coach_02.webp", defaultName: "Marco" },
-  { key: "coach_03", src: "/coaches/coach_03.webp", defaultName: "Marco" },
-  { key: "coach_04", src: "/coaches/coach_04.webp", defaultName: "Marco" },
-  { key: "coach_05", src: "/coaches/coach_05.webp", defaultName: "Marco" },
-  { key: "coach_11", src: "/coaches/coach_11.webp", defaultName: "Marco" },
-  { key: "coach_12", src: "/coaches/coach_12.webp", defaultName: "Marco" },
-  { key: "coach_13", src: "/coaches/coach_13.webp", defaultName: "Marco" },
-  { key: "coach_14", src: "/coaches/coach_14.webp", defaultName: "Marco" },
-  { key: "coach_15", src: "/coaches/coach_15.webp", defaultName: "Marco" },
-  { key: "coach_06", src: "/coaches/coach_06.webp", defaultName: "Maria" },
-  { key: "coach_07", src: "/coaches/coach_07.webp", defaultName: "Maria" },
-  { key: "coach_08", src: "/coaches/coach_08.webp", defaultName: "Maria" },
-  { key: "coach_09", src: "/coaches/coach_09.webp", defaultName: "Maria" },
-  { key: "coach_10", src: "/coaches/coach_10.webp", defaultName: "Maria" },
-  { key: "coach_16", src: "/coaches/coach_16.webp", defaultName: "Maria" },
-  { key: "coach_17", src: "/coaches/coach_17.webp", defaultName: "Maria" },
-  { key: "coach_18", src: "/coaches/coach_18.webp", defaultName: "Maria" },
-  { key: "coach_19", src: "/coaches/coach_19.webp", defaultName: "Maria" },
-  { key: "coach_20", src: "/coaches/coach_20.webp", defaultName: "Maria" },
+  { key: "coach_01", src: "/coaches/coach_01.webp", defaultName: "Forma" },
+  { key: "coach_02", src: "/coaches/coach_02.webp", defaultName: "Forma" },
+  { key: "coach_03", src: "/coaches/coach_03.webp", defaultName: "Forma" },
+  { key: "coach_04", src: "/coaches/coach_04.webp", defaultName: "Forma" },
+  { key: "coach_05", src: "/coaches/coach_05.webp", defaultName: "Forma" },
+  { key: "coach_11", src: "/coaches/coach_11.webp", defaultName: "Forma" },
+  { key: "coach_12", src: "/coaches/coach_12.webp", defaultName: "Forma" },
+  { key: "coach_13", src: "/coaches/coach_13.webp", defaultName: "Forma" },
+  { key: "coach_14", src: "/coaches/coach_14.webp", defaultName: "Forma" },
+  { key: "coach_15", src: "/coaches/coach_15.webp", defaultName: "Forma" },
+  { key: "coach_06", src: "/coaches/coach_06.webp", defaultName: "Forma" },
+  { key: "coach_07", src: "/coaches/coach_07.webp", defaultName: "Forma" },
+  { key: "coach_08", src: "/coaches/coach_08.webp", defaultName: "Forma" },
+  { key: "coach_09", src: "/coaches/coach_09.webp", defaultName: "Forma" },
+  { key: "coach_10", src: "/coaches/coach_10.webp", defaultName: "Forma" },
+  { key: "coach_16", src: "/coaches/coach_16.webp", defaultName: "Forma" },
+  { key: "coach_17", src: "/coaches/coach_17.webp", defaultName: "Forma" },
+  { key: "coach_18", src: "/coaches/coach_18.webp", defaultName: "Forma" },
+  { key: "coach_19", src: "/coaches/coach_19.webp", defaultName: "Forma" },
+  { key: "coach_20", src: "/coaches/coach_20.webp", defaultName: "Forma" },
 ];
 
 // Legacy keys (pre-neutralisation) → new keys, so stored preferences keep working.

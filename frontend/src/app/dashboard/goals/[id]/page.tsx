@@ -6,31 +6,28 @@ import Link from "next/link";
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
   ArrowLeft,
-  Calendar,
-  Clock,
-  Target,
   MapPin,
   Mountain,
   ExternalLink,
   Pencil,
   Trash2,
   Upload,
-  MessageCircle,
-  Zap,
   TrendingUp,
-  Activity,
   X,
-  Trophy,
-  ClipboardCheck,
-  Star,
 } from "lucide-react";
 import { goals as goalsApi, metrics, training, rides } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { cn, formatDate } from "@/lib/utils";
-import { StatCard } from "@/components/ui/stat-card";
 import { ElevationProfileChart } from "@/components/charts/elevation-profile-chart";
 import { PerformanceCards } from "@/components/race-projection/performance-cards";
 import { FitnessTrajectoryChart } from "@/components/charts/fitness-trajectory-chart";
+import { Button, Arrow, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Kicker } from "@/components/ui/kicker";
+import { SectionHeader } from "@/components/ui/section-header";
+import { DataTile } from "@/components/ui/data-tile";
+import { CoachNote } from "@/components/ui/coach-note";
+import { Input } from "@/components/ui/input";
 import type { GoalEvent } from "@/lib/api";
 
 const EVENT_TYPES = [
@@ -48,9 +45,9 @@ const EVENT_TYPES = [
 ];
 
 const PRIORITIES = [
-  { value: "a_race", label: "A Race (Primary)" },
-  { value: "b_race", label: "B Race (Secondary)" },
-  { value: "c_race", label: "C Race (Low Priority)" },
+  { value: "a_race", label: "A race (the one that matters)" },
+  { value: "b_race", label: "B race (a marker on the way)" },
+  { value: "c_race", label: "C race (training with a number on)" },
 ];
 
 function formatDurationMinutes(minutes: number): string {
@@ -60,30 +57,55 @@ function formatDurationMinutes(minutes: number): string {
   return `${m}m`;
 }
 
-function priorityColor(priority: string): string {
-  switch (priority) {
-    case "a_race":
-      return "bg-vb-sage-tint text-vb-forest border-transparent";
-    case "b_race":
-      return "bg-vb-surface text-vb-text-dim border-vb-border";
-    case "c_race":
-      return "bg-vb-surface text-vb-text-muted border-vb-border";
-    default:
-      return "bg-vb-surface text-vb-text-muted border-vb-border";
-  }
+function priorityLabel(priority: string): string {
+  if (priority === "a_race") return "A race";
+  if (priority === "b_race") return "B race";
+  if (priority === "c_race") return "C race";
+  return priority.replace(/_/g, " ");
 }
 
 function readinessColor(label: string): string {
   switch (label) {
     case "On Track":
-      return "text-vb-forest";
+      return "text-vb-success";
     case "Needs Work":
-      return "text-vb-clay";
+      return "text-vb-warning";
     case "At Risk":
-      return "text-vb-clay";
+      return "text-vb-red";
     default:
       return "text-vb-text-dim";
   }
+}
+
+const selectClasses =
+  "flex h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red";
+
+const textareaClasses =
+  "w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red resize-none";
+
+/** Mono tile matching DataTile visuals, for formatted string values. */
+function MonoTile({
+  label,
+  display,
+  sub,
+  className,
+}: {
+  label: string;
+  display: string;
+  sub?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("border border-vb-border-subtle bg-vb-surface p-4", className)}
+    >
+      <p className="f-kicker text-vb-text-muted">{label}</p>
+      <p className="f-data mt-2 text-4xl font-semibold leading-none text-vb-text">
+        {display}
+      </p>
+      {sub && <p className="mt-2 text-xs text-vb-text-dim">{sub}</p>}
+    </div>
+  );
 }
 
 export default function GoalDetailPage() {
@@ -93,6 +115,7 @@ export default function GoalDetailPage() {
   const { user } = useAuth();
   const goalId = params.id as string;
   const gpxInputRef = useRef<HTMLInputElement>(null);
+  const coachName = user?.coach_name || "Forma";
 
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -297,7 +320,7 @@ export default function GoalDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-forest" />
+        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-red" />
       </div>
     );
   }
@@ -308,185 +331,179 @@ export default function GoalDetailPage() {
     );
   }
 
-  const inputClasses =
-    "w-full rounded-sm border border-vb-border-subtle bg-vb-bg px-2.5 py-1.5 text-sm text-vb-text focus:border-vb-forest focus:outline-none";
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <Link
-            href="/dashboard/goals"
-            className="mb-2 inline-flex items-center gap-1 text-sm text-vb-text-dim hover:text-vb-forest"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to goals
-          </Link>
-          <h1 className="font-display text-3xl font-light tracking-[-0.01em] text-vb-text">{goal.event_name}</h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-sm text-vb-text-dim">
-              <Calendar className="h-4 w-4" />
-              {formatDate(goal.event_date)}
-            </span>
-            {goal.days_until != null && goal.days_until >= 0 && (
-              <span className="rounded-full bg-vb-sage-tint px-2.5 py-0.5 text-xs font-medium tabular-nums text-vb-forest">
-                {goal.days_until === 0
-                  ? "Today!"
-                  : `${goal.days_until} days away`}
-              </span>
-            )}
-            <span className="inline-flex items-center rounded-full border border-vb-border px-2 py-0.5 text-xs capitalize text-vb-text-dim">
-              {goal.event_type.replace(/_/g, " ")}
-            </span>
-            <span
-              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs capitalize ${priorityColor(goal.priority)}`}
-            >
-              {goal.priority.replace(/_/g, " ")}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={openEdit}
-            className="flex items-center gap-1.5 rounded-sm border border-vb-border px-3 py-2 text-sm text-vb-forest hover:bg-vb-surface"
-          >
-            <Pencil className="h-4 w-4" /> Edit
-          </button>
-          <button
-            onClick={() => {
-              if (confirm(`Delete "${goal.event_name}"?`)) {
-                deleteGoalMutation.mutate();
-              }
-            }}
-            className="flex items-center gap-1.5 rounded-sm border border-vb-border px-3 py-2 text-sm text-vb-clay hover:bg-vb-clay/5"
-          >
-            <Trash2 className="h-4 w-4" /> Delete
-          </button>
-        </div>
-      </div>
-
-      {/* Assessment Banner, needs assessment */}
-      {goal.needs_assessment && (
+    <div className="space-y-8">
+      {/* ============ MASTHEAD ============ */}
+      <header className="f-rise border-b-2 border-vb-border-strong pb-5">
         <Link
-          href={`/dashboard/goals/${goalId}/assess`}
-          className="flex items-center gap-4 rounded-md border border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface p-5 transition-colors hover:bg-vb-surface-raised"
+          href="/dashboard/goals"
+          className="mb-3 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.08em] text-vb-text-dim transition-colors hover:text-vb-red"
         >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-vb-clay/15">
-            <ClipboardCheck className="h-6 w-6 text-vb-clay" />
-          </div>
-          <div className="flex-1">
-            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-clay">
-              Race report pending
-            </p>
-            <p className="font-display text-xl font-light tracking-[-0.01em] text-vb-text">
-              How did {goal.event_name} go?
-            </p>
-            <p className="mt-0.5 text-sm text-vb-text-dim">
-              Complete your race report, capture results, link your ride data, and debrief with Coach Marco.
-            </p>
-          </div>
-          <span className="rounded-sm border border-vb-clay px-4 py-2 text-sm font-medium text-vb-clay">
-            Race Report
-          </span>
+          <ArrowLeft className="h-3.5 w-3.5" /> The calendar
         </Link>
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="min-w-0">
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              <Kicker>{goal.event_type.replace(/_/g, " ")}</Kicker>
+              <Badge
+                variant={goal.priority === "a_race" ? "flamme" : "outline"}
+              >
+                {priorityLabel(goal.priority)}
+              </Badge>
+            </div>
+            <h1 className="f-display text-4xl text-vb-text md:text-5xl">
+              {goal.event_name}
+            </h1>
+            <p className="f-kicker mt-3 text-vb-text-muted">
+              {formatDate(goal.event_date)}
+            </p>
+          </div>
+          <div className="flex items-end gap-5">
+            {/* Countdown */}
+            {goal.days_until != null && goal.days_until >= 0 && (
+              <div className="text-right">
+                <p
+                  className={cn(
+                    "f-data text-5xl font-semibold leading-none",
+                    goal.days_until < 14 ? "text-vb-red" : "text-vb-text"
+                  )}
+                >
+                  {goal.days_until}
+                </p>
+                <Kicker className="mt-1.5 justify-end">
+                  {goal.days_until === 0 ? "Race day" : "Days to go"}
+                </Kicker>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={openEdit}>
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (confirm(`Delete "${goal.event_name}"?`)) {
+                    deleteGoalMutation.mutate();
+                  }
+                }}
+                className="hover:border-vb-red hover:text-vb-red"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Assessment banner, needs assessment */}
+      {goal.needs_assessment && (
+        <CoachNote
+          kicker="Race report pending"
+          signature={false}
+          action={
+            <Link
+              href={`/dashboard/goals/${goalId}/assess`}
+              className={buttonVariants({ variant: "flamme", size: "sm" })}
+            >
+              File the report
+              <Arrow />
+            </Link>
+          }
+        >
+          So, how did {goal.event_name} go? Give me the result, link the ride
+          file, and this race starts working for the next one.
+        </CoachNote>
       )}
 
-      {/* Assessment Results, completed goals */}
+      {/* Assessment results, completed goals */}
       {goal.assessment_completed_at && (
-        <div className="space-y-4">
-          {/* Result Summary Card */}
-          <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
-                <Trophy className="h-5 w-5 text-vb-forest" />
-                Result
-              </h2>
-              <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.08em] ${
-                goal.status === "completed"
-                  ? "bg-vb-sage-tint text-vb-forest"
-                  : goal.status === "dnf"
-                    ? "bg-vb-clay/15 text-vb-clay"
-                    : "bg-vb-clay/15 text-vb-clay"
-              }`}>
-                {goal.status === "dns" ? "DNS" : goal.status === "dnf" ? "DNF" : "Completed"}
-              </span>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {goal.finish_time_seconds && (
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">Finish Time</p>
-                  <p className="font-display text-lg font-light tabular-nums text-vb-text">
-                    {Math.floor(goal.finish_time_seconds / 3600)}h{" "}
-                    {Math.floor((goal.finish_time_seconds % 3600) / 60)}m{" "}
-                    {goal.finish_time_seconds % 60}s
-                  </p>
-                </div>
-              )}
-              {goal.finish_position && (
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">Position</p>
-                  <p className="font-display text-lg font-light tabular-nums text-vb-text">
-                    {goal.finish_position}
-                    {goal.finish_position_total && (
-                      <span className="text-sm text-vb-text-muted">/{goal.finish_position_total}</span>
-                    )}
-                  </p>
-                </div>
-              )}
-              {goal.overall_satisfaction && (
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">Satisfaction</p>
-                  <p className="flex items-center gap-1 font-display text-lg font-light tabular-nums text-vb-text">
-                    {goal.overall_satisfaction}
-                    <span className="text-sm text-vb-text-muted">/10</span>
-                    <Star className="h-4 w-4 text-vb-forest" />
-                  </p>
-                </div>
-              )}
-              {goal.perceived_exertion && (
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">RPE</p>
-                  <p className="font-display text-lg font-light tabular-nums text-vb-text">
-                    {goal.perceived_exertion}
-                    <span className="text-sm text-vb-text-muted">/10</span>
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Takeaways */}
-            {goal.assessment_data && (() => {
-              const ad = goal.assessment_data as Record<string, unknown>;
-              return (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {ad.went_well ? (
-                    <div className="rounded-sm border border-vb-border-subtle bg-vb-sage-tint/40 p-3">
-                      <p className="text-xs font-medium text-vb-forest">What went well</p>
-                      <p className="mt-1 text-sm text-vb-text-dim">
-                        {String(ad.went_well)}
-                      </p>
-                    </div>
-                  ) : null}
-                  {ad.to_improve ? (
-                    <div className="rounded-sm border border-vb-border-subtle border-l-[3px] border-l-vb-clay bg-vb-surface p-3">
-                      <p className="text-xs font-medium text-vb-clay">To improve</p>
-                      <p className="mt-1 text-sm text-vb-text-dim">
-                        {String(ad.to_improve)}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })()}
+        <div className="border border-vb-border-subtle bg-vb-surface p-5">
+          <div className="flex items-center justify-between">
+            <Kicker>The result</Kicker>
+            <Badge variant={goal.status === "completed" ? "ink" : "outline"}>
+              {goal.status === "dns"
+                ? "DNS"
+                : goal.status === "dnf"
+                  ? "DNF"
+                  : "Completed"}
+            </Badge>
           </div>
+          <div className="f-stagger mt-4 grid grid-cols-2 gap-px sm:grid-cols-4">
+            {goal.finish_time_seconds && (
+              <MonoTile
+                label="Finish time"
+                display={`${Math.floor(goal.finish_time_seconds / 3600)}:${String(
+                  Math.floor((goal.finish_time_seconds % 3600) / 60)
+                ).padStart(2, "0")}:${String(goal.finish_time_seconds % 60).padStart(2, "0")}`}
+              />
+            )}
+            {goal.finish_position && (
+              <MonoTile
+                label="Position"
+                display={`${goal.finish_position}`}
+                sub={
+                  goal.finish_position_total
+                    ? `of ${goal.finish_position_total}`
+                    : undefined
+                }
+              />
+            )}
+            {goal.overall_satisfaction && (
+              <DataTile
+                label="Satisfaction"
+                value={goal.overall_satisfaction}
+                unit="/10"
+              />
+            )}
+            {goal.perceived_exertion && (
+              <DataTile
+                label="RPE"
+                value={goal.perceived_exertion}
+                unit="/10"
+              />
+            )}
+          </div>
+
+          {/* Takeaways */}
+          {goal.assessment_data && (() => {
+            const ad = goal.assessment_data as Record<string, unknown>;
+            return (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {ad.went_well ? (
+                  <div className="border border-vb-border-subtle bg-vb-sunken p-3">
+                    <Kicker className="mb-1">What went well</Kicker>
+                    <p className="text-sm text-vb-text-dim">
+                      {String(ad.went_well)}
+                    </p>
+                  </div>
+                ) : null}
+                {ad.to_improve ? (
+                  <div className="border border-vb-border-subtle border-l-[3px] border-l-vb-red bg-vb-surface p-3">
+                    <Kicker flamme className="mb-1">
+                      What to change
+                    </Kicker>
+                    <p className="text-sm text-vb-text-dim">
+                      {String(ad.to_improve)}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })()}
         </div>
       )}
 
       {/* Edit Form */}
       {showEdit && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-light tracking-[-0.01em] text-vb-text">Edit Goal</h2>
+        <div className="f-rise border border-vb-border-subtle bg-vb-surface p-5">
+          <div className="mb-4 flex items-start justify-between">
+            <div>
+              <Kicker className="mb-1.5">Edit goal</Kicker>
+              <h2 className="f-display text-2xl text-vb-text">
+                Change the target
+              </h2>
+            </div>
             <button
               onClick={() => setShowEdit(false)}
               className="rounded-sm p-1 text-vb-text-muted hover:text-vb-text"
@@ -496,40 +513,32 @@ export default function GoalDetailPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-vb-text-muted">
-                Event Name
-              </label>
-              <input
+              <Kicker className="mb-2">What&apos;s the event?</Kicker>
+              <Input
                 value={editForm.event_name}
                 onChange={(e) =>
                   setEditForm({ ...editForm, event_name: e.target.value })
                 }
-                className={inputClasses}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-vb-text-muted">
-                Date
-              </label>
-              <input
+              <Kicker className="mb-2">When is race day?</Kicker>
+              <Input
                 type="date"
                 value={editForm.event_date}
                 onChange={(e) =>
                   setEditForm({ ...editForm, event_date: e.target.value })
                 }
-                className={inputClasses}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-vb-text-muted">
-                Type
-              </label>
+              <Kicker className="mb-2">What kind of race?</Kicker>
               <select
                 value={editForm.event_type}
                 onChange={(e) =>
                   setEditForm({ ...editForm, event_type: e.target.value })
                 }
-                className={inputClasses}
+                className={selectClasses}
               >
                 {EVENT_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -539,15 +548,13 @@ export default function GoalDetailPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-vb-text-muted">
-                Priority
-              </label>
+              <Kicker className="mb-2">How much does it matter?</Kicker>
               <select
                 value={editForm.priority}
                 onChange={(e) =>
                   setEditForm({ ...editForm, priority: e.target.value })
                 }
-                className={inputClasses}
+                className={selectClasses}
               >
                 {PRIORITIES.map((p) => (
                   <option key={p.value} value={p.value}>
@@ -557,10 +564,8 @@ export default function GoalDetailPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-vb-text-muted">
-                Target Duration (min)
-              </label>
-              <input
+              <Kicker className="mb-2">Target time, in minutes</Kicker>
+              <Input
                 type="number"
                 value={editForm.target_duration_minutes}
                 onChange={(e) =>
@@ -570,125 +575,105 @@ export default function GoalDetailPage() {
                   })
                 }
                 placeholder="e.g. 240"
-                className={inputClasses}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-vb-text-muted">
-                Route URL
-              </label>
-              <input
+              <Kicker className="mb-2">Where does the route live?</Kicker>
+              <Input
                 type="url"
                 value={editForm.route_url}
                 onChange={(e) =>
                   setEditForm({ ...editForm, route_url: e.target.value })
                 }
-                className={inputClasses}
               />
             </div>
           </div>
           <div className="mt-4">
-            <label className="mb-1 block text-xs font-medium text-vb-text-muted">
-              Notes
-            </label>
+            <Kicker className="mb-2">Anything I should know?</Kicker>
             <textarea
               value={editForm.notes}
               onChange={(e) =>
                 setEditForm({ ...editForm, notes: e.target.value })
               }
               rows={3}
-              className={`${inputClasses} resize-none`}
+              className={textareaClasses}
             />
           </div>
           <div className="mt-4 flex gap-2">
-            <button
+            <Button
               onClick={() => updateGoal.mutate()}
               disabled={!editForm.event_name || !editForm.event_date || updateGoal.isPending}
-              className="rounded-sm bg-vb-forest px-4 py-2 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
             >
-              {updateGoal.isPending ? "Saving..." : "Save Changes"}
-            </button>
-            <button
-              onClick={() => setShowEdit(false)}
-              className="rounded-sm border border-vb-border px-4 py-2 text-sm text-vb-forest hover:bg-vb-surface"
-            >
+              {updateGoal.isPending ? "Saving…" : "Save changes"}
+            </Button>
+            <Button variant="ghost" onClick={() => setShowEdit(false)}>
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {/* ============ STATS ROW ============ */}
+      <div className="f-stagger grid grid-cols-2 gap-px md:grid-cols-4">
         {goal.target_duration_minutes && (
-          <StatCard
-            label="Target Duration"
-            value={formatDurationMinutes(goal.target_duration_minutes)}
+          <MonoTile
+            label="Target time"
+            display={formatDurationMinutes(goal.target_duration_minutes)}
           />
         )}
         {goal.days_until != null && goal.days_until > 0 && (
-          <StatCard
-            label="Days Until"
-            value={goal.days_until}
-            unit="days"
-          />
+          <DataTile label="Days to go" value={goal.days_until} unit="days" />
         )}
         {goal.route_data?.total_distance_km && (
-          <StatCard
+          <DataTile
             label="Distance"
             value={goal.route_data.total_distance_km}
             unit="km"
+            decimals={Number.isInteger(goal.route_data.total_distance_km) ? 0 : 1}
           />
         )}
         {goal.route_data?.elevation_gain_m && (
-          <StatCard
-            label="Elevation"
+          <DataTile
+            label="Climbing"
             value={Math.round(goal.route_data.elevation_gain_m)}
             unit="m"
           />
         )}
       </div>
 
-      {/* Race Day Projection */}
+      {/* ============ RACE DAY PROJECTION ============ */}
       {projection && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-vb-forest" />
-            <h2 className="font-display text-xl font-light tracking-[-0.01em] text-vb-text">Race Day Projection</h2>
+        <div>
+          <SectionHeader kicker="Race day" title="The projection" />
+          <div className="space-y-4">
+            <PerformanceCards projection={projection} daysUntil={goal.days_until} />
+            {projection.fitness_trajectory.length > 2 && (
+              <div className="border border-vb-border-subtle bg-vb-surface p-4">
+                <Kicker className="mb-2">Where your form is going</Kicker>
+                <FitnessTrajectoryChart trajectory={projection.fitness_trajectory} />
+              </div>
+            )}
           </div>
-          <PerformanceCards projection={projection} daysUntil={goal.days_until} />
-          {projection.fitness_trajectory.length > 2 && (
-            <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-4">
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Fitness Trajectory
-              </p>
-              <FitnessTrajectoryChart trajectory={projection.fitness_trajectory} />
-            </div>
-          )}
         </div>
       )}
 
-      {/* Course Profile, elevation chart or GPX upload CTA */}
+      {/* Course profile, elevation chart or GPX upload CTA */}
       {goal.route_data?.elevation_profile &&
         goal.route_data.elevation_profile.length > 0 ? (
-          <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
+          <div className="border border-vb-border-subtle bg-vb-surface p-5">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                Course Profile
-                {goal.gpx_file_path && (
-                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-vb-sage-tint px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-vb-forest">
-                    <Mountain className="h-2.5 w-2.5" /> GPX
-                  </span>
-                )}
-              </p>
+              <div className="flex items-center gap-2">
+                <Kicker>Course profile</Kicker>
+                {goal.gpx_file_path && <Badge variant="chalk">GPX</Badge>}
+              </div>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => gpxInputRef.current?.click()}
                   disabled={uploadGpx.isPending}
-                  className="flex items-center gap-1 rounded-sm border border-vb-border px-2.5 py-1 text-xs text-vb-text-dim hover:border-vb-forest hover:text-vb-forest"
+                  className="flex items-center gap-1 rounded-sm border border-vb-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-vb-text-dim transition-colors hover:border-vb-border-strong hover:text-vb-text"
                 >
                   <Upload className="h-3 w-3" />
-                  {uploadGpx.isPending ? "Uploading..." : "Replace GPX"}
+                  {uploadGpx.isPending ? "Uploading…" : "Replace GPX"}
                 </button>
                 {goal.gpx_file_path && (
                   <button
@@ -698,10 +683,10 @@ export default function GoalDetailPage() {
                       }
                     }}
                     disabled={deleteGpx.isPending}
-                    className="flex items-center gap-1 rounded-sm border border-vb-border px-2.5 py-1 text-xs text-vb-clay hover:bg-vb-clay/5"
+                    className="flex items-center gap-1 rounded-sm border border-vb-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-vb-text-dim transition-colors hover:border-vb-red hover:text-vb-red"
                   >
                     <Trash2 className="h-3 w-3" />
-                    {deleteGpx.isPending ? "Removing..." : "Remove"}
+                    {deleteGpx.isPending ? "Removing…" : "Remove"}
                   </button>
                 )}
               </div>
@@ -709,30 +694,30 @@ export default function GoalDetailPage() {
             {/* Toggle pills when actual ride data is available */}
             {actualForChart && actualForChart.length > 0 && (
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] uppercase tracking-[0.12em] text-vb-text-muted mr-1">Show:</span>
+                <span className="f-kicker mr-1 text-vb-text-muted">Show</span>
                 {projection?.pacing_strategy && (
                   <button
                     onClick={() => setShowTargetPower((v) => !v)}
                     className={cn(
-                      "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                      "rounded-sm border px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors",
                       showTargetPower
-                        ? "bg-vb-sage-tint text-vb-forest border border-vb-forest/40"
-                        : "bg-vb-surface text-vb-text-muted border border-vb-border"
+                        ? "border-vb-border-strong bg-vb-sunken text-vb-text"
+                        : "border-vb-border bg-vb-surface text-vb-text-muted"
                     )}
                   >
-                    Target Power {showTargetPower ? "✓" : ""}
+                    Target power
                   </button>
                 )}
                 <button
                   onClick={() => setShowActualPower((v) => !v)}
                   className={cn(
-                    "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                    "rounded-sm border px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors",
                     showActualPower
-                      ? "bg-vb-clay/15 text-vb-clay border border-vb-clay/40"
-                      : "bg-vb-surface text-vb-text-muted border border-vb-border"
+                      ? "border-vb-red text-vb-red"
+                      : "border-vb-border bg-vb-surface text-vb-text-muted"
                   )}
                 >
-                  Actual Power {showActualPower ? "✓" : ""}
+                  Actual power
                 </button>
               </div>
             )}
@@ -745,7 +730,7 @@ export default function GoalDetailPage() {
             />
           </div>
         ) : (
-          <div className="rounded-md border border-dashed border-vb-border bg-vb-surface p-5">
+          <div className="border border-dashed border-vb-border bg-vb-surface p-5">
             <input
               ref={gpxInputRef}
               type="file"
@@ -758,52 +743,44 @@ export default function GoalDetailPage() {
               }}
             />
             <div className="flex flex-col items-center gap-3 py-4 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-vb-sage-tint">
-                <Mountain className="h-6 w-6 text-vb-forest" />
-              </div>
+              <Mountain className="h-8 w-8 text-vb-text-muted" />
               <div>
-                <p className="text-sm font-medium text-vb-text">
+                <p className="f-display text-lg text-vb-text">
                   {goal.gpx_file_path
-                    ? "Re-upload GPX to update the elevation profile"
-                    : "Upload a GPX file for the elevation profile"}
+                    ? "Re-upload the GPX to redraw the profile"
+                    : "One GPX file and Forma studies every climb"}
                 </p>
                 <p className="mx-auto mt-1 max-w-sm text-xs text-vb-text-muted">
                   {goal.route_data?.source === "strava"
-                    ? "Strava provides summary stats. Upload a GPX export for the full course profile."
-                    : "Export the route from Strava, RideWithGPS, or Komoot as a .gpx file"}
+                    ? "Strava gives summary numbers only. Upload a GPX export for the full course profile and pacing plan."
+                    : "Export the route from Strava, RideWithGPS or Komoot as a .gpx file."}
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => gpxInputRef.current?.click()}
                 disabled={uploadGpx.isPending}
-                className="flex w-full items-center justify-center gap-2 rounded-sm bg-vb-forest px-6 py-3 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50 sm:w-auto"
+                className="w-full sm:w-auto"
               >
                 <Upload className="h-4 w-4" />
-                {uploadGpx.isPending ? "Uploading..." : "Upload GPX File"}
-              </button>
+                {uploadGpx.isPending ? "Reading the route…" : "Upload GPX file"}
+              </Button>
             </div>
           </div>
         )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Route & Event Details */}
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
-            Event Details
-          </h2>
+        <div className="border border-vb-border-subtle bg-vb-surface p-5">
+          <Kicker className="mb-4">Event details</Kicker>
 
           <div className="space-y-3">
             {/* Route data */}
             {goal.route_data && !goal.route_data.error && (
-              <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
+              <div className="border border-vb-border-subtle bg-vb-bg p-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                    Route Info
-                  </p>
+                  <Kicker>The route</Kicker>
                   {goal.route_data.source && (
-                    <span className="rounded-full bg-vb-sunken px-1.5 py-0.5 text-[10px] capitalize text-vb-text-dim">
-                      {goal.route_data.source}
-                    </span>
+                    <Badge variant="chalk">{goal.route_data.source}</Badge>
                   )}
                 </div>
                 {(goal.route_data.title || goal.route_data.name) && (
@@ -817,46 +794,54 @@ export default function GoalDetailPage() {
                   </p>
                 )}
                 {(goal.route_data.total_distance_km || goal.route_data.elevation_gain_m) && (
-                  <div className="mt-2 grid grid-cols-2 gap-3">
+                  <div className="mt-3 grid grid-cols-2 gap-3">
                     {goal.route_data.total_distance_km && (
                       <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-vb-forest" />
+                        <MapPin className="h-4 w-4 text-vb-text-muted" />
                         <div>
-                          <p className="text-sm font-medium tabular-nums text-vb-text">
+                          <p className="f-data text-sm font-semibold text-vb-text">
                             {goal.route_data.total_distance_km}km
                           </p>
-                          <p className="text-xs text-vb-text-muted">Distance</p>
+                          <p className="f-kicker text-[9px] text-vb-text-muted">
+                            Distance
+                          </p>
                         </div>
                       </div>
                     )}
                     {goal.route_data.elevation_gain_m && (
                       <div className="flex items-center gap-2">
-                        <Mountain className="h-4 w-4 text-vb-forest" />
+                        <Mountain className="h-4 w-4 text-vb-text-muted" />
                         <div>
-                          <p className="text-sm font-medium tabular-nums text-vb-text">
+                          <p className="f-data text-sm font-semibold text-vb-text">
                             {goal.route_data.elevation_gain_m}m
                           </p>
-                          <p className="text-xs text-vb-text-muted">Climbing</p>
+                          <p className="f-kicker text-[9px] text-vb-text-muted">
+                            Climbing
+                          </p>
                         </div>
                       </div>
                     )}
                     {goal.route_data.avg_gradient_pct != null && (
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-vb-forest" />
+                        <TrendingUp className="h-4 w-4 text-vb-text-muted" />
                         <div>
-                          <p className="text-sm font-medium tabular-nums text-vb-text">
+                          <p className="f-data text-sm font-semibold text-vb-text">
                             {goal.route_data.avg_gradient_pct}%
                           </p>
-                          <p className="text-xs text-vb-text-muted">Avg gradient</p>
+                          <p className="f-kicker text-[9px] text-vb-text-muted">
+                            Avg gradient
+                          </p>
                         </div>
                       </div>
                     )}
                     {goal.route_data.max_elevation_m != null && (
                       <div>
-                        <p className="text-sm font-medium tabular-nums text-vb-text">
+                        <p className="f-data text-sm font-semibold text-vb-text">
                           {goal.route_data.max_elevation_m}m
                         </p>
-                        <p className="text-xs text-vb-text-muted">Max elevation</p>
+                        <p className="f-kicker text-[9px] text-vb-text-muted">
+                          Max elevation
+                        </p>
                       </div>
                     )}
                   </div>
@@ -872,7 +857,7 @@ export default function GoalDetailPage() {
                   href={goal.route_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-vb-forest hover:text-vb-forest-soft"
+                  className="text-sm text-vb-text transition-colors hover:text-vb-red"
                 >
                   {goal.route_url.length > 60
                     ? goal.route_url.slice(0, 60) + "..."
@@ -884,7 +869,7 @@ export default function GoalDetailPage() {
             {/* GPX status */}
             {goal.gpx_file_path && (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-sm text-vb-forest">
+                <span className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.08em] text-vb-text-dim">
                   <Mountain className="h-4 w-4" />
                   GPX file uploaded
                 </span>
@@ -894,10 +879,8 @@ export default function GoalDetailPage() {
             {/* Notes */}
             {goal.notes && (
               <div className="mt-3">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Notes
-                </p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-vb-text-dim">
+                <Kicker className="mb-1">Notes</Kicker>
+                <p className="whitespace-pre-wrap text-sm text-vb-text-dim">
                   {goal.notes}
                 </p>
               </div>
@@ -906,62 +889,57 @@ export default function GoalDetailPage() {
         </div>
 
         {/* Fitness Readiness */}
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
-            Fitness Readiness
-          </h2>
+        <div className="border border-vb-border-subtle bg-vb-surface p-5">
+          <Kicker className="mb-4">Fitness readiness</Kicker>
 
           {readiness ? (
             <div className="space-y-4">
               {/* Readiness score */}
               <div className="text-center">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                  Readiness
-                </p>
                 <p
-                  className={`mt-1 font-display text-3xl font-light tracking-[-0.01em] ${readinessColor(readiness.readiness_label)}`}
+                  className={`f-display mt-1 text-3xl ${readinessColor(readiness.readiness_label)}`}
                 >
                   {readiness.readiness_label}
                 </p>
-                <p className="mt-0.5 text-sm tabular-nums text-vb-text-muted">
-                  Score: {readiness.readiness_score}/100
+                <p className="f-data mt-1 text-sm text-vb-text-muted">
+                  {readiness.readiness_score}/100
                 </p>
               </div>
 
               {/* Metrics */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">Current CTL</p>
-                  <p className="font-display text-lg font-light tabular-nums text-vb-text">
+              <div className="grid grid-cols-2 gap-px">
+                <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                  <p className="f-kicker text-vb-text-muted">Current CTL</p>
+                  <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
                     {Math.round(readiness.current_ctl)}
                   </p>
-                  <p className="text-xs tabular-nums text-vb-text-muted">
-                    Target: {Math.round(readiness.target_ctl)}
+                  <p className="f-data text-xs text-vb-text-muted">
+                    Target {Math.round(readiness.target_ctl)}
                   </p>
                 </div>
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">Current TSB</p>
-                  <p className="font-display text-lg font-light tabular-nums text-vb-text">
+                <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                  <p className="f-kicker text-vb-text-muted">Current TSB</p>
+                  <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
                     {Math.round(readiness.current_tsb)}
                   </p>
                   {readiness.projected_tsb_on_event != null && (
-                    <p className="text-xs tabular-nums text-vb-text-muted">
-                      Event day: ~{Math.round(readiness.projected_tsb_on_event)}
+                    <p className="f-data text-xs text-vb-text-muted">
+                      Race day ~{Math.round(readiness.projected_tsb_on_event)}
                     </p>
                   )}
                 </div>
                 {readiness.current_ftp && (
-                  <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                    <p className="text-xs text-vb-text-muted">FTP</p>
-                    <p className="font-display text-lg font-light tabular-nums text-vb-text">
+                  <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                    <p className="f-kicker text-vb-text-muted">FTP</p>
+                    <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
                       {readiness.current_ftp}W
                     </p>
                   </div>
                 )}
                 {readiness.w_per_kg && (
-                  <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                    <p className="text-xs text-vb-text-muted">W/kg</p>
-                    <p className="font-display text-lg font-light tabular-nums text-vb-text">
+                  <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                    <p className="f-kicker text-vb-text-muted">W/kg</p>
+                    <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
                       {readiness.w_per_kg}
                     </p>
                   </div>
@@ -971,16 +949,14 @@ export default function GoalDetailPage() {
               {/* Recommendations */}
               {readiness.recommendations.length > 0 && (
                 <div>
-                  <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
-                    Recommendations
-                  </p>
+                  <Kicker>From the coach</Kicker>
                   <ul className="mt-2 space-y-1.5">
                     {readiness.recommendations.map((rec, i) => (
                       <li
                         key={i}
                         className="flex items-start gap-2 text-sm text-vb-text-dim"
                       >
-                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-vb-forest" />
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-vb-red" />
                         {rec}
                       </li>
                     ))}
@@ -990,83 +966,89 @@ export default function GoalDetailPage() {
             </div>
           ) : fitness ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">Current Fitness</p>
-                  <p className="font-display text-lg font-light tabular-nums text-vb-text">
-                    {Math.round(fitness.current_ctl)} CTL
+              <div className="grid grid-cols-2 gap-px">
+                <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                  <p className="f-kicker text-vb-text-muted">Fitness</p>
+                  <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
+                    {Math.round(fitness.current_ctl)}
+                    <span className="ml-1 text-sm font-medium text-vb-text-muted">
+                      CTL
+                    </span>
                   </p>
                 </div>
-                <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                  <p className="text-xs text-vb-text-muted">Form</p>
-                  <p className="font-display text-lg font-light tabular-nums text-vb-text">
-                    {Math.round(fitness.current_tsb)} TSB
+                <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                  <p className="f-kicker text-vb-text-muted">Form</p>
+                  <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
+                    {Math.round(fitness.current_tsb)}
+                    <span className="ml-1 text-sm font-medium text-vb-text-muted">
+                      TSB
+                    </span>
                   </p>
                 </div>
                 {user?.ftp && (
-                  <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                    <p className="text-xs text-vb-text-muted">FTP</p>
-                    <p className="font-display text-lg font-light tabular-nums text-vb-text">
+                  <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                    <p className="f-kicker text-vb-text-muted">FTP</p>
+                    <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
                       {user.ftp}W
                     </p>
                   </div>
                 )}
                 {fitness.w_per_kg && (
-                  <div className="rounded-sm border border-vb-border-subtle bg-vb-bg p-3">
-                    <p className="text-xs text-vb-text-muted">W/kg</p>
-                    <p className="font-display text-lg font-light tabular-nums text-vb-text">
+                  <div className="border border-vb-border-subtle bg-vb-surface p-3">
+                    <p className="f-kicker text-vb-text-muted">W/kg</p>
+                    <p className="f-data mt-1 text-2xl font-semibold text-vb-text">
                       {fitness.w_per_kg}
                     </p>
                   </div>
                 )}
               </div>
               <p className="text-xs text-vb-text-muted">
-                Detailed readiness assessment available for upcoming events.
+                The full readiness read arrives once the event is on the horizon.
               </p>
             </div>
           ) : (
             <p className="py-8 text-center text-sm text-vb-text-muted">
-              Upload rides with power data to see your fitness readiness.
+              This panel is waiting for your first ride with power. One file
+              and it starts moving.
             </p>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
+      {/* ============ ACTIONS ============ */}
       <div className="flex flex-wrap gap-3">
         {goal.needs_assessment ? (
           <Link
             href={`/dashboard/goals/${goalId}/assess`}
-            className="flex items-center gap-2 rounded-sm border border-vb-clay px-5 py-2.5 text-sm font-medium text-vb-clay hover:bg-vb-clay/5"
+            className={buttonVariants({ variant: "flamme" })}
           >
-            <ClipboardCheck className="h-4 w-4" />
-            Complete Race Report
+            File the race report
+            <Arrow />
           </Link>
         ) : goal.assessment_completed_at ? (
           <Link
             href={`/dashboard/coach?goal_id=${goalId}&debrief=true`}
-            className="flex items-center gap-2 rounded-sm bg-vb-forest px-5 py-2.5 text-sm font-medium text-white hover:bg-vb-forest-soft"
+            className={buttonVariants({ variant: "flamme" })}
           >
-            <MessageCircle className="h-4 w-4" />
-            Debrief with Coach Marco
+            Debrief with {coachName}
+            <Arrow />
           </Link>
         ) : (
           <>
             <Link
               href={`/dashboard/coach?goal_id=${goalId}`}
-              className="flex items-center gap-2 rounded-sm bg-vb-forest px-5 py-2.5 text-sm font-medium text-white hover:bg-vb-forest-soft"
+              className={buttonVariants({ variant: "flamme" })}
             >
-              <MessageCircle className="h-4 w-4" />
-              Ask Coach About This Goal
+              Ask {coachName} about this goal
+              <Arrow />
             </Link>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => generatePlan.mutate()}
               disabled={generatePlan.isPending}
-              className="flex items-center gap-2 rounded-sm border border-vb-border px-5 py-2.5 text-sm font-medium text-vb-forest hover:bg-vb-surface disabled:opacity-50"
             >
-              <Zap className="h-4 w-4" />
-              {generatePlan.isPending ? "Generating..." : "Generate Training Plan"}
-            </button>
+              {generatePlan.isPending ? "Building your season…" : "Build my season"}
+            </Button>
           </>
         )}
       </div>

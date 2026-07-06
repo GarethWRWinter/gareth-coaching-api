@@ -10,25 +10,37 @@ import {
   Trophy,
   Frown,
   Ban,
-  MessageCircle,
   Target,
   Calendar,
 } from "lucide-react";
 import { goals as goalsApi } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { formatDate, formatDuration, cn } from "@/lib/utils";
 import type { CandidateRide, GoalAssessmentSubmit } from "@/lib/api";
+import { Button, Arrow, buttonVariants } from "@/components/ui/button";
+import { Kicker } from "@/components/ui/kicker";
+import { Input } from "@/components/ui/input";
+import { CoachNote } from "@/components/ui/coach-note";
 
 const STATUS_OPTIONS = [
-  { value: "completed", label: "Completed", icon: Trophy, color: "border-vb-forest bg-vb-sage-tint text-vb-forest" },
-  { value: "dnf", label: "DNF", icon: Frown, color: "border-vb-clay bg-vb-clay/10 text-vb-clay" },
-  { value: "dns", label: "DNS", icon: Ban, color: "border-vb-clay bg-vb-clay/10 text-vb-clay" },
+  { value: "completed", label: "Completed", icon: Trophy },
+  { value: "dnf", label: "DNF", icon: Frown },
+  { value: "dns", label: "DNS", icon: Ban },
 ];
+
+const selectClasses =
+  "flex h-11 w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red";
+
+const textareaClasses =
+  "w-full rounded-sm border border-vb-border bg-vb-surface px-3 py-2 text-sm text-vb-text placeholder:text-vb-text-muted focus:border-vb-red focus:outline-none focus:ring-1 focus:ring-vb-red resize-none";
 
 export default function AssessPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const goalId = params.id as string;
+  const coachName = user?.coach_name || "Forma";
 
   const [status, setStatus] = useState("completed");
   const [selectedRideId, setSelectedRideId] = useState<string | null>(null);
@@ -104,7 +116,7 @@ export default function AssessPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-forest" />
+        <div className="h-8 w-8 animate-spin rounded-full border border-vb-border-subtle border-t-vb-red" />
       </div>
     );
   }
@@ -117,98 +129,95 @@ export default function AssessPage() {
   if (submitted) {
     return (
       <div className="mx-auto max-w-lg space-y-6 py-8">
-        <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-vb-sage-tint">
-            <Check className="h-8 w-8 text-vb-forest" />
-          </div>
-          <h1 className="mt-4 font-display text-2xl font-light tracking-[-0.01em] text-vb-text">
-            Assessment Complete
-          </h1>
-          <p className="mt-1 text-vb-text-dim">
-            Your race report for{" "}
-            <span className="font-medium text-vb-text">{goal.event_name}</span>{" "}
-            has been saved.
-          </p>
-          <div className="mt-5 flex flex-col items-center gap-2">
+        <CoachNote
+          kicker="Race report filed"
+          coachName={coachName}
+          className="f-rise"
+          action={
             <Link
               href={`/dashboard/coach?goal_id=${goalId}&debrief=true`}
-              className="flex items-center gap-2 rounded-sm bg-vb-forest px-6 py-3 text-sm font-medium text-white hover:bg-vb-forest-soft"
+              className={buttonVariants({ variant: "flamme", size: "sm" })}
             >
-              <MessageCircle className="h-4 w-4" />
-              Debrief with Coach Marco
+              Debrief
+              <Arrow />
             </Link>
-          </div>
-        </div>
+          }
+        >
+          Filed. This race just made the next one faster. Everything you told
+          me about {goal.event_name} is now part of how I build what comes
+          next. When you&apos;re ready, let&apos;s talk it through.
+        </CoachNote>
 
         {/* What's next, invite user to plan their next block */}
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="font-display text-lg font-light tracking-[-0.01em] text-vb-text">What&apos;s next?</h2>
+        <div className="border border-vb-border-subtle bg-vb-surface p-5">
+          <Kicker className="mb-1.5">What&apos;s next</Kicker>
+          <h2 className="f-display text-xl text-vb-text">
+            Keep the wheels turning
+          </h2>
           <p className="mt-1 text-xs text-vb-text-dim">
-            Keep momentum going, pick your next target and we&apos;ll build a plan
-            around it, or start a fresh training block to keep building fitness.
+            Pick your next target and the season rebuilds around it, or start
+            a fresh block and keep the fitness you just banked.
           </p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <div className="f-stagger mt-4 grid gap-2 sm:grid-cols-2">
             <Link
               href="/dashboard/goals?new=1"
-              className="flex items-center gap-3 rounded-sm border border-vb-border-subtle bg-vb-bg p-3 hover:bg-vb-surface-raised"
+              className="f-lift flex items-center gap-3 border border-vb-border-subtle bg-vb-surface p-3"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-sage-tint">
-                <Target className="h-4 w-4 text-vb-forest" />
-              </div>
+              <Target className="h-5 w-5 shrink-0 text-vb-red" />
               <div>
-                <p className="text-sm font-medium text-vb-text">Add a new goal</p>
-                <p className="text-[11px] text-vb-text-muted">Plan peaks for your next race</p>
+                <p className="text-sm font-medium text-vb-text">Name the next race</p>
+                <p className="text-[11px] text-vb-text-muted">
+                  The season builds backwards from it
+                </p>
               </div>
             </Link>
             <Link
               href="/dashboard/training"
-              className="flex items-center gap-3 rounded-sm border border-vb-border-subtle bg-vb-bg p-3 hover:bg-vb-surface-raised"
+              className="f-lift flex items-center gap-3 border border-vb-border-subtle bg-vb-surface p-3"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vb-sage-tint">
-                <Calendar className="h-4 w-4 text-vb-forest" />
-              </div>
+              <Calendar className="h-5 w-5 shrink-0 text-vb-text" />
               <div>
                 <p className="text-sm font-medium text-vb-text">New training block</p>
-                <p className="text-[11px] text-vb-text-muted">Generate a 12-week plan</p>
+                <p className="text-[11px] text-vb-text-muted">
+                  Keep building while it decides
+                </p>
               </div>
             </Link>
           </div>
           <Link
             href={`/dashboard/goals/${goalId}`}
-            className="mt-4 block text-center text-xs text-vb-text-muted hover:text-vb-forest"
+            className="mt-4 block text-center font-mono text-[11px] uppercase tracking-[0.08em] text-vb-text-muted transition-colors hover:text-vb-red"
           >
-            Or view goal details
+            Or review the goal
           </Link>
         </div>
       </div>
     );
   }
 
-  const inputClasses =
-    "w-full rounded-sm border border-vb-border-subtle bg-vb-bg px-3 py-2 text-sm text-vb-text focus:border-vb-forest focus:outline-none";
-
   return (
     <div className="mx-auto max-w-2xl space-y-8">
-      {/* Header */}
-      <div>
+      {/* ============ HEADER ============ */}
+      <div className="f-rise">
         <Link
           href={`/dashboard/goals/${goalId}`}
-          className="mb-2 inline-flex items-center gap-1 text-sm text-vb-text-dim hover:text-vb-forest"
+          className="mb-3 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.08em] text-vb-text-dim transition-colors hover:text-vb-red"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to goal
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to the goal
         </Link>
-        <h1 className="font-display text-3xl font-light tracking-[-0.01em] text-vb-text">
+        <Kicker className="mb-2">The debrief</Kicker>
+        <h1 className="f-display text-4xl text-vb-text md:text-5xl">
           How did {goal.event_name} go?
         </h1>
-        <p className="mt-1 text-sm text-vb-text-dim">
-          {formatDate(goal.event_date)} &middot;{" "}
+        <p className="f-kicker mt-3 text-vb-text-muted">
+          {formatDate(goal.event_date)} ·{" "}
           {goal.event_type.replace(/_/g, " ")}
         </p>
       </div>
 
       {/* Section 1: Result Status */}
-      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">Result</h2>
+      <div className="border border-vb-border-subtle bg-vb-surface p-5">
+        <Kicker className="mb-4">01 · The result</Kicker>
         <div className="grid grid-cols-3 gap-3">
           {STATUS_OPTIONS.map((opt) => {
             const Icon = opt.icon;
@@ -218,12 +227,18 @@ export default function AssessPage() {
                 key={opt.value}
                 onClick={() => setStatus(opt.value)}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-sm border p-4 transition-all",
-                  isSelected ? opt.color : "border-vb-border-subtle bg-vb-bg text-vb-text-dim hover:border-vb-border"
+                  "f-lift f-press flex flex-col items-center gap-2 rounded-sm border p-4",
+                  isSelected
+                    ? "border-vb-red bg-vb-surface text-vb-text"
+                    : "border-vb-border-subtle bg-vb-surface text-vb-text-dim hover:border-vb-border"
                 )}
               >
-                <Icon className="h-6 w-6" />
-                <span className="text-sm font-medium">{opt.label}</span>
+                <Icon
+                  className={cn("h-6 w-6", isSelected && "text-vb-red")}
+                />
+                <span className="font-mono text-xs font-semibold uppercase tracking-[0.08em]">
+                  {opt.label}
+                </span>
               </button>
             );
           })}
@@ -233,61 +248,57 @@ export default function AssessPage() {
         {status === "completed" && (
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
-                Finish Time
-              </label>
+              <Kicker className="mb-2">Finish time</Kicker>
               <div className="flex items-center gap-1.5">
-                <input
+                <Input
                   type="number"
                   value={finishHours}
                   onChange={(e) => setFinishHours(e.target.value)}
                   placeholder="h"
                   min="0"
-                  className={`${inputClasses} w-16 text-center`}
+                  className="f-data w-16 text-center"
                 />
                 <span className="text-vb-text-muted">:</span>
-                <input
+                <Input
                   type="number"
                   value={finishMinutes}
                   onChange={(e) => setFinishMinutes(e.target.value)}
                   placeholder="m"
                   min="0"
                   max="59"
-                  className={`${inputClasses} w-16 text-center`}
+                  className="f-data w-16 text-center"
                 />
                 <span className="text-vb-text-muted">:</span>
-                <input
+                <Input
                   type="number"
                   value={finishSeconds}
                   onChange={(e) => setFinishSeconds(e.target.value)}
                   placeholder="s"
                   min="0"
                   max="59"
-                  className={`${inputClasses} w-16 text-center`}
+                  className="f-data w-16 text-center"
                 />
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
-                Position (optional)
-              </label>
+              <Kicker className="mb-2">Position, if you placed</Kicker>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   type="number"
                   value={finishPosition}
                   onChange={(e) => setFinishPosition(e.target.value)}
                   placeholder="Place"
                   min="1"
-                  className={`${inputClasses} w-20`}
+                  className="f-data w-20"
                 />
                 <span className="text-vb-text-muted">/</span>
-                <input
+                <Input
                   type="number"
                   value={finishPositionTotal}
                   onChange={(e) => setFinishPositionTotal(e.target.value)}
                   placeholder="Total"
                   min="1"
-                  className={`${inputClasses} w-20`}
+                  className="f-data w-20"
                 />
               </div>
             </div>
@@ -297,12 +308,10 @@ export default function AssessPage() {
 
       {/* Section 2: Link Ride */}
       {candidateRidesData && candidateRidesData.rides.length > 0 && (
-        <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-          <h2 className="mb-1 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
-            Link Your Ride
-          </h2>
+        <div className="border border-vb-border-subtle bg-vb-surface p-5">
+          <Kicker className="mb-1">02 · The ride file</Kicker>
           <p className="mb-4 text-xs text-vb-text-dim">
-            Select the ride file from race day for detailed analysis
+            Point Forma at the ride from race day and the numbers join the story.
           </p>
           <div className="space-y-2">
             {candidateRidesData.rides.map((ride: CandidateRide) => (
@@ -312,15 +321,15 @@ export default function AssessPage() {
                   setSelectedRideId(selectedRideId === ride.id ? null : ride.id)
                 }
                 className={cn(
-                  "flex w-full items-center justify-between rounded-sm border p-3 text-left transition-all",
+                  "f-lift flex w-full items-center justify-between rounded-sm border p-3 text-left",
                   selectedRideId === ride.id
-                    ? "border-vb-forest bg-vb-sage-tint"
-                    : "border-vb-border-subtle bg-vb-bg hover:border-vb-border"
+                    ? "border-vb-red bg-vb-surface"
+                    : "border-vb-border-subtle bg-vb-surface hover:border-vb-border"
                 )}
               >
                 <div>
                   <p className="text-sm font-medium text-vb-text">{ride.title}</p>
-                  <p className="text-xs text-vb-text-dim">
+                  <p className="f-data text-xs text-vb-text-dim">
                     {ride.ride_date}
                     {ride.duration_seconds && ` · ${formatDuration(ride.duration_seconds)}`}
                   </p>
@@ -328,18 +337,22 @@ export default function AssessPage() {
                 <div className="flex items-center gap-3 text-right">
                   {ride.normalized_power && (
                     <div>
-                      <p className="text-sm font-medium tabular-nums text-vb-text">{Math.round(ride.normalized_power)}W</p>
-                      <p className="text-[10px] text-vb-text-muted">NP</p>
+                      <p className="f-data text-sm font-semibold text-vb-text">
+                        {Math.round(ride.normalized_power)}W
+                      </p>
+                      <p className="f-kicker text-[9px] text-vb-text-muted">NP</p>
                     </div>
                   )}
                   {ride.tss && (
                     <div>
-                      <p className="text-sm font-medium tabular-nums text-vb-text">{ride.tss}</p>
-                      <p className="text-[10px] text-vb-text-muted">TSS</p>
+                      <p className="f-data text-sm font-semibold text-vb-text">
+                        {ride.tss}
+                      </p>
+                      <p className="f-kicker text-[9px] text-vb-text-muted">TSS</p>
                     </div>
                   )}
                   {selectedRideId === ride.id && (
-                    <Check className="h-5 w-5 text-vb-forest" />
+                    <Check className="h-5 w-5 text-vb-red" />
                   )}
                 </div>
               </button>
@@ -349,18 +362,17 @@ export default function AssessPage() {
       )}
 
       {/* Section 3: Ratings */}
-      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
-          How Did It Go?
-        </h2>
+      <div className="border border-vb-border-subtle bg-vb-surface p-5">
+        <Kicker className="mb-4">03 · Gut check</Kicker>
         <div className="space-y-5">
           {/* Satisfaction */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-sm font-medium text-vb-text-dim">
-                Overall Satisfaction
-              </label>
-              <span className="font-display text-lg font-light tabular-nums text-vb-text">{satisfaction}/10</span>
+              <Kicker>Happy with the day?</Kicker>
+              <span className="f-data text-2xl font-semibold text-vb-text">
+                {satisfaction}
+                <span className="text-sm text-vb-text-muted">/10</span>
+              </span>
             </div>
             <input
               type="range"
@@ -368,9 +380,9 @@ export default function AssessPage() {
               max="10"
               value={satisfaction}
               onChange={(e) => setSatisfaction(parseInt(e.target.value))}
-              className="w-full accent-vb-forest"
+              className="w-full accent-vb-red"
             />
-            <div className="mt-1 flex justify-between text-[10px] text-vb-text-muted">
+            <div className="mt-1 flex justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-vb-text-muted">
               <span>Disappointed</span>
               <span>Delighted</span>
             </div>
@@ -379,10 +391,11 @@ export default function AssessPage() {
           {/* RPE */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label className="text-sm font-medium text-vb-text-dim">
-                Perceived Exertion (RPE)
-              </label>
-              <span className="font-display text-lg font-light tabular-nums text-vb-text">{exertion}/10</span>
+              <Kicker>How hard did it feel?</Kicker>
+              <span className="f-data text-2xl font-semibold text-vb-text">
+                {exertion}
+                <span className="text-sm text-vb-text-muted">/10</span>
+              </span>
             </div>
             <input
               type="range"
@@ -390,9 +403,9 @@ export default function AssessPage() {
               max="10"
               value={exertion}
               onChange={(e) => setExertion(parseInt(e.target.value))}
-              className="w-full accent-vb-forest"
+              className="w-full accent-vb-red"
             />
-            <div className="mt-1 flex justify-between text-[10px] text-vb-text-muted">
+            <div className="mt-1 flex justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-vb-text-muted">
               <span>Very easy</span>
               <span>Maximal</span>
             </div>
@@ -401,39 +414,35 @@ export default function AssessPage() {
       </div>
 
       {/* Section 4: Self-Assessment */}
-      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">
-          Self-Assessment
-        </h2>
+      <div className="border border-vb-border-subtle bg-vb-surface p-5">
+        <Kicker className="mb-4">04 · Under the skin</Kicker>
         <div className="space-y-5">
           {/* Physical */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
-                Legs Rating (1-10)
-              </label>
+              <Kicker className="mb-2">How were the legs?</Kicker>
               <input
                 type="range"
                 min="1"
                 max="10"
                 value={legsRating}
                 onChange={(e) => setLegsRating(parseInt(e.target.value))}
-                className="w-full accent-vb-forest"
+                className="w-full accent-vb-red"
               />
-              <div className="mt-0.5 flex justify-between text-[10px] text-vb-text-muted">
+              <div className="mt-0.5 flex justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-vb-text-muted">
                 <span>Heavy</span>
-                <span className="font-medium tabular-nums text-vb-text-dim">{legsRating}</span>
+                <span className="f-data text-xs font-semibold text-vb-text">
+                  {legsRating}
+                </span>
                 <span>Flying</span>
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
-                Fatigue Onset
-              </label>
+              <Kicker className="mb-2">When did fatigue arrive?</Kicker>
               <select
                 value={fatigueOnset}
                 onChange={(e) => setFatigueOnset(e.target.value)}
-                className={inputClasses}
+                className={selectClasses}
               >
                 <option value="early">Early (first third)</option>
                 <option value="middle">Middle</option>
@@ -446,13 +455,11 @@ export default function AssessPage() {
           {/* Pacing + Nutrition */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
-                Followed Pacing Plan?
-              </label>
+              <Kicker className="mb-2">Did the pacing plan hold?</Kicker>
               <select
                 value={followedPlan}
                 onChange={(e) => setFollowedPlan(e.target.value)}
-                className={inputClasses}
+                className={selectClasses}
               >
                 <option value="yes">Yes, nailed it</option>
                 <option value="mostly">Mostly</option>
@@ -461,13 +468,11 @@ export default function AssessPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
-                Fueling / Nutrition
-              </label>
+              <Kicker className="mb-2">Did the fuelling work?</Kicker>
               <select
                 value={fuelingWorked}
                 onChange={(e) => setFuelingWorked(e.target.value)}
-                className={inputClasses}
+                className={selectClasses}
               >
                 <option value="yes">Worked well</option>
                 <option value="some_issues">Some issues</option>
@@ -478,20 +483,20 @@ export default function AssessPage() {
 
           {/* Mental */}
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vb-text-muted">
-              Pre-Race Confidence
-            </label>
+            <Kicker className="mb-2">How confident were you on the start line?</Kicker>
             <input
               type="range"
               min="1"
               max="10"
               value={preRaceConfidence}
               onChange={(e) => setPreRaceConfidence(parseInt(e.target.value))}
-              className="w-full accent-vb-forest"
+              className="w-full accent-vb-red"
             />
-            <div className="mt-0.5 flex justify-between text-[10px] text-vb-text-muted">
+            <div className="mt-0.5 flex justify-between font-mono text-[10px] uppercase tracking-[0.1em] text-vb-text-muted">
               <span>Very nervous</span>
-              <span className="font-medium tabular-nums text-vb-text-dim">{preRaceConfidence}</span>
+              <span className="f-data text-xs font-semibold text-vb-text">
+                {preRaceConfidence}
+              </span>
               <span>Very confident</span>
             </div>
           </div>
@@ -499,31 +504,27 @@ export default function AssessPage() {
       </div>
 
       {/* Section 5: Takeaways */}
-      <div className="rounded-md border border-vb-border-subtle bg-vb-surface p-5">
-        <h2 className="mb-4 font-display text-xl font-light tracking-[-0.01em] text-vb-text">Takeaways</h2>
+      <div className="border border-vb-border-subtle bg-vb-surface p-5">
+        <Kicker className="mb-4">05 · For the record</Kicker>
         <div className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vb-forest">
-              What went well?
-            </label>
+            <Kicker className="mb-2">What went well?</Kicker>
             <textarea
               value={wentWell}
               onChange={(e) => setWentWell(e.target.value)}
-              placeholder="e.g. Pacing was consistent, fueling strategy worked, strong on climbs..."
+              placeholder="e.g. Held 250W on the final climb, fuelled every 20 minutes, never panicked..."
               rows={2}
-              className={`${inputClasses} resize-none`}
+              className={textareaClasses}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-vb-clay">
-              What would you improve?
-            </label>
+            <Kicker className="mb-2">What would you change?</Kicker>
             <textarea
               value={toImprove}
               onChange={(e) => setToImprove(e.target.value)}
-              placeholder="e.g. Started too fast, need more climbing practice, forgot gels..."
+              placeholder="e.g. Went out too hot in the first hour, need more long climbs in training, forgot the gels..."
               rows={2}
-              className={`${inputClasses} resize-none`}
+              className={textareaClasses}
             />
           </div>
         </div>
@@ -531,16 +532,19 @@ export default function AssessPage() {
 
       {/* Submit */}
       <div className="flex gap-3">
-        <button
+        <Button
+          variant="flamme"
+          size="lg"
           onClick={handleSubmit}
           disabled={submitMutation.isPending}
-          className="flex-1 rounded-sm bg-vb-forest px-6 py-3.5 text-sm font-medium text-white hover:bg-vb-forest-soft disabled:opacity-50"
+          className="flex-1"
         >
-          {submitMutation.isPending ? "Saving..." : "Submit Race Report"}
-        </button>
+          {submitMutation.isPending ? "Filing…" : "File the race report"}
+          <Arrow />
+        </Button>
         <Link
           href={`/dashboard/goals/${goalId}`}
-          className="rounded-sm border border-vb-border px-6 py-3.5 text-sm text-vb-forest hover:bg-vb-surface"
+          className={buttonVariants({ variant: "ghost", size: "lg" })}
         >
           Cancel
         </Link>

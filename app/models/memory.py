@@ -1,4 +1,4 @@
-"""Memory graph — Marco's brain (Pillar 2, v2).
+"""Memory graph — Forma's brain (Pillar 2, v2).
 
 Typed entity graph: `mem_entities` are nodes (a Value, Goal, LearningGap,
 Insight, Habit, LifeEvent, Person, HealthSignal, Procedural, RideMemory);
@@ -6,7 +6,7 @@ Insight, Habit, LifeEvent, Person, HealthSignal, Procedural, RideMemory);
 ADDRESSED_BY, BECAME, INVOLVES, CONSTRAINS, ABOUT).
 
 The relationships are where the intelligence lives — a plan, a coaching
-narrative, or "Marco's reading of your brain" is a traversal, not a stored
+narrative, or "Forma's reading of your brain" is a traversal, not a stored
 blob. See prd/cycling-coach/memory-layer.md (v2).
 """
 

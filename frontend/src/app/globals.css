@@ -2,84 +2,97 @@
 @plugin "@tailwindcss/typography";
 
 /* ============================================================
-   ALMANAC design system — Marco
-   VoiceBox's editorial bones, Arket's Scandinavian skin.
-   Light warm-linen ground · soft espresso ink · deep forest accent
-   · single clay highlight · humanist sans + a handwritten signature.
+   FORMA design system
+   Rouleur editorial: paper ground, ink structure, one flamme accent.
+   Archivo 800 (display) · Inter Tight (body) · IBM Plex Mono (labels/data).
+   Flat surfaces, hairline borders, no shadows. Flamme is scarce.
 
    Token NAMES are kept as `vb-*` so every existing page inherits the
-   rebrand for free; only the VALUES change.
+   brand for free; only the VALUES change. `vb-red` / `vb-forest`
+   are both the single flamme accent.
    ============================================================ */
 @theme {
   /* Surfaces */
-  --color-vb-bg: #F3F1EA;            /* warm linen / oat */
+  --color-vb-bg: #FAFAF7;            /* paper */
   --color-vb-surface: #FFFFFF;       /* cards */
-  --color-vb-surface-raised: #FBFAF6;
-  --color-vb-sunken: #ECE8DE;        /* sand fills */
+  --color-vb-surface-raised: #FBFAF7;
+  --color-vb-sunken: #F0F0EC;        /* chalk fills */
 
-  /* Content (ink — never pure black, that's the Arket warmth trick) */
-  --color-vb-text: #23211C;
-  --color-vb-text-dim: #615B50;
-  --color-vb-text-muted: #948D80;
+  /* Content (ink) */
+  --color-vb-text: #0B0B0C;
+  --color-vb-text-dim: #55554F;
+  --color-vb-text-muted: #9A9A94;
 
-  /* Borders — hairline warm */
-  --color-vb-border-subtle: #E7E2D7;
-  --color-vb-border: #D6CFC1;
-  --color-vb-border-strong: #23211C;
+  /* Borders — hairline neutral, ink for strong */
+  --color-vb-border-subtle: #ECEBE6;
+  --color-vb-border: #D8D8D2;
+  --color-vb-border-strong: #0B0B0C;
 
-  /* Accent — `vb-red` is repurposed as the PRIMARY (forest) so existing
-     accent usages flip to forest automatically. */
-  --color-vb-red: #36513F;           /* forest (primary accent / actions) */
-  --color-vb-red-bright: #5C7A63;    /* forest hover */
-  --color-vb-red-dim: #2C4233;
+  /* Accent — flamme is THE accent */
+  --color-vb-red: #FF3D00;           /* flamme (primary accent / actions) */
+  --color-vb-red-bright: #FF5A2A;    /* flamme, lighter (hover / soft) */
+  --color-vb-red-dim: #D93400;       /* flamme, darker */
 
-  /* Named accents for new work */
-  --color-vb-forest: #36513F;
-  --color-vb-forest-soft: #5C7A63;
-  --color-vb-sage: #C3CDBC;
-  --color-vb-sage-tint: #E9ECE2;
-  --color-vb-clay: #BB6647;          /* single highlight / soft attention */
-  --color-vb-clay-soft: #D2855B;
-  --color-vb-dusty: #7C95A3;
-  --color-vb-ochre: #C7A458;
+  /* Named accents — legacy aliases collapse to flamme + neutrals */
+  --color-vb-forest: #FF3D00;        /* → flamme (primary) */
+  --color-vb-forest-soft: #FF5A2A;   /* → flamme hover / soft */
+  --color-vb-sage: #E7E7E1;          /* soft neutral fill */
+  --color-vb-sage-tint: #F4F3EE;     /* lighter neutral fill */
+  --color-vb-clay: #55554F;          /* former 2nd accent → muted ink */
+  --color-vb-clay-soft: #9A9A94;     /* → grey */
+  --color-vb-dusty: #9A9A94;         /* → grey */
+  --color-vb-ochre: #D9A62E;         /* amber (kept for warning) */
 
   /* Semantic */
-  --color-vb-success: #4C6747;
-  --color-vb-warning: #C7A458;
+  --color-vb-success: #3E8E7E;
+  --color-vb-warning: #D9A62E;
+
+  /* FORMA training-zone ramp — cold to hot (charts, zones, effort) */
+  --color-vb-z1: #4A6FA5;
+  --color-vb-z2: #3E8E7E;
+  --color-vb-z3: #D9A62E;
+  --color-vb-z4: #E8641B;
+  --color-vb-z5: #E01B1B;
+  --color-vb-z6: #B4123F;
+  --color-vb-z7: #6E0E3C;
+
+  /* Carbon (dark instrument surfaces — ride mode) */
+  --color-vb-carbon: #101012;
+  --color-vb-carbon-raised: #1A1A1E;
+  --color-vb-chalk: #F0F0EC;         /* text on carbon */
+  --color-vb-chalk-dim: #8E9196;     /* titanium — dim text on carbon */
 
   /* Typography — wired through next/font CSS vars */
-  --font-display: var(--font-bricolage), "Segoe UI", Helvetica, sans-serif;
-  --font-sans: var(--font-schibsted), -apple-system, "Segoe UI", Helvetica, sans-serif;
+  --font-display: var(--font-archivo), "Archivo", "Segoe UI", Helvetica, sans-serif;
+  --font-sans: var(--font-inter-tight), "Inter Tight", -apple-system, "Segoe UI", Helvetica, sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
   --font-script: var(--font-caveat), "Segoe Script", cursive;
-  /* mono aliased to the sans workhorse — ALMANAC is sans-led, not techy */
-  --font-mono: var(--font-schibsted), -apple-system, "Segoe UI", Helvetica, sans-serif;
 
-  /* Radius — soft, not bubbly */
+  /* Radius — FORMA is sharp / editorial */
   --radius-none: 0px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
   --radius-full: 9999px;
 }
 
-/* ---- Legacy aliases kept so non-converted pages still render sanely
-        against the light theme. ---- */
+/* ---- Legacy aliases kept so non-converted pages still render sanely. ---- */
 :root {
-  --background: #F3F1EA;
-  --foreground: #23211C;
+  --background: #FAFAF7;
+  --foreground: #0B0B0C;
   --card: #FFFFFF;
-  --card-foreground: #23211C;
-  --primary: #36513F;
+  --card-foreground: #0B0B0C;
+  --primary: #FF3D00;
   --primary-foreground: #FFFFFF;
-  --secondary: #ECE8DE;
-  --secondary-foreground: #23211C;
-  --muted: #ECE8DE;
-  --muted-foreground: #615B50;
-  --accent: #36513F;
+  --secondary: #F0F0EC;
+  --secondary-foreground: #0B0B0C;
+  --muted: #F0F0EC;
+  --muted-foreground: #55554F;
+  --accent: #FF3D00;
   --accent-foreground: #FFFFFF;
-  --destructive: #BB6647;
-  --border: #E7E2D7;
-  --input: #E7E2D7;
-  --ring: #36513F;
+  --destructive: #D93400;
+  --border: #D8D8D2;
+  --input: #D8D8D2;
+  --ring: #FF3D00;
 }
 
 body {
@@ -88,19 +101,103 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Tabular figures for column alignment. */
+/* ============================================================
+   FORMA type utilities
+   ============================================================ */
+.f-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+}
+.f-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.f-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.f-signature {
+  font-family: var(--font-script);
+  color: var(--color-vb-red);
+}
 .tabular-nums { font-variant-numeric: tabular-nums; }
 
-/* ALMANAC route motif — a fine contour rule used as a section divider. */
-.almanac-rule { display:block; width:100%; height:22px; color: var(--color-vb-border); }
+/* Rules — ink for section starts, hairline for quiet dividers */
+.f-rule { border: none; border-top: 2px solid var(--color-vb-border-strong); }
+.f-hairline { border: none; border-top: 1px solid var(--color-vb-border-subtle); }
 
-/* Scrollbar — light, minimal. */
+/* ============================================================
+   FORMA motion primitives
+   ============================================================ */
+.f-lift { transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease; }
+.f-press { transition: transform 0.1s ease; }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes f-rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .f-rise { animation: f-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .f-rise-slow { animation: f-rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  .f-stagger > * { animation: f-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .f-stagger > *:nth-child(1)  { animation-delay: 0ms; }
+  .f-stagger > *:nth-child(2)  { animation-delay: 60ms; }
+  .f-stagger > *:nth-child(3)  { animation-delay: 120ms; }
+  .f-stagger > *:nth-child(4)  { animation-delay: 180ms; }
+  .f-stagger > *:nth-child(5)  { animation-delay: 240ms; }
+  .f-stagger > *:nth-child(6)  { animation-delay: 300ms; }
+  .f-stagger > *:nth-child(7)  { animation-delay: 360ms; }
+  .f-stagger > *:nth-child(8)  { animation-delay: 420ms; }
+  .f-stagger > *:nth-child(9)  { animation-delay: 480ms; }
+  .f-stagger > *:nth-child(10) { animation-delay: 540ms; }
+  .f-stagger > *:nth-child(11) { animation-delay: 600ms; }
+  .f-stagger > *:nth-child(12) { animation-delay: 660ms; }
+
+  @keyframes f-pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.4); opacity: 0.6; }
+  }
+  .f-pulse-dot { animation: f-pulse-dot 1.6s ease-in-out infinite; }
+
+  @keyframes f-draw {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+  .f-draw { transform-origin: left; animation: f-draw 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  .f-lift:hover { transform: translateY(-2px); }
+  .f-press:active { transform: scale(0.98); }
+
+  /* Arrow nudge — put .f-arrow on a parent, span.f-arrow-head slides right */
+  .f-arrow .f-arrow-head { display: inline-block; transition: transform 0.18s ease; }
+  .f-arrow:hover .f-arrow-head { transform: translateX(3px); }
+}
+.f-lift:hover { border-color: var(--color-vb-border-strong); }
+
+/* ============================================================
+   Carbon ride mode — instrument screen scope
+   ============================================================ */
+.f-carbon {
+  background-color: var(--color-vb-carbon);
+  color: var(--color-vb-chalk);
+}
+.f-carbon ::-webkit-scrollbar-track { background: var(--color-vb-carbon); }
+.f-carbon ::-webkit-scrollbar-thumb { background: var(--color-vb-carbon-raised); }
+
+/* Scrollbar — light, minimal */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--color-vb-bg); }
 ::-webkit-scrollbar-thumb { background: var(--color-vb-border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-vb-text-muted); }
 
-/* ----- Existing animation utilities (preserved, recoloured) ----- */
+/* ----- Voice + live animation utilities ----- */
 @keyframes voice-bar {
   0%, 100% { height: 4px; }
   50% { height: 20px; }
@@ -112,8 +209,8 @@ body {
 .voice-bar:nth-child(5) { animation-delay: 0.15s; }
 
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0   rgba(54, 81, 63, 0.35); }
-  70%  { box-shadow: 0 0 0 10px rgba(54, 81, 63, 0); }
-  100% { box-shadow: 0 0 0 0   rgba(54, 81, 63, 0); }
+  0%   { box-shadow: 0 0 0 0   rgba(255, 61, 0, 0.35); }
+  70%  { box-shadow: 0 0 0 10px rgba(255, 61, 0, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(255, 61, 0, 0); }
 }
 .pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }

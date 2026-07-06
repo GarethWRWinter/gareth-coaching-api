@@ -20,17 +20,17 @@ const W = 1240;
 const H = 1320;
 
 const TYPE_STYLE: Record<string, { c: string; r: number; label: string }> = {
-  user: { c: "#23211C", r: 15, label: "You" },
-  value: { c: "#36513F", r: 8.5, label: "Value" },
-  goal: { c: "#BB6647", r: 9.5, label: "Goal" },
-  gap: { c: "#A24E36", r: 7.5, label: "Gap" },
-  insight: { c: "#C7A458", r: 6.5, label: "Insight" },
-  habit: { c: "#9FB295", r: 6.5, label: "Habit" },
-  person: { c: "#7C95A3", r: 7, label: "Person" },
-  life_event: { c: "#948D80", r: 5.5, label: "Life" },
-  ride_memory: { c: "#C28F4E", r: 6.5, label: "Ride" },
-  health_signal: { c: "#8A7D96", r: 6.5, label: "Health" },
-  procedural: { c: "#5C7A63", r: 6, label: "Coaching rule" },
+  user: { c: "#0B0B0C", r: 15, label: "You" },
+  value: { c: "#3E8E7E", r: 8.5, label: "Value" },
+  goal: { c: "#FF3D00", r: 9.5, label: "Goal" },
+  gap: { c: "#E01B1B", r: 7.5, label: "Gap" },
+  insight: { c: "#D9A62E", r: 6.5, label: "Insight" },
+  habit: { c: "#4A6FA5", r: 6.5, label: "Habit" },
+  person: { c: "#6E0E3C", r: 7, label: "Person" },
+  life_event: { c: "#9A9A94", r: 5.5, label: "Life" },
+  ride_memory: { c: "#E8641B", r: 6.5, label: "Ride" },
+  health_signal: { c: "#B4123F", r: 6.5, label: "Health" },
+  procedural: { c: "#1A1A1E", r: 6, label: "Coaching rule" },
 };
 
 const AREAS: Record<string, { label: string; ax: number; ay: number }> = {
@@ -42,13 +42,13 @@ const AREAS: Record<string, { label: string; ax: number; ay: number }> = {
 
 const FILTERS: { key: string; label: string; color?: string }[] = [
   { key: "all", label: "All" },
-  { key: "value", label: "Values", color: "#36513F" },
-  { key: "goal", label: "Goals", color: "#BB6647" },
-  { key: "habit", label: "Habits", color: "#9FB295" },
-  { key: "insight", label: "Insights", color: "#C7A458" },
-  { key: "gap", label: "Gaps", color: "#A24E36" },
-  { key: "person", label: "People", color: "#7C95A3" },
-  { key: "life_event", label: "Life", color: "#948D80" },
+  { key: "value", label: "Values", color: "#3E8E7E" },
+  { key: "goal", label: "Goals", color: "#FF3D00" },
+  { key: "habit", label: "Habits", color: "#4A6FA5" },
+  { key: "insight", label: "Insights", color: "#D9A62E" },
+  { key: "gap", label: "Gaps", color: "#E01B1B" },
+  { key: "person", label: "People", color: "#6E0E3C" },
+  { key: "life_event", label: "Life", color: "#9A9A94" },
 ];
 
 const EDGE_WORDS: Record<string, string> = {
@@ -77,7 +77,7 @@ interface SimNode {
 
 export default function BrainPage() {
   const { user } = useAuth();
-  const coach = user?.coach_name || "Marco";
+  const coach = user?.coach_name || "Forma";
   const queryClient = useQueryClient();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scrubRef = useRef<HTMLInputElement>(null);
@@ -345,7 +345,7 @@ export default function BrainPage() {
         ctx!.fill();
         if (n.type === "user") {
           ctx!.lineWidth = 3;
-          ctx!.strokeStyle = "#F3F1EA";
+          ctx!.strokeStyle = "#FAFAF7";
           ctx!.stroke();
           ctx!.fillStyle = "#fff";
           ctx!.font = "600 10px Schibsted Grotesk, sans-serif";
@@ -362,7 +362,7 @@ export default function BrainPage() {
         const w = ctx!.measureText(n.label).width + 22;
         const lx = Math.min(W - 56 - w, Math.max(56, n.x - w / 2));
         const ly = n.y - 34;
-        ctx!.fillStyle = "#23211C";
+        ctx!.fillStyle = "#0B0B0C";
         ctx!.beginPath();
         ctx!.roundRect(lx, ly - 13, w, 26, 13);
         ctx!.fill();
@@ -483,7 +483,7 @@ export default function BrainPage() {
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-vb-text-muted">
             What {coach} knows about you
           </p>
-          <h1 className="mt-2 font-display text-4xl font-light tracking-[-0.02em]">
+          <h1 className="mt-2 font-display text-4xl font-extrabold tracking-[-0.02em]">
             Your brain.
           </h1>
           <p className="mt-2 max-w-xl text-sm text-vb-text-dim">
@@ -518,9 +518,9 @@ export default function BrainPage() {
               strokeWidth="1.4"
               strokeLinecap="round"
             />
-            <circle cx="180" cy="7" r="2.4" fill="#BB6647" />
+            <circle cx="180" cy="7" r="2.4" fill="#FF3D00" />
           </svg>
-          <p className="font-display text-xl font-light">
+          <p className="font-display text-xl font-semibold">
             Your brain starts with your first conversation.
           </p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-vb-text-dim">
@@ -609,7 +609,7 @@ export default function BrainPage() {
                         ? "Today"
                         : `Day ${Math.floor(tDayRef.current)}`;
                 }}
-                className="flex-1 accent-[#36513F]"
+                className="flex-1 accent-vb-red"
               />
               <span
                 ref={tlabelRef}

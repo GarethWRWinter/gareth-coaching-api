@@ -13,7 +13,11 @@ import {
 } from "recharts";
 import { Mountain, TrendingUp, ArrowUp, Ruler } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ZONES, SERIES } from "@/lib/palette";
 import type { PacingSegment } from "@/lib/api";
+
+const MONO = "IBM Plex Mono, ui-monospace, SFMono-Regular, monospace";
+const TICK = { fontSize: 11, fill: SERIES.grey, fontFamily: MONO };
 
 interface ElevationPoint {
   distance_km: number;
@@ -40,15 +44,15 @@ interface ElevationProfileChartProps {
   className?: string;
 }
 
-// Zone colors matching the app's zone color scheme
+// Zone colours from the FORMA ramp
 const ZONE_COLORS: Record<string, string> = {
-  Z1: "#8AA3B0",
-  Z2: "#9FB295",
-  Z3: "#C7A458",
-  Z4: "#D2855B",
-  Z5: "#C06A48",
-  Z6: "#A24E36",
-  Z7: "#7E3A28",
+  Z1: ZONES.z1,
+  Z2: ZONES.z2,
+  Z3: ZONES.z3,
+  Z4: ZONES.z4,
+  Z5: ZONES.z5,
+  Z6: ZONES.z6,
+  Z7: ZONES.z7,
 };
 
 interface MergedPoint extends ElevationPoint {
@@ -151,24 +155,22 @@ function ElevationTooltipContent({
   const data = payload[0].payload;
 
   return (
-    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
-      <p className="mb-1 text-xs font-medium text-vb-text-dim">
+    <div className="rounded-sm border border-vb-border bg-vb-surface px-3 py-2">
+      <p className="f-kicker mb-1 text-vb-text-muted">
         {data.distance_km.toFixed(1)} km
       </p>
-      <p className="text-sm font-mono font-medium text-vb-forest">
+      <p className="f-data text-sm font-medium text-vb-text">
         {Math.round(data.elevation_m)}m
       </p>
       {data.gradient_pct !== undefined && (
         <p
           className={cn(
-            "text-xs font-mono",
+            "f-data text-xs",
             data.gradient_pct > 8
-              ? "text-vb-clay"
+              ? "text-vb-red"
               : data.gradient_pct > 4
-                ? "text-[#D2855B]"
-                : data.gradient_pct > 0
-                  ? "text-vb-ochre"
-                  : "text-vb-dusty"
+                ? "text-vb-ochre"
+                : "text-vb-text-dim"
           )}
         >
           {data.gradient_pct > 0 ? "+" : ""}
@@ -176,13 +178,13 @@ function ElevationTooltipContent({
         </p>
       )}
       {(data.target_power_watts || data.actual_power_watts) && (
-        <div className="mt-1.5 border-t border-vb-border-subtle pt-1.5 space-y-0.5">
+        <div className="mt-1.5 space-y-0.5 border-t border-vb-border-subtle pt-1.5">
           {data.target_power_watts && data.zone && (
             <p className="text-xs text-vb-text-dim">
               Target:{" "}
               <span
-                className="font-mono font-semibold"
-                style={{ color: ZONE_COLORS[data.zone] || "#8AA3B0" }}
+                className="f-data font-semibold"
+                style={{ color: ZONE_COLORS[data.zone] || SERIES.grey }}
               >
                 {data.target_power_watts}W
               </span>
@@ -194,13 +196,13 @@ function ElevationTooltipContent({
           {data.actual_power_watts !== undefined && (
             <p className="text-xs text-vb-text-dim">
               Actual:{" "}
-              <span className="font-mono font-semibold text-vb-clay">
+              <span className="f-data font-semibold text-vb-red">
                 {Math.round(data.actual_power_watts)}W
               </span>
               {data.target_power_watts && (
                 <span className={cn(
-                  "ml-1 font-mono text-[10px]",
-                  data.actual_power_watts > data.target_power_watts ? "text-vb-clay" : "text-vb-success"
+                  "f-data ml-1 text-[10px]",
+                  data.actual_power_watts > data.target_power_watts ? "text-vb-red" : "text-vb-success"
                 )}>
                   ({data.actual_power_watts > data.target_power_watts ? "+" : ""}
                   {Math.round(data.actual_power_watts - data.target_power_watts)}W)
@@ -277,46 +279,40 @@ export function ElevationProfileChart({
   const maxPower = powerValues.length > 0 ? Math.max(...powerValues) * 1.1 : 300;
   const showPowerAxis = hasPacing || hasActual;
 
+  const stats: { label: string; value: string }[] = [
+    { label: "Distance", value: `${totalDist.toFixed(1)} km` },
+    {
+      label: "Climbing",
+      value: elevationGainM ? `${Math.round(elevationGainM)}m` : "·",
+    },
+    { label: "High point", value: `${Math.round(maxEle)}m` },
+    { label: "Avg gradient", value: `${avgGradient.toFixed(1)}%` },
+  ];
+  const icons = [
+    <Ruler key="r" className="h-4 w-4 text-vb-text-dim" />,
+    <ArrowUp key="a" className="h-4 w-4 text-vb-text-dim" />,
+    <Mountain key="m" className="h-4 w-4 text-vb-text-dim" />,
+    <TrendingUp key="t" className="h-4 w-4 text-vb-text-dim" />,
+  ];
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Summary stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="flex items-center gap-2 rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2">
-          <Ruler className="h-4 w-4 text-vb-forest" />
-          <div>
-            <p className="text-[10px] uppercase text-vb-text-muted">Distance</p>
-            <p className="text-sm font-semibold text-vb-text">
-              {totalDist.toFixed(1)} km
-            </p>
+        {stats.map((s, i) => (
+          <div
+            key={s.label}
+            className="flex items-center gap-2 rounded-sm border border-vb-border-subtle bg-vb-surface px-3 py-2"
+          >
+            {icons[i]}
+            <div>
+              <p className="f-kicker text-[10px] text-vb-text-muted">{s.label}</p>
+              <p className="f-data text-sm font-semibold text-vb-text">
+                {s.value}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2">
-          <ArrowUp className="h-4 w-4 text-vb-forest" />
-          <div>
-            <p className="text-[10px] uppercase text-vb-text-muted">Climbing</p>
-            <p className="text-sm font-semibold text-vb-text">
-              {elevationGainM ? `${Math.round(elevationGainM)}m` : "-"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2">
-          <Mountain className="h-4 w-4 text-vb-clay" />
-          <div>
-            <p className="text-[10px] uppercase text-vb-text-muted">Max Elevation</p>
-            <p className="text-sm font-semibold text-vb-text">
-              {Math.round(maxEle)}m
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2">
-          <TrendingUp className="h-4 w-4 text-vb-clay" />
-          <div>
-            <p className="text-[10px] uppercase text-vb-text-muted">Avg Gradient</p>
-            <p className="text-sm font-semibold text-vb-text">
-              {avgGradient.toFixed(1)}%
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Chart */}
@@ -325,35 +321,24 @@ export function ElevationProfileChart({
           data={mergedData}
           margin={{ top: 10, right: showPowerAxis ? 50 : 10, left: 0, bottom: 5 }}
         >
-          <defs>
-            <linearGradient id="elevationGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#36513F" stopOpacity={0.6} />
-              <stop offset="50%" stopColor="#36513F" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="#36513F" stopOpacity={0.1} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#E4DCCE"
-            vertical={false}
-          />
+          <CartesianGrid stroke={SERIES.hairline} vertical={false} />
           <XAxis
             dataKey="distance_km"
             type="number"
             domain={[0, "dataMax"]}
-            stroke="#D6CFC1"
-            tick={{ fontSize: 11, fill: "#948D80" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            stroke={SERIES.hairline}
+            tick={TICK}
+            tickLine={{ stroke: SERIES.hairline }}
+            axisLine={{ stroke: SERIES.hairline }}
             tickFormatter={(v: number) => `${v.toFixed(0)}km`}
           />
           <YAxis
             yAxisId="elevation"
             domain={[Math.floor(minEle - yPad), Math.ceil(maxEle + yPad)]}
-            stroke="#D6CFC1"
-            tick={{ fontSize: 11, fill: "#948D80" }}
-            tickLine={{ stroke: "#D6CFC1" }}
-            axisLine={{ stroke: "#D6CFC1" }}
+            stroke={SERIES.hairline}
+            tick={TICK}
+            tickLine={{ stroke: SERIES.hairline }}
+            axisLine={{ stroke: SERIES.hairline }}
             tickFormatter={(v: number) => `${v}m`}
           />
           {showPowerAxis && (
@@ -361,62 +346,65 @@ export function ElevationProfileChart({
               yAxisId="power"
               orientation="right"
               domain={[Math.floor(minPower), Math.ceil(maxPower)]}
-              tick={{ fontSize: 10, fill: hasPacing ? "#C7A458" : "#BB6647" }}
-              tickLine={{ stroke: "#D6CFC1" }}
-              axisLine={{ stroke: "#D6CFC1" }}
+              tick={{ fontSize: 10, fill: SERIES.grey, fontFamily: MONO }}
+              tickLine={{ stroke: SERIES.hairline }}
+              axisLine={{ stroke: SERIES.hairline }}
               tickFormatter={(v: number) => `${v}W`}
               width={40}
             />
           )}
           <Tooltip
             content={<ElevationTooltipContent />}
-            cursor={{ stroke: "#BCB3A3", strokeDasharray: "4 4" }}
+            cursor={{ stroke: SERIES.grey, strokeDasharray: "4 4" }}
           />
           <ReferenceLine
             yAxisId="elevation"
             y={minEle}
-            stroke="#D6CFC1"
+            stroke={SERIES.hairline}
             strokeDasharray="4 4"
             label={{
               value: `${Math.round(minEle)}m`,
               position: "left",
-              fill: "#948D80",
+              fill: SERIES.grey,
               fontSize: 10,
+              fontFamily: MONO,
             }}
           />
+          {/* The terrain — quiet grey */}
           <Area
             yAxisId="elevation"
             type="monotone"
             dataKey="elevation_m"
-            stroke="#36513F"
-            strokeWidth={2}
-            fill="url(#elevationGradient)"
+            stroke={SERIES.grey}
+            strokeWidth={1.5}
+            fill={SERIES.grey}
+            fillOpacity={0.14}
             dot={false}
-            activeDot={{ r: 4, fill: "#36513F", stroke: "#FBF7F0" }}
+            activeDot={{ r: 4, fill: SERIES.grey, stroke: SERIES.paper }}
           />
           {hasPacing && showTargetPower && (
             <Line
               yAxisId="power"
               type="monotone"
               dataKey="target_power_watts"
-              stroke="#C7A458"
+              stroke={SERIES.amber}
               strokeWidth={1.5}
-              strokeOpacity={0.7}
+              strokeOpacity={0.8}
               dot={false}
-              activeDot={{ r: 3, fill: "#C7A458", stroke: "#FBF7F0", strokeWidth: 2 }}
+              activeDot={{ r: 3, fill: SERIES.amber, stroke: SERIES.paper, strokeWidth: 2 }}
               connectNulls
             />
           )}
+          {/* What you actually did — the story, flamme */}
           {hasActual && showActualPower && (
             <Line
               yAxisId="power"
               type="monotone"
               dataKey="actual_power_watts"
-              stroke="#BB6647"
+              stroke={SERIES.flamme}
               strokeWidth={1.5}
-              strokeDasharray="6 3"
               dot={false}
-              activeDot={{ r: 3, fill: "#BB6647", stroke: "#FBF7F0", strokeWidth: 2 }}
+              activeDot={{ r: 3, fill: SERIES.flamme, stroke: SERIES.paper, strokeWidth: 2 }}
               connectNulls
             />
           )}
@@ -426,23 +414,21 @@ export function ElevationProfileChart({
 
       {/* Legend */}
       {(hasPacing || hasActual) && (
-        <div className="flex flex-wrap items-center gap-3 px-1">
+        <div className="flex flex-wrap items-center gap-3 px-1 font-mono text-[10px] text-vb-text-muted">
           <div className="flex items-center gap-1.5">
-            <div className="h-0.5 w-4 rounded bg-vb-forest" />
-            <span className="text-[10px] text-vb-text-muted">Elevation</span>
+            <div className="h-px w-4 bg-vb-text-muted" />
+            <span>Elevation</span>
           </div>
           {hasPacing && showTargetPower && (
             <div className="flex items-center gap-1.5">
-              <div className="h-0.5 w-4 rounded bg-vb-ochre" />
-              <span className="text-[10px] text-vb-text-muted">Target Power</span>
+              <div className="h-px w-4 bg-vb-ochre" />
+              <span>Target power</span>
             </div>
           )}
           {hasActual && showActualPower && (
             <div className="flex items-center gap-1.5">
-              <svg width="16" height="4" className="shrink-0">
-                <line x1="0" y1="2" x2="16" y2="2" stroke="#BB6647" strokeWidth="2" strokeDasharray="4 2" />
-              </svg>
-              <span className="text-[10px] text-vb-text-muted">Actual Power</span>
+              <div className="h-px w-4 bg-vb-red" />
+              <span>Actual power</span>
             </div>
           )}
           {hasPacing && (
@@ -453,7 +439,7 @@ export function ElevationProfileChart({
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: ZONE_COLORS[z] }}
                   />
-                  <span className="text-[10px] text-vb-text-muted">{z}</span>
+                  <span>{z}</span>
                 </div>
               ))}
             </div>

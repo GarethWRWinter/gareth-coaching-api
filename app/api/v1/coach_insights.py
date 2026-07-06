@@ -1,4 +1,4 @@
-"""API endpoints for Coach Marco's proactive presence."""
+"""API endpoints for Coach Forma's proactive presence."""
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -48,7 +48,7 @@ def get_daily_nudge(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get today's coaching nudge from Marco. Cached per day."""
+    """Get today's coaching nudge from Forma. Cached per day."""
     return generate_daily_nudge(db, current_user)
 
 
@@ -59,7 +59,7 @@ def get_ride_debrief(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Get Marco's post-ride debrief. Cached on the ride record."""
+    """Get Forma's post-ride debrief. Cached on the ride record."""
     ride = (
         db.query(Ride)
         .filter(Ride.id == ride_id, Ride.user_id == current_user.id)
@@ -76,5 +76,5 @@ def explain_metric_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Ask Marco to explain a metric in your personal context."""
+    """Ask Forma to explain a metric in your personal context."""
     return explain_metric(db, current_user, body.metric_name, body.metric_value)

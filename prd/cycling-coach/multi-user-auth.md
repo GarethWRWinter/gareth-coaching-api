@@ -12,7 +12,7 @@ resolution: 4/7
 
 # Multi-User & Auth
 
-> Part of [AI Cycling Coach (Marco)](../cycling-coach.md)
+> Part of [AI Cycling Coach (Forma)](../cycling-coach.md)
 
 ## Purpose
 
@@ -28,7 +28,7 @@ This epic gates Milestone 3 (paid beta) but has an **intermediate deliverable** 
 
 ### Real beta sign-up
 
-*"My friend gets a beta invite email. She clicks the link, sets a password, connects her own Strava, does the conversational onboarding with Marco, gets her first plan, and rides. Her data is invisible to me. I can't accidentally see her conversations."*
+*"My friend gets a beta invite email. She clicks the link, sets a password, connects her own Strava, does the conversational onboarding with Forma, gets her first plan, and rides. Her data is invisible to me. I can't accidentally see her conversations."*
 
 ### OAuth convenience
 
@@ -160,7 +160,7 @@ IP + email-based rate limits on auth endpoints, structured audit log.
 
 ### F8 — Conversational Onboarding
 
-Voice + text first-contact onboarding with Marco. **Sub-PRD:** [Conversational Onboarding](conversational-onboarding.md).
+Voice + text first-contact onboarding with Forma. **Sub-PRD:** [Conversational Onboarding](conversational-onboarding.md).
 
 ## Open Questions
 

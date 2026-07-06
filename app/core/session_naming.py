@@ -1,10 +1,10 @@
 """Canonical session naming.
 
 A single source of truth for the human-friendly name of a workout, so the
-calendar, the workout detail page, and the AI coach (Marco) all refer to the
+calendar, the workout detail page, and the AI coach (Forma) all refer to the
 same session by the same name — no continuity gaps. The zone/type carries the
 "what"; these names carry the character. Structure (e.g. "3×15 sweet spot")
-lives in the workout's description, which Marco also reads.
+lives in the workout's description, which Forma also reads.
 
 Selection is deterministic from the workout id, so a given workout always
 shows the same name everywhere and across reloads.

@@ -65,7 +65,7 @@ class Ride(TimestampMixin, Base):
     pr_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     kudos_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    # Coach debrief (Marco's post-ride feedback)
+    # Coach debrief (Forma's post-ride feedback)
     debrief_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     debrief_generated_at: Mapped[str | None] = mapped_column(DateTime, nullable=True)
 

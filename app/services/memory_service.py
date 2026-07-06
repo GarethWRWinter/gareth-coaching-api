@@ -1,4 +1,4 @@
-"""Memory service — writes to and reads from Marco's brain.
+"""Memory service — writes to and reads from Forma's brain.
 
 Write path: extract_memories() runs a Haiku pass over a conversation exchange
 or ride debrief, returning typed entities + edges (taxonomy prompt is a stable,
@@ -7,7 +7,7 @@ entities are enriched, never duplicated.
 
 Read paths:
 - get_graph(): nodes + edges for the Brain page.
-- get_context(): a compact text block for Marco's prompts (recent + connected
+- get_context(): a compact text block for Forma's prompts (recent + connected
   + goal-adjacent), hidden facts included but flagged never-quote.
 
 Extraction failures are logged loudly. Never swallowed silently — a memory
@@ -229,9 +229,9 @@ def get_graph(db: Session, user: User, include_hidden: bool = False) -> dict:
 
 
 def get_context(db: Session, user: User, limit: int = 24) -> str:
-    """Compact memory block for Marco's prompts.
+    """Compact memory block for Forma's prompts.
 
-    Recency + connectedness weighted. Hidden entities ARE included (Marco keeps
+    Recency + connectedness weighted. Hidden entities ARE included (Forma keeps
     coaching around a hidden injury) but flagged never-quote.
     """
     entities = (

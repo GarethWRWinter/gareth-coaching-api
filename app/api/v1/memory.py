@@ -1,7 +1,7 @@
 """Memory API — the Brain.
 
 GET  /memory/graph       → nodes + edges for the Brain page
-GET  /memory/reading     → Marco's narrated reading of the graph
+GET  /memory/reading     → Forma's narrated reading of the graph
 PATCH /memory/{id}/hide  → hide-not-delete
 PATCH /memory/{id}/unhide
 """
@@ -38,7 +38,7 @@ def get_memory_reading(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Marco's short narrated reading of the rider's brain."""
+    """Forma's short narrated reading of the rider's brain."""
     context = memory_service.get_context(db, current_user, limit=40)
     if not context:
         return {"reading": None}
@@ -49,7 +49,7 @@ def get_memory_reading(
             max_tokens=220,
             system=(
                 distilled_persona(current_user.coach_name, current_user.coach_tone)
-                + "\n\n## This surface: Marco's reading of the rider's brain\n"
+                + "\n\n## This surface: Forma's reading of the rider's brain\n"
                 "You are looking at their memory graph — everything you know about them. "
                 "Write a 2-3 sentence reading: name the strongest cluster or thread, "
                 "point out one meaningful cross-life connection or one quiet corner "

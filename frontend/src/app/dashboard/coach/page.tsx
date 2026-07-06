@@ -9,7 +9,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { chat, goals as goalsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { coachAvatarSrc } from "@/lib/coach";
+import { CoachGlyph } from "@/components/ui/coach-glyph";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useAuth } from "@/lib/auth-context";
 import { VoiceButton } from "@/components/voice/VoiceButton";
@@ -17,8 +17,7 @@ import { VoiceIndicator } from "@/components/voice/VoiceIndicator";
 
 function CoachPageInner() {
   const { user: authUser } = useAuth();
-  const coach = authUser?.coach_name || "Marco";
-  const coachAvatar = coachAvatarSrc(authUser?.coach_avatar);
+  const coach = authUser?.coach_name || "Forma";
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const goalId = searchParams.get("goal_id");
@@ -396,7 +395,7 @@ function CoachPageInner() {
             <MessageCircle className="h-5 w-5" />
           </button>
           <span className="text-sm font-medium text-vb-text-dim">
-            {sessions?.find((s) => s.id === activeSessionId)?.title || "Coach Marco"}
+            {sessions?.find((s) => s.id === activeSessionId)?.title || "Coach Forma"}
           </span>
         </div>
 
@@ -405,8 +404,8 @@ function CoachPageInner() {
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
-                <img src={coachAvatar} alt={coach} className="mx-auto h-20 w-20 rounded-full border border-vb-border-subtle object-cover" />
-                <h3 className="mt-4 font-display text-lg font-light tracking-[-0.01em] text-vb-text">
+                <CoachGlyph className="mx-auto h-20 w-20" />
+                <h3 className="mt-4 font-display text-lg font-semibold tracking-[-0.01em] text-vb-text">
                   Coach {coach}
                 </h3>
                 <p className="mt-1 max-w-sm text-sm text-vb-text-dim">
@@ -456,9 +455,7 @@ function CoachPageInner() {
                 )}
               >
                 {msg.role === "assistant" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-vb-forest">
-                    <img src={coachAvatar} alt={coach} className="h-full w-full rounded-full object-cover" />
-                  </div>
+                  <CoachGlyph className="h-7 w-7 shrink-0" />
                 )}
                 <div
                   className={cn(
