@@ -122,13 +122,13 @@ export default function DashboardPage() {
       {/* ============ A NOTE FROM FORMA ============ */}
       {nudge && (
         <section className="f-rise">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+          <div className="flex flex-col items-center gap-4 bg-vb-cove p-6 sm:flex-row sm:gap-6 sm:p-8">
             <Orb
               variant="forma"
-              size={132}
-              breathe
+              seated
+              size={200}
               alt={`${coach}, your coach`}
-              className="self-center sm:self-start sm:mt-1"
+              className="self-center sm:self-start"
             />
             <div className="min-w-0 flex-1 sm:max-w-2xl">
               <CoachNote
@@ -206,14 +206,14 @@ export default function DashboardPage() {
         const zone = zoneFromIF(latestRide.intensity_factor);
         return (
           <section>
-            <div className="flex flex-col gap-7 md:flex-row md:gap-11">
+            <div className="flex flex-col gap-6 bg-vb-cove p-6 md:flex-row md:gap-10 md:p-8">
               <Orb
                 variant="zone"
                 orb={zone.orb}
-                tint={zone.orbTint}
-                size={150}
+                seated
+                size={200}
                 alt={`${zone.name} session`}
-                className="self-center md:mt-9 md:self-start"
+                className="self-center md:self-start"
               />
               <div className="min-w-0 flex-1">
                 <SectionHeader

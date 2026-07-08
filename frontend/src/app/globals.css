@@ -56,6 +56,9 @@
   --color-vb-z6: #B4123F;
   --color-vb-z7: #6E0E3C;
 
+  /* Warm chalk cove — the seated-orb floor panel (matches the render ground) */
+  --color-vb-cove: #F4ECE1;
+
   /* Carbon (dark instrument surfaces — ride mode) */
   --color-vb-carbon: #101012;
   --color-vb-carbon-raised: #1A1A1E;

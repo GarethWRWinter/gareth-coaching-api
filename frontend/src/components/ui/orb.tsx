@@ -19,6 +19,7 @@ export function Orb({
   size = 140,
   breathe = false,
   dark = false,
+  seated = false,
   alt,
   className,
 }: {
@@ -34,6 +35,8 @@ export function Orb({
   breathe?: boolean;
   /** Carbon surface — deepens the contact shadow. */
   dark?: boolean;
+  /** Seated: use the photographic infinity render (real floor + shadow) inside a cove panel, instead of the floating cutout. */
+  seated?: boolean;
   /** Accessible label; omit for purely decorative use. */
   alt?: string;
   className?: string;
@@ -41,6 +44,30 @@ export function Orb({
   const file = orb ?? (variant === "forma" ? "forma-rest" : "z2-endurance");
   const src = `/orbs/${file}${dark && variant === "forma" ? "-dark" : ""}.webp`;
   const caustic = tint ?? (variant === "forma" ? "#FF3D00" : undefined);
+
+  // Seated: the photographic infinity render with its real floor + shadow.
+  // Its baked warm-chalk ground matches the cove panel, so the orb reads as
+  // sitting on the floor. No CSS float, no pseudo shadow.
+  if (seated) {
+    return (
+      <img
+        src={`/orbs/${file}-seated.webp`}
+        alt={alt ?? ""}
+        aria-hidden={alt ? undefined : true}
+        draggable={false}
+        className={cn("block shrink-0", className)}
+        style={{ width: size, height: size }}
+        onError={(e) => {
+          // No seated render for this zone yet — fall back to the cutout.
+          const img = e.currentTarget;
+          if (!img.dataset.fallback) {
+            img.dataset.fallback = "1";
+            img.src = `/orbs/${file}.webp`;
+          }
+        }}
+      />
+    );
+  }
 
   return (
     <span
