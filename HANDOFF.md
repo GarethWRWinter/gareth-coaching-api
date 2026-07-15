@@ -4,9 +4,17 @@
 > At the start of your turn: `git pull --rebase`, claim below. At the end: commit, push, release below.
 
 Holder: FREE
-Updated: 2026-07-15
+Updated: 2026-07-16
 
 ## In flight / Next
+- **forma-core SHIPPED** (`app/core/forma_core.py`): the single Claude funnel — routing table
+  (Sonnet: chat/debrief/assessment; Haiku: nudge/explain/memory), cache_control on every stable
+  system prefix, cost logging to the new `forma_calls` table (migration m7i8j9k0l1f2), provider
+  client in one place. All 9 scattered `anthropic.Anthropic()` call sites migrated, prompts
+  byte-identical. `GET /api/v1/admin/costs` (gated by `ADMIN_EMAILS` env — **set on Railway**)
+  serves per-user/per-task spend. Verified live: chat turn-2 read 9.2K cached tokens (75%
+  cheaper than turn-1). Next per PRD: per-user monthly token budget on top of forma_calls,
+  then auth hardening (Epic D).
 - **Brand v2 shipped across the app** (kite mark, chalk page, new zone inks, Archivo Expanded,
   CoachDot, TODAY/COACH/RIDES/FORM/PLAN nav). Source: `frontend/docs/brand/`; skills updated.
 - **Production fixes landed**: Dropbox debrief await-sync bug, workout auto-complete on in-app

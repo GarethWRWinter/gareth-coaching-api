@@ -10,12 +10,12 @@ import json
 import re
 from datetime import date, datetime, timedelta, timezone
 
-import anthropic
+import anthropic  # kept for anthropic.APIError handling; calls go via forma_core
 from sqlalchemy.orm import Session
 
 from collections import Counter
 
-from app.config import settings
+from app.core import forma_core
 from app.core.formulas import rider_profile_scores, rider_type_profile, w_per_kg as calc_w_per_kg
 from app.models.chat import ChatMessage, ChatRole, ChatSession
 from app.models.training import Workout, WorkoutStatus
@@ -764,9 +764,7 @@ async def stream_response(
     # Build message history
     messages = _build_messages(session)
 
-    # Stream from Claude with agentic tool loop
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
+    # Stream from Claude with agentic tool loop — via the forma-core funnel
     full_response = ""
     tokens_used = 0
     plan_was_updated = False
@@ -776,9 +774,10 @@ async def stream_response(
         # Agentic loop — keeps going while Claude wants to call tools
         max_iterations = 5
         for _ in range(max_iterations):
-            with client.messages.stream(
-                model="claude-sonnet-5",
-                max_tokens=2048,
+            with forma_core.stream(
+                user_id=user.id,
+                task="chat",
+                surface="coach",
                 system=system,
                 messages=messages,
                 tools=COACH_TOOLS,
@@ -925,9 +924,7 @@ async def stream_voice_response(
     # Build message history
     messages = _build_messages(session)
 
-    # Stream from Claude
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
+    # Stream from Claude — via the forma-core funnel
     full_response = ""
     sentence_buffer = ""
     sentence_index = 0
@@ -940,9 +937,10 @@ async def stream_voice_response(
         # Agentic loop — keeps going while Claude wants to call tools
         max_iterations = 5
         for _ in range(max_iterations):
-            with client.messages.stream(
-                model="claude-sonnet-5",
-                max_tokens=1024,  # Shorter for voice — conciseness matters
+            with forma_core.stream(
+                user_id=user.id,
+                task="chat_voice",  # shorter max_tokens — conciseness matters
+                surface="coach_voice",
                 system=system,
                 messages=messages,
                 tools=COACH_TOOLS,
@@ -1082,11 +1080,10 @@ def get_non_streaming_response(
 
     messages = _build_messages(session)
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
-    response = client.messages.create(
-        model="claude-sonnet-5",
-        max_tokens=2048,
+    response = forma_core.call(
+        user_id=user.id,
+        task="chat_sync",
+        surface="coach",
         system=system,
         messages=messages,
     )

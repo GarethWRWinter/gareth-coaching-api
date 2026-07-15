@@ -8,12 +8,11 @@ PATCH /memory/{id}/unhide
 
 import logging
 
-import anthropic
+from app.core import forma_core
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user, get_db
-from app.config import settings
 from app.models.user import User
 from app.services import memory_service
 from app.core.llm_utils import response_text
@@ -21,9 +20,6 @@ from app.core.coach_skills import distilled_persona
 
 router = APIRouter(prefix="/memory", tags=["memory"])
 logger = logging.getLogger(__name__)
-
-HAIKU_MODEL = "claude-haiku-4-5-20251001"
-
 
 @router.get("/graph")
 def get_memory_graph(
@@ -43,10 +39,10 @@ def get_memory_reading(
     if not context:
         return {"reading": None}
     try:
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        resp = client.messages.create(
-            model=HAIKU_MODEL,
-            max_tokens=220,
+        resp = forma_core.call(
+            user_id=current_user.id,
+            task="memory_reading",
+            surface="brain",
             system=(
                 distilled_persona(current_user.coach_name, current_user.coach_tone)
                 + "\n\n## This surface: Forma's reading of the rider's brain\n"

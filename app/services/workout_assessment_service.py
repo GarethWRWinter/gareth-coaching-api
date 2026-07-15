@@ -14,11 +14,10 @@ import json
 import logging
 from datetime import date, datetime, timedelta, timezone
 
-import anthropic
+from app.core import forma_core
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.models.ride import Ride
 from app.models.training import Workout, WorkoutStatus, WorkoutType
 from app.models.user import User
@@ -324,10 +323,10 @@ def generate_assessment(
         user_msg = _build_assessment_prompt(user, workout, ride, score_result, upcoming)
 
         try:
-            client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-            response = client.messages.create(
-                model="claude-sonnet-5",
-                max_tokens=1500,
+            response = forma_core.call(
+                user_id=user.id,
+                task="assessment",
+                surface="workout_detail",
                 system=distilled_persona(user.coach_name, user.coach_tone) + ASSESSMENT_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_msg}],
             )

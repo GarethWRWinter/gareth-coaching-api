@@ -19,11 +19,10 @@ import logging
 from datetime import datetime
 from difflib import SequenceMatcher
 
-import anthropic
+from app.core import forma_core
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.core.memory_taxonomy import EDGE_TYPES, ENTITY_TYPES, LIFE_AREAS, extraction_prompt
 from app.models.memory import MemoryEdge, MemoryEntity
 from app.models.user import User
@@ -31,7 +30,6 @@ from app.core.llm_utils import response_text
 
 logger = logging.getLogger(__name__)
 
-HAIKU_MODEL = "claude-haiku-4-5-20251001"
 DEDUP_THRESHOLD = 0.86
 
 
@@ -83,11 +81,11 @@ def extract_memories(
     )
     known_block = "\n".join(f"- [{e.type}] {e.label}" for e in known) or "(none yet)"
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
     try:
-        resp = client.messages.create(
-            model=HAIKU_MODEL,
-            max_tokens=1500,
+        resp = forma_core.call(
+            user_id=user.id,
+            task="memory_extraction",
+            surface=source,
             system=[
                 {
                     "type": "text",

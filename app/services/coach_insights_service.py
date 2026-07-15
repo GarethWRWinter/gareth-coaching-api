@@ -16,10 +16,9 @@ from datetime import date, datetime, timedelta
 
 from app.core.session_naming import session_display_name, workout_type_label
 
-import anthropic
 from sqlalchemy.orm import Session
 
-from app.config import settings
+from app.core import forma_core
 from app.models.ride import Ride
 from app.models.training import TrainingPlan, TrainingPhase, Workout, PlanStatus, WorkoutStatus
 from app.models.user import User
@@ -28,10 +27,6 @@ from app.core.llm_utils import humanize, response_text
 from app.core.coach_skills import distilled_persona
 
 logger = logging.getLogger(__name__)
-
-# Cost-aware model selection
-HAIKU_MODEL = "claude-haiku-4-5-20251001"
-SONNET_MODEL = "claude-sonnet-5"
 
 
 # ── Daily Nudge ──────────────────────────────────────────────────────────────
@@ -195,10 +190,10 @@ def generate_daily_nudge(db: Session, user: User) -> dict:
     context = _build_nudge_context(db, user)
 
     try:
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
-            model=HAIKU_MODEL,
-            max_tokens=200,
+        response = forma_core.call(
+            user_id=user.id,
+            task="nudge",
+            surface="dashboard",
             system=distilled_persona(user.coach_name, user.coach_tone) + NUDGE_SYSTEM_PROMPT,
             messages=[{
                 "role": "user",
@@ -358,10 +353,10 @@ def generate_ride_debrief(
     context = _build_debrief_context(db, user, ride)
 
     try:
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
-            model=SONNET_MODEL,
-            max_tokens=500,
+        response = forma_core.call(
+            user_id=user.id,
+            task="debrief",
+            surface="ride_detail",
             system=distilled_persona(user.coach_name, user.coach_tone) + DEBRIEF_SYSTEM_PROMPT,
             messages=[{
                 "role": "user",
@@ -445,10 +440,10 @@ def explain_metric(
         logger.exception("Memory context for explain_metric failed (user=%s)", user.id)
 
     try:
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
-            model=HAIKU_MODEL,
-            max_tokens=200,
+        response = forma_core.call(
+            user_id=user.id,
+            task="explain",
+            surface="metric_explain",
             system=distilled_persona(user.coach_name, user.coach_tone) + EXPLAIN_SYSTEM_PROMPT,
             messages=[{
                 "role": "user",
