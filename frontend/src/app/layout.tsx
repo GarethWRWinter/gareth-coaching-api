@@ -4,16 +4,17 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { QueryProvider } from "@/lib/query-provider";
 
-// FORMA type system:
-//  - display  → Archivo (the wordmark / headline face)
-//  - sans     → Inter Tight (the workhorse body face)
-//  - mono     → IBM Plex Mono (labels, kickers, data)
+// FORMA type system (brand v2 — three voices):
+//  - display  → Archivo EXPANDED, the Announcer (variable wdth axis;
+//               .f-display sets font-stretch: 125%)
+//  - sans     → Inter Tight, the Coach (body, guidance)
+//  - mono     → IBM Plex Mono, the Timekeeper (kickers, data, deltas)
 //  - script   → Caveat (the coach's handwritten signature only)
 const archivo = Archivo({
-  weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin"],
   variable: "--font-archivo",
   display: "swap",
+  axes: ["wdth"],
 });
 
 const interTight = Inter_Tight({

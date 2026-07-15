@@ -1,16 +1,45 @@
 /**
- * Forma's presence glyph — a carbon disc with a flamme core.
- * A brand stand-in for the coach (one Forma, not a human face) and a
- * placeholder for the Presence orb once it is designed. Size it via
- * className (e.g. "h-20 w-20"); the flamme core scales to the disc.
+ * Forma's presence — brand v2. No avatar, no face, no disc: the coach
+ * is a flamme DOT with three states.
+ *   C1 "still"     — present, listening (default)
+ *   C2 "pulsing"   — thinking / typing
+ *   C3 "rippling"  — speaking; reserve for carbon surfaces
+ * Size via the `size` prop (any CSS length) or --dot on the parent.
+ */
+export type CoachDotState = "still" | "pulsing" | "rippling";
+
+export function CoachDot({
+  state = "still",
+  size,
+  className = "",
+}: {
+  state?: CoachDotState;
+  size?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      data-state={state}
+      className={`f-coach-dot ${className}`}
+      style={size ? ({ "--dot": size } as React.CSSProperties) : undefined}
+    />
+  );
+}
+
+/**
+ * Legacy export — earlier surfaces imported a carbon disc glyph sized
+ * via className (e.g. "h-20 w-20"). Brand v2 retires the disc; the same
+ * import now centres the still dot inside the old box, so every call
+ * site inherits the new presence without touching its layout.
  */
 export function CoachGlyph({ className = "" }: { className?: string }) {
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex items-center justify-center rounded-full bg-vb-carbon ${className}`}
+      className={`inline-flex items-center justify-center ${className}`}
     >
-      <span className="block h-[34%] w-[34%] rounded-full bg-vb-red" />
+      <CoachDot state="still" size="34%" />
     </span>
   );
 }

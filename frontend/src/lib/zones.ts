@@ -25,14 +25,14 @@ export interface ZoneInfo {
 }
 
 export const ZONES: Record<ZoneKey, ZoneInfo> = {
-  z1: { key: "z1", name: "Recovery", orb: "z1-rest", color: "#4A6FA5", orbTint: "#5FB8A6" },
-  z2: { key: "z2", name: "Endurance", orb: "z2-endurance", color: "#3E8E7E", orbTint: "#3E6FB5" },
-  z3: { key: "z3", name: "Tempo", orb: "z3-tempo", color: "#D9A62E", orbTint: "#5C8A34" },
-  z4: { key: "z4", name: "Threshold", orb: "z4-effort", color: "#E8641B", orbTint: "#E8641B" },
-  z5: { key: "z5", name: "VO2 max", orb: "z5-sprint", color: "#E01B1B", orbTint: "#E01B1B" },
+  z1: { key: "z1", name: "Recovery", orb: "z1-rest", color: "#8E9196", orbTint: "#5FB8A6" },
+  z2: { key: "z2", name: "Endurance", orb: "z2-endurance", color: "#4A72AE", orbTint: "#3E6FB5" },
+  z3: { key: "z3", name: "Tempo", orb: "z3-tempo", color: "#439D7C", orbTint: "#5C8A34" },
+  z4: { key: "z4", name: "Threshold", orb: "z4-effort", color: "#D9AC34", orbTint: "#E8641B" },
+  z5: { key: "z5", name: "VO2 max", orb: "z5-sprint", color: "#E86F22", orbTint: "#E01B1B" },
   // Sprint orb covers Z5-Z6; Z7 is the neuromuscular max-effort orb.
-  z6: { key: "z6", name: "Anaerobic", orb: "z5-sprint", color: "#B4123F", orbTint: "#E01B1B" },
-  z7: { key: "z7", name: "Sprint", orb: "z7-max-effort", color: "#6E0E3C", orbTint: "#8A1A3C" },
+  z6: { key: "z6", name: "Anaerobic", orb: "z5-sprint", color: "#D92420", orbTint: "#E01B1B" },
+  z7: { key: "z7", name: "Sprint", orb: "z7-max-effort", color: "#B81743", orbTint: "#8A1A3C" },
 };
 
 /**

@@ -85,7 +85,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
           </div>
         </div>
         {showExplain && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-vb-border-subtle bg-vb-surface p-3 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+          <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-vb-border bg-vb-surface p-3">
             <div className="mb-1.5 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <Bot className="h-3.5 w-3.5 text-vb-forest" />

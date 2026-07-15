@@ -53,10 +53,7 @@ export default function LandingPage() {
             The goal{" "}
             <span className="whitespace-nowrap">
               holds
-              <span
-                aria-hidden="true"
-                className="ml-[0.06em] inline-block h-[0.16em] w-[0.16em] rounded-full bg-vb-red align-baseline"
-              />
+              <span aria-hidden="true" className="f-kite ml-[0.12em]" />
             </span>
           </h1>
           <p className="mt-8 max-w-xl text-lg leading-relaxed text-vb-text-dim">

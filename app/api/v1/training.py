@@ -33,6 +33,7 @@ from app.services.plan_service import (
     link_ride_to_workout,
     update_workout_status,
 )
+from app.services.ride_service import get_ride
 from app.services.workout_assessment_service import generate_assessment
 
 router = APIRouter(tags=["training"])
@@ -166,6 +167,12 @@ def link_ride(
     workout = get_workout(db, workout_id, current_user.id)
     if not workout:
         raise NotFoundException(detail="Workout not found")
+
+    # The ride must belong to the caller too, or a forged ride_id links
+    # (and later surfaces, via the assessment) another user's ride data.
+    ride = get_ride(db, body.ride_id, current_user.id)
+    if not ride:
+        raise NotFoundException(detail="Ride not found")
 
     workout = link_ride_to_workout(db, workout, body.ride_id)
     return WorkoutResponse.model_validate(workout)

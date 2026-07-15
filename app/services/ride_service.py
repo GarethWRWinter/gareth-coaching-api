@@ -15,6 +15,7 @@ from app.core.formulas import (
     variability_index,
 )
 from app.models.ride import Ride, RideData, RideSource
+from app.models.training import Workout, WorkoutStatus
 from app.models.user import User
 
 
@@ -360,6 +361,18 @@ def create_ride_from_recording(
                 "distance": dp.get("distance"),
             })
         db.execute(insert(RideData), data_rows)
+
+    # Riding a planned session IS completing it — flip the workout so the
+    # calendar and weekly compliance reflect the ride without a manual PATCH.
+    if workout_id:
+        workout = (
+            db.query(Workout)
+            .filter(Workout.id == workout_id, Workout.user_id == user.id)
+            .first()
+        )
+        if workout:
+            workout.status = WorkoutStatus.completed
+            workout.actual_ride_id = ride.id
 
     db.commit()
     db.refresh(ride)

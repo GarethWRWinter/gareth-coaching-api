@@ -33,7 +33,7 @@ function CustomTooltip({
   const point = payload[0].payload;
 
   return (
-    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+    <div className="rounded-md border border-vb-border-subtle bg-vb-surface px-3 py-2">
       <p className="text-xs font-medium text-vb-text-dim">
         {formatShortDate(point.date)}
         {point.label && (
@@ -88,7 +88,7 @@ export function FitnessTrajectoryChart({
 
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#E4DCCE"
+            stroke="#ECEBE6"
             vertical={false}
           />
 
@@ -143,12 +143,12 @@ export function FitnessTrajectoryChart({
             activeDot={{
               r: 4,
               fill: "#0B0B0C",
-              stroke: "#FBF7F0",
+              stroke: "#FAFAF7",
               strokeWidth: 2,
             }}
           />
 
-          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#BCB3A3", strokeDasharray: "4 4" }} />
+          <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#9A9A94", strokeDasharray: "4 4" }} />
         </AreaChart>
       </ResponsiveContainer>
 

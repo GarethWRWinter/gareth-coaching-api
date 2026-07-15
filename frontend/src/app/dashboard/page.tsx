@@ -11,8 +11,7 @@ import { RiderProfileRadar } from "@/components/charts/rider-profile-radar";
 import { Kicker } from "@/components/ui/kicker";
 import { SectionHeader } from "@/components/ui/section-header";
 import { DataTile } from "@/components/ui/data-tile";
-import { CoachNote } from "@/components/ui/coach-note";
-import { Orb } from "@/components/ui/orb";
+import { SeatedBanner, ZoneChip } from "@/components/ui/seated-banner";
 import { zoneFromIF } from "@/lib/zones";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardBody } from "@/components/ui/card";
@@ -119,37 +118,28 @@ export default function DashboardPage() {
         </h1>
       </header>
 
-      {/* ============ A NOTE FROM FORMA ============ */}
+      {/* ============ A NOTE FROM FORMA (seated banner) ============ */}
       {nudge && (
-        <section className="f-rise">
-          <div
-            className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:gap-8 sm:p-8"
-            style={{ backgroundColor: "#EFE6DA" }}
-          >
-            <Orb
-              variant="forma"
-              seated
-              size={216}
-              alt={`${coach}, your coach`}
-            />
-            <div className="min-w-0 flex-1 sm:max-w-2xl">
-              <CoachNote
-                kicker={`A note from ${coach}`}
-                coachName={coach}
-                action={
-                  <Link
-                    href="/dashboard/coach"
-                    className="f-kicker f-arrow text-vb-text-muted transition-colors hover:text-vb-red"
-                  >
-                    Reply <span className="f-arrow-head">→</span>
-                  </Link>
-                }
+        <div className="f-rise">
+          <SeatedBanner src="/orbs/forma-rest-seated.webp">
+            <div className="flex items-start justify-between gap-4">
+              <Kicker flamme>A note from {coach}</Kicker>
+              <Link
+                href="/dashboard/coach"
+                className="f-kicker f-arrow shrink-0 text-vb-text-muted transition-colors hover:text-vb-red"
               >
-                <p className="text-lg leading-relaxed">{nudge.nudge}</p>
-              </CoachNote>
+                Reply <span className="f-arrow-head">→</span>
+              </Link>
             </div>
-          </div>
-        </section>
+            <p className="mt-3 max-w-md text-lg leading-relaxed text-vb-text">
+              {nudge.nudge}
+            </p>
+            <p className="mt-4">
+              <span className="f-signature text-2xl leading-none">{coach}</span>
+              <span className="ml-2 text-xs text-vb-text-muted">your coach</span>
+            </p>
+          </SeatedBanner>
+        </div>
       )}
 
       {/* ============ FITNESS STAT STRIP ============ */}
@@ -203,45 +193,32 @@ export default function DashboardPage() {
           </Link>
         ))}
 
-      {/* ============ LATEST DEBRIEF (editorial article) ============ */}
+      {/* ============ LATEST DEBRIEF (seated banner) ============ */}
       {latestDebrief && latestRide && (() => {
         const zone = zoneFromIF(latestRide.intensity_factor);
         return (
-          <section>
-            <div
-              className="flex flex-col items-center gap-6 p-6 md:flex-row md:gap-10 md:p-8"
-              style={{ backgroundColor: "#F1E6DA" }}
-            >
-              <Orb
-                variant="zone"
-                orb={zone.orb}
-                seated
-                size={216}
-                alt={`${zone.name} session`}
-              />
-              <div className="min-w-0 flex-1">
-                <SectionHeader
-                  kicker={`${coach}'s debrief · ${zone.name} · ${formatDate(latestRide.ride_date)}`}
-                  title={latestRide.title}
-                  action={
-                    <Link
-                      href={`/dashboard/rides/${latestRide.id}`}
-                      className="f-kicker f-arrow text-vb-text-muted transition-colors hover:text-vb-red"
-                    >
-                      Full ride <span className="f-arrow-head">→</span>
-                    </Link>
-                  }
-                />
-                <article className="max-w-3xl">
-                  <div className="prose max-w-none text-vb-text-dim prose-p:my-3 prose-p:text-[17px] prose-p:leading-[1.7] prose-strong:font-semibold prose-strong:text-vb-text prose-em:not-italic prose-em:text-vb-text">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {latestDebrief.debrief}
-                    </ReactMarkdown>
-                  </div>
-                </article>
-              </div>
+          <SeatedBanner src={`/orbs/${zone.orb}-seated.webp`}>
+            <ZoneChip color={zone.color}>
+              {zone.name} · {zone.key.toUpperCase()}
+            </ZoneChip>
+            <h2 className="f-display mt-3 text-3xl leading-tight md:text-4xl">
+              {latestRide.title}
+            </h2>
+            <p className="f-kicker mt-2 text-vb-text-muted">
+              {coach}&apos;s debrief · {formatDate(latestRide.ride_date)}
+            </p>
+            <div className="prose mt-3 max-w-md text-vb-text-dim prose-p:my-2.5 prose-p:text-[16px] prose-p:leading-[1.65] prose-strong:font-semibold prose-strong:text-vb-text prose-em:not-italic prose-em:text-vb-text">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {latestDebrief.debrief}
+              </ReactMarkdown>
             </div>
-          </section>
+            <Link
+              href={`/dashboard/rides/${latestRide.id}`}
+              className="f-kicker f-arrow mt-4 inline-block text-vb-text transition-colors hover:text-vb-red"
+            >
+              Full ride <span className="f-arrow-head">→</span>
+            </Link>
+          </SeatedBanner>
         );
       })()}
 

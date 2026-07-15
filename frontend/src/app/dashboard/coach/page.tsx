@@ -9,7 +9,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { chat, goals as goalsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { CoachGlyph } from "@/components/ui/coach-glyph";
+import { CoachDot, CoachGlyph } from "@/components/ui/coach-glyph";
 import { useVoiceChat } from "@/hooks/useVoiceChat";
 import { useAuth } from "@/lib/auth-context";
 import { VoiceButton } from "@/components/voice/VoiceButton";
@@ -455,13 +455,23 @@ function CoachPageInner() {
                 )}
               >
                 {msg.role === "assistant" && (
-                  <CoachGlyph className="h-7 w-7 shrink-0" />
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+                    <CoachDot
+                      state={
+                        streaming && i === messages.length - 1
+                          ? "pulsing"
+                          : "still"
+                      }
+                      size="10px"
+                    />
+                  </span>
                 )}
                 <div
                   className={cn(
                     "max-w-[90%] rounded-md px-3 py-2.5 text-sm sm:max-w-[80%] sm:px-4 sm:py-3",
+                    // rider speaks in ink; flamme stays the coach's colour
                     msg.role === "user"
-                      ? "bg-vb-forest text-white"
+                      ? "bg-vb-text text-white"
                       : "bg-vb-sage-tint text-vb-text"
                   )}
                 >

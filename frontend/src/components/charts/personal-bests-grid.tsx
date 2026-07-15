@@ -30,26 +30,26 @@ function durationBand(seconds: number): {
 } {
   if (seconds <= 30) {
     return {
-      color: "text-[#7E3A28]",
-      bgColor: "bg-[#7E3A28]/10",
+      color: "text-[#E86F22]",
+      bgColor: "bg-[#E86F22]/10",
       borderColor: "border-vb-border-subtle",
-      icon: <Zap className="h-3.5 w-3.5 text-[#7E3A28]" />,
+      icon: <Zap className="h-3.5 w-3.5 text-[#E86F22]" />,
     };
   }
   if (seconds <= 300) {
     return {
-      color: "text-[#C06A48]",
-      bgColor: "bg-[#C06A48]/10",
+      color: "text-[#D92420]",
+      bgColor: "bg-[#D92420]/10",
       borderColor: "border-vb-border-subtle",
-      icon: <Flame className="h-3.5 w-3.5 text-[#C06A48]" />,
+      icon: <Flame className="h-3.5 w-3.5 text-[#D92420]" />,
     };
   }
   if (seconds <= 1800) {
     return {
-      color: "text-[#4A6FA5]",
-      bgColor: "bg-[#4A6FA5]/10",
+      color: "text-[#4A72AE]",
+      bgColor: "bg-[#4A72AE]/10",
       borderColor: "border-vb-border-subtle",
-      icon: <Wind className="h-3.5 w-3.5 text-[#4A6FA5]" />,
+      icon: <Wind className="h-3.5 w-3.5 text-[#4A72AE]" />,
     };
   }
   return {
@@ -110,7 +110,7 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
             <div
               key={point.duration_seconds}
               className={cn(
-                "rounded-lg border p-3 transition-colors",
+                "rounded-sm border p-3 transition-colors",
                 band.borderColor,
                 band.bgColor,
                 point.ride_id && "hover:border-vb-border cursor-pointer"
@@ -188,15 +188,15 @@ export function PersonalBestsGrid({ points, days, className }: PersonalBestsGrid
       {/* Legend */}
       <div className="mt-3 flex flex-wrap items-center gap-4 text-[10px] text-vb-text-muted">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-[#7E3A28]" />
+          <span className="inline-block h-2 w-2 rounded-full bg-[#E86F22]" />
           Neuromuscular
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-[#C06A48]" />
+          <span className="inline-block h-2 w-2 rounded-full bg-[#D92420]" />
           Anaerobic / VO2max
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-[#4A6FA5]" />
+          <span className="inline-block h-2 w-2 rounded-full bg-[#4A72AE]" />
           Threshold
         </span>
         <span className="flex items-center gap-1">

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { memory, type MemoryEntity } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import { BRAIN } from "@/lib/palette";
 
 /**
  * Your Brain — the memory graph rendered as a living organ (Pillar 2 flagship).
@@ -20,17 +21,17 @@ const W = 1240;
 const H = 1320;
 
 const TYPE_STYLE: Record<string, { c: string; r: number; label: string }> = {
-  user: { c: "#0B0B0C", r: 15, label: "You" },
-  value: { c: "#3E8E7E", r: 8.5, label: "Value" },
-  goal: { c: "#FF3D00", r: 9.5, label: "Goal" },
-  gap: { c: "#E01B1B", r: 7.5, label: "Gap" },
-  insight: { c: "#D9A62E", r: 6.5, label: "Insight" },
-  habit: { c: "#4A6FA5", r: 6.5, label: "Habit" },
-  person: { c: "#6E0E3C", r: 7, label: "Person" },
-  life_event: { c: "#9A9A94", r: 5.5, label: "Life" },
-  ride_memory: { c: "#E8641B", r: 6.5, label: "Ride" },
-  health_signal: { c: "#B4123F", r: 6.5, label: "Health" },
-  procedural: { c: "#1A1A1E", r: 6, label: "Coaching rule" },
+  user: { c: BRAIN.user.c, r: 15, label: "You" },
+  value: { c: BRAIN.value.c, r: 8.5, label: "Value" },
+  goal: { c: BRAIN.goal.c, r: 9.5, label: "Goal" },
+  gap: { c: BRAIN.gap.c, r: 7.5, label: "Gap" },
+  insight: { c: BRAIN.insight.c, r: 6.5, label: "Insight" },
+  habit: { c: BRAIN.habit.c, r: 6.5, label: "Habit" },
+  person: { c: BRAIN.person.c, r: 7, label: "Person" },
+  life_event: { c: BRAIN.life_event.c, r: 5.5, label: "Life" },
+  ride_memory: { c: BRAIN.ride_memory.c, r: 6.5, label: "Ride" },
+  health_signal: { c: BRAIN.health_signal.c, r: 6.5, label: "Health" },
+  procedural: { c: BRAIN.procedural.c, r: 6, label: "Coaching rule" },
 };
 
 const AREAS: Record<string, { label: string; ax: number; ay: number }> = {
@@ -42,13 +43,13 @@ const AREAS: Record<string, { label: string; ax: number; ay: number }> = {
 
 const FILTERS: { key: string; label: string; color?: string }[] = [
   { key: "all", label: "All" },
-  { key: "value", label: "Values", color: "#3E8E7E" },
-  { key: "goal", label: "Goals", color: "#FF3D00" },
-  { key: "habit", label: "Habits", color: "#4A6FA5" },
-  { key: "insight", label: "Insights", color: "#D9A62E" },
-  { key: "gap", label: "Gaps", color: "#E01B1B" },
-  { key: "person", label: "People", color: "#6E0E3C" },
-  { key: "life_event", label: "Life", color: "#9A9A94" },
+  { key: "value", label: "Values", color: BRAIN.value.c },
+  { key: "goal", label: "Goals", color: BRAIN.goal.c },
+  { key: "habit", label: "Habits", color: BRAIN.habit.c },
+  { key: "insight", label: "Insights", color: BRAIN.insight.c },
+  { key: "gap", label: "Gaps", color: BRAIN.gap.c },
+  { key: "person", label: "People", color: BRAIN.person.c },
+  { key: "life_event", label: "Life", color: BRAIN.life_event.c },
 ];
 
 const EDGE_WORDS: Record<string, string> = {
@@ -583,7 +584,7 @@ export default function BrainPage() {
               className="block h-[72vh] min-h-[560px] w-full cursor-crosshair"
             />
 
-            <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center gap-3 rounded-lg border border-vb-border-subtle bg-vb-bg/95 px-3.5 py-2">
+            <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center gap-3 rounded-sm border border-vb-border-subtle bg-vb-bg/95 px-3.5 py-2">
               <button
                 onClick={() => {
                   playingRef.current = !playingRef.current;

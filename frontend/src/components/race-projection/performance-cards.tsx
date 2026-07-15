@@ -81,7 +81,7 @@ export function PerformanceCards({ projection, daysUntil }: PerformanceCardsProp
 
         {/* Projected Performance Card */}
         {hasProjection && projected_performance && improvement && (
-          <div className="relative rounded-md border border-vb-border-subtle bg-vb-surface p-5 shadow-[0_2px_8px_rgba(33,30,26,0.10)]">
+          <div className="relative rounded-md border border-vb-border-subtle bg-vb-surface p-5">
             <div className="mb-3 flex items-center gap-2">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-vb-forest/15">
                 <TrendingUp className="h-3.5 w-3.5 text-vb-forest" />

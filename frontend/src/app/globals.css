@@ -12,11 +12,11 @@
    are both the single flamme accent.
    ============================================================ */
 @theme {
-  /* Surfaces */
-  --color-vb-bg: #FAFAF7;            /* paper */
-  --color-vb-surface: #FFFFFF;       /* cards */
-  --color-vb-surface-raised: #FBFAF7;
-  --color-vb-sunken: #F0F0EC;        /* chalk fills */
+  /* Surfaces — v2: CHALK is the page, PAPER is what you lay on it */
+  --color-vb-bg: #F0F0EC;            /* chalk — THE PAGE */
+  --color-vb-surface: #FAFAF7;       /* paper — cards / sheets */
+  --color-vb-surface-raised: #FFFFFF;
+  --color-vb-sunken: #E7E7E1;        /* recessed chalk fills */
 
   /* Content (ink) */
   --color-vb-text: #0B0B0C;
@@ -41,20 +41,20 @@
   --color-vb-clay: #55554F;          /* former 2nd accent → muted ink */
   --color-vb-clay-soft: #9A9A94;     /* → grey */
   --color-vb-dusty: #9A9A94;         /* → grey */
-  --color-vb-ochre: #D9A62E;         /* amber (kept for warning) */
+  --color-vb-ochre: #D9AC34;         /* amber (kept for warning) */
 
   /* Semantic */
-  --color-vb-success: #3E8E7E;
-  --color-vb-warning: #D9A62E;
+  --color-vb-success: #439D7C;
+  --color-vb-warning: #D9AC34;
 
-  /* FORMA training-zone ramp — cold to hot (charts, zones, effort) */
-  --color-vb-z1: #4A6FA5;
-  --color-vb-z2: #3E8E7E;
-  --color-vb-z3: #D9A62E;
-  --color-vb-z4: #E8641B;
-  --color-vb-z5: #E01B1B;
-  --color-vb-z6: #B4123F;
-  --color-vb-z7: #6E0E3C;
+  /* FORMA training-zone ramp v2 — data ink only, never brand colour */
+  --color-vb-z1: #8E9196;
+  --color-vb-z2: #4A72AE;
+  --color-vb-z3: #439D7C;
+  --color-vb-z4: #D9AC34;
+  --color-vb-z5: #E86F22;
+  --color-vb-z6: #D92420;
+  --color-vb-z7: #B81743;
 
   /* Warm chalk cove — the seated-orb floor panel (matches the render ground) */
   --color-vb-cove: #F4ECE1;
@@ -80,15 +80,15 @@
 
 /* ---- Legacy aliases kept so non-converted pages still render sanely. ---- */
 :root {
-  --background: #FAFAF7;
+  --background: #F0F0EC;
   --foreground: #0B0B0C;
-  --card: #FFFFFF;
+  --card: #FAFAF7;
   --card-foreground: #0B0B0C;
   --primary: #FF3D00;
   --primary-foreground: #FFFFFF;
-  --secondary: #F0F0EC;
+  --secondary: #E7E7E1;
   --secondary-foreground: #0B0B0C;
-  --muted: #F0F0EC;
+  --muted: #E7E7E1;
   --muted-foreground: #55554F;
   --accent: #FF3D00;
   --accent-foreground: #FFFFFF;
@@ -107,11 +107,62 @@ body {
 /* ============================================================
    FORMA type utilities
    ============================================================ */
+/* Announcer — Archivo Expanded. The v2 headline voice: wide, loud, 700-900. */
 .f-display {
   font-family: var(--font-display);
+  font-stretch: 125%;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.04;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
+}
+
+/* ============================================================
+   The kite — FORMA's mark. A pennant hung from the line above,
+   tip touching the baseline. Never an arrow, never rotated.
+   Size via font-size on the element or --kite.
+   ============================================================ */
+.f-kite {
+  display: inline-block;
+  width: var(--kite, 0.34em);
+  height: calc(var(--kite, 0.34em) * 1.22);
+  background: var(--color-vb-red);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  vertical-align: baseline;
+}
+
+/* ============================================================
+   Coach presence — the flamme dot. No avatar, no face.
+   C1 still · C2 pulsing (thinking) · C3 rippling (speaking, carbon)
+   ============================================================ */
+.f-coach-dot {
+  position: relative;
+  display: inline-block;
+  width: var(--dot, 10px);
+  height: var(--dot, 10px);
+  border-radius: 9999px;
+  background: var(--color-vb-red);
+  flex: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .f-coach-dot[data-state="pulsing"] { animation: f-dot-pulse 1.6s ease-in-out infinite; }
+  @keyframes f-dot-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.35); opacity: 0.65; }
+  }
+  .f-coach-dot[data-state="rippling"]::before,
+  .f-coach-dot[data-state="rippling"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 1px solid var(--color-vb-red);
+    animation: f-dot-ripple 2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  }
+  .f-coach-dot[data-state="rippling"]::after { animation-delay: 1s; }
+  @keyframes f-dot-ripple {
+    0%   { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(3.2); opacity: 0; }
+  }
 }
 .f-kicker {
   font-family: var(--font-mono);

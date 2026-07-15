@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { metrics } from "@/lib/api";
+import { coachInsights, metrics } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { CoachNote } from "@/components/ui/coach-note";
 import { StatCard } from "@/components/ui/stat-card";
 import { PMCChart } from "@/components/charts/pmc-chart";
 import { PowerCurveChart } from "@/components/charts/power-curve-chart";
@@ -136,6 +137,24 @@ export default function PerformancePage() {
       ? weeklyLoad.weeks[weeklyLoad.weeks.length - 1].ride_count
       : 0;
 
+  // Pillar 1 — Forma reads the numbers on the most data-dense page.
+  // Keyed on the rounded TSB so the reading refreshes when form moves,
+  // not on every visit.
+  const tsbNow = Math.round(fitness?.current_tsb ?? 0);
+  const { data: reading } = useQuery({
+    queryKey: ["performance-reading", tsbNow],
+    queryFn: () =>
+      coachInsights.explainMetric(
+        "my current form and training load",
+        `CTL ${Math.round(fitness?.current_ctl ?? 0)}, ATL ${Math.round(
+          fitness?.current_atl ?? 0
+        )}, TSB ${tsbNow}, this week ${currentWeekTSS} TSS over ${currentWeekRides} rides`
+      ),
+    enabled: !!fitness,
+    staleTime: 30 * 60 * 1000,
+    retry: false,
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -191,6 +210,13 @@ export default function PerformancePage() {
           explainable="Weekly TSS"
         />
       </div>
+
+      {/* Forma reads the trends — no data page goes uncoached */}
+      {reading?.explanation && (
+        <CoachNote kicker="Forma reads the numbers" coachName={user?.coach_name || "Forma"}>
+          {reading.explanation}
+        </CoachNote>
+      )}
 
       {/* Date Range Selector */}
       <div className="flex flex-wrap items-center gap-2">

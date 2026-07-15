@@ -28,6 +28,13 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
     # --- Startup ---
+    # A placeholder signing key means every user's JWT is forgeable.
+    if "change-me" in settings.secret_key:
+        logger.critical(
+            "SECRET_KEY is the default placeholder — set a real SECRET_KEY "
+            "env var. All auth tokens are forgeable until this is fixed."
+        )
+
     sync_interval = settings.dropbox_sync_interval
     if sync_interval > 0:
         start_auto_sync(interval=sync_interval)

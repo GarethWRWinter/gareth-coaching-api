@@ -242,12 +242,12 @@ async def sync_fit_files(db: Session, user_id: str, limit: int = 10) -> list[dic
             })
             logger.info("Synced FIT file from Dropbox: %s", filename)
 
-            # Auto-generate Coach Forma debrief
+            # Auto-generate Coach Forma debrief (sync function — no await)
             try:
                 from app.services.coach_insights_service import generate_ride_debrief
-                await generate_ride_debrief(db, user, ride)
+                generate_ride_debrief(db, user, ride)
             except Exception:
-                logger.warning("Failed to generate debrief for ride %s", ride.id)
+                logger.exception("Failed to generate debrief for ride %s", ride.id)
 
         except Exception:
             logger.exception("Failed to sync FIT file from Dropbox: %s", filename)

@@ -14,7 +14,7 @@ import json
 import logging
 from datetime import date, datetime, timedelta
 
-from app.core.session_naming import session_display_name
+from app.core.session_naming import session_display_name, workout_type_label
 
 import anthropic
 from sqlalchemy.orm import Session
@@ -128,7 +128,7 @@ def _build_nudge_context(
             "title": session_display_name(
                 today_workout.workout_type, today_workout.id
             ),
-            "type": today_workout.workout_type,
+            "type": workout_type_label(today_workout.workout_type),
             "structure": today_workout.title,
             "description": today_workout.description,
             "planned_duration_minutes": (today_workout.planned_duration_seconds or 0) // 60,
@@ -213,9 +213,12 @@ def generate_daily_nudge(db: Session, user: User) -> dict:
         tsb = context["fitness"]["tsb"]
         workout = context.get("todays_workout")
         if workout:
-            nudge_text = f"Hey {rider_name}, you've got a {workout['type']} session on the plan today. Your form is sitting at {tsb:+.0f} — let's make it count."
+            wtype = workout["type"]
+            article = "an" if wtype[:1].lower() in "aeiou" else "a"
+            nudge_text = f"Hey {rider_name}, you've got {article} {wtype} session on the plan today. Your form is sitting at {tsb:+.0f}, let's make it count."
         else:
             nudge_text = f"Rest day, {rider_name}. Your body builds fitness during recovery, not just during training. Enjoy the day off."
+        nudge_text = humanize(nudge_text)
 
     # Cache
     nudge = CoachNudge(
@@ -306,7 +309,7 @@ def _build_debrief_context(
             "title": session_display_name(
                 linked_workout.workout_type, linked_workout.id
             ),
-            "type": linked_workout.workout_type,
+            "type": workout_type_label(linked_workout.workout_type),
             "structure": linked_workout.title,
             "description": linked_workout.description,
             "planned_duration_minutes": (linked_workout.planned_duration_seconds or 0) // 60,
@@ -376,7 +379,8 @@ def generate_ride_debrief(
         )
         if r.get("tss"):
             debrief_text += f" for {r['tss']:.0f} TSS"
-        debrief_text += ". Every ride counts toward your goal — keep building."
+        debrief_text += ". Every ride counts toward your goal, keep building."
+        debrief_text = humanize(debrief_text)
 
     # Cache on ride
     ride.debrief_text = debrief_text
@@ -454,6 +458,6 @@ def explain_metric(
         explanation = humanize(response_text(response).strip())
     except Exception as e:
         logger.error(f"Metric explanation failed: {e}")
-        explanation = f"{rider_name}, your {metric_name} is currently {metric_value}. This reflects your recent training load and recovery balance."
+        explanation = humanize(f"{rider_name}, your {metric_name} is currently {metric_value}. This reflects your recent training load and recovery balance.")
 
     return {"explanation": explanation}

@@ -45,6 +45,31 @@ SESSION_NAMES: dict[str, list[str]] = {
 }
 
 
+# Human-friendly label for a workout type — the "what" in plain words, used
+# when Forma refers to a session by its kind rather than its character name
+# (e.g. "an endurance session"). Never expose the raw enum repr to riders.
+WORKOUT_TYPE_LABELS: dict[str, str] = {
+    "recovery": "recovery",
+    "endurance": "endurance",
+    "tempo": "tempo",
+    "sweet_spot": "sweet spot",
+    "threshold": "threshold",
+    "vo2max": "VO2 max",
+    "sprint": "sprint",
+    "rest": "rest",
+}
+
+
+def workout_type_label(workout_type: object) -> str:
+    """Plain, lowercase name of a workout type (e.g. 'endurance', 'sweet spot').
+
+    Accepts a WorkoutType enum member or a raw string; always returns the human
+    label, never the 'WorkoutType.endurance' enum repr.
+    """
+    key = getattr(workout_type, "value", None) or str(workout_type)
+    return WORKOUT_TYPE_LABELS.get(key, key.replace("_", " "))
+
+
 def _stable_index(seed: str, length: int) -> int:
     """Deterministic, stable hash → index. Mirrors the previous frontend logic
     (h = h*31 + charCode, 32-bit) so names stay consistent."""

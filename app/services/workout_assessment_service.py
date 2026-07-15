@@ -306,7 +306,12 @@ def generate_assessment(
     if not workout.actual_ride_id:
         raise ValueError("Workout has no linked ride to assess")
 
-    ride = db.query(Ride).filter(Ride.id == workout.actual_ride_id).first()
+    # user-scope the ride read — a linked ride must belong to the same user
+    ride = (
+        db.query(Ride)
+        .filter(Ride.id == workout.actual_ride_id, Ride.user_id == user.id)
+        .first()
+    )
     if not ride:
         raise ValueError("Linked ride not found")
 

@@ -13,14 +13,16 @@ import { FormaMark } from "@/components/ui/forma-mark";
  * where you are. On mobile the top bar and drawer invert to carbon.
  */
 
+// Brand v2 IA — the five words: TODAY · COACH · RIDES · FORM · PLAN,
+// then the deeper rooms (Brain, Goals, Settings).
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/dashboard/coach", label: "Coach Forma" },
-  { href: "/dashboard/brain", label: "Your Brain" },
+  { href: "/dashboard", label: "Today" },
+  { href: "/dashboard/coach", label: "Coach" },
   { href: "/dashboard/rides", label: "Rides" },
-  { href: "/dashboard/performance", label: "Performance" },
+  { href: "/dashboard/performance", label: "Form" },
+  { href: "/dashboard/training", label: "Plan" },
+  { href: "/dashboard/brain", label: "Brain" },
   { href: "/dashboard/goals", label: "Goals" },
-  { href: "/dashboard/training", label: "Training" },
   { href: "/dashboard/settings", label: "Settings" },
 ];
 
@@ -88,9 +90,7 @@ export function Sidebar() {
                       isActive ? "bg-vb-red" : "bg-transparent"
                     )}
                   />
-                  {item.href === "/dashboard/coach"
-                    ? `Coach ${user?.coach_name || "Forma"}`
-                    : item.label}
+                  {item.label}
                 </Link>
               </li>
             );

@@ -50,7 +50,7 @@ export default function DashboardLayout({
 
       {/* Auto-sync toast, editorial chip with red accent on errors. */}
       {(syncing || (lastSyncedCount != null && lastSyncedCount > 0) || lastError) && (
-        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-vb-border bg-vb-surface px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-vb-text shadow-[0_1px_3px_rgba(33,30,26,0.08)]">
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-vb-border bg-vb-surface px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-vb-text">
           {syncing ? (
             <>
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
