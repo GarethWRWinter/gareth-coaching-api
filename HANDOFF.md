@@ -7,6 +7,19 @@ Holder: FREE
 Updated: 2026-07-16
 
 ## In flight / Next
+- **Per-user monthly budget SHIPPED** on the forma_calls ledger: `settings.monthly_budget_cents`
+  (env `MONTHLY_BUDGET_CENTS`, default $8). `forma_core.call/stream` raise `BudgetExceededError`
+  before spending when over the hard cap; chat emits `QUOTA_MESSAGE`; `GET /coach/usage` exposes
+  spend/pct/state for the soft-cap UI. Verified: $0.01 budget → blocked, no ledger row; $8 → normal.
+- **Compliance decided: GDPR now, defer SOC2/ISO.** PRD Appendix B → "Compliance & certifications"
+  has the pre-launch reminders (ICO reg, privacy policy, Cyber Essentials). Don't skip before launch.
+- **AUTH still to build** — Gareth chose "GDPR for now" but has NOT yet answered the two gating
+  questions: auth scope (public-launch = OAuth login + live email provider, vs beta baseline) and
+  Postgres RLS (yes = defense-in-depth + isolation tests, vs app-layer + tests only). Known gaps to
+  fix once scoped: refresh-token rotation/revocation + `/auth/logout`, email verify + password
+  reset, login timing/user-enumeration + rate-limit/lockout, **plaintext Strava/Dropbox tokens
+  (encrypt at rest — highest-severity data issue)**, security headers, GDPR export/delete endpoints,
+  `is_active`/`deleted_at` on User. **Also still: rotate SECRET_KEY on Railway.**
 - **forma-core SHIPPED** (`app/core/forma_core.py`): the single Claude funnel — routing table
   (Sonnet: chat/debrief/assessment; Haiku: nudge/explain/memory), cache_control on every stable
   system prefix, cost logging to the new `forma_calls` table (migration m7i8j9k0l1f2), provider

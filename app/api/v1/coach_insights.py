@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.v1.deps import get_current_user
+from app.core import forma_core
 from app.core.exceptions import NotFoundException
 from app.database import get_db
 from app.models.ride import Ride
@@ -41,7 +42,26 @@ class ExplainResponse(BaseModel):
     explanation: str
 
 
+class UsageResponse(BaseModel):
+    month_spend_usd: float
+    month_budget_usd: float
+    pct_used: int
+    state: str  # "ok" | "soft" | "hard"
+
+
 # --- Endpoints ---
+
+@router.get("/usage", response_model=UsageResponse)
+def get_usage(current_user: User = Depends(get_current_user)):
+    """The rider's month-to-date Forma spend vs their cap. Drives the soft-cap
+    warning in the UI and tells the frontend when the quota is exhausted."""
+    s = forma_core.budget_status(current_user.id)
+    return UsageResponse(
+        month_spend_usd=round(s.spent_cents / 100, 4),
+        month_budget_usd=round(s.budget_cents / 100, 2),
+        pct_used=min(100, round(s.ratio * 100)),
+        state=s.state,
+    )
 
 @router.get("/nudge", response_model=NudgeResponse)
 def get_daily_nudge(

@@ -376,6 +376,17 @@ This is what exists today, walked from the live URL.
 - GDPR / UK GDPR compliant. Data export = JSON archive of all layers + raw FIT files.
 - Strava terms compliance (data not redistributed; user is the only consumer of their data).
 
+### Compliance & certifications
+
+**Decision (2026-07-16):** the active compliance target is **UK GDPR + Data Protection Act 2018 plus industry-standard security engineering** — appropriate for a pre-PMF, ~100-user consumer subscription. Formal audited certifications (SOC 2, ISO 27001) are **deferred** — they are procurement-driven attestations for enterprise/B2B sales, cost £15–40k and 6–12 months each, and buy nothing at this stage. This foundation is exactly what a later SOC 2/ISO audit builds on, so none of the GDPR/security work is wasted.
+
+**⚠️ PRE-PUBLIC-LAUNCH REMINDERS (do NOT skip — flagged so we don't forget):**
+
+- **ICO registration + annual fee** (~£40–60) — a UK data controller must register with the Information Commissioner's Office. A form + payment, legally required. *Gareth's action.*
+- **Privacy policy live** — public privacy notice covering lawful basis, data-subject rights, health-data (special-category) explicit consent, retention, and breach process. Claude can draft; Gareth reviews/publishes.
+- **Cyber Essentials (UK)** — ~£300, self-assessed, government-backed. Cheap early trust signal; a checklist + config hardening we can prepare pre-launch. *Not a blocker, but do it before public launch.*
+- **Re-evaluate SOC 2 / ISO 27001** — pursue **only** if a customer, partner, or employer (e.g. Mindvalley) contractually requires an audited certification. Revisit trigger: first enterprise/partner deal or procurement request. Until then, do not spend on it.
+
 ### Strava API budget & Developer Program
 
 - Strava: 100 requests / 15 min / app, 1000 / day / app (Standard Tier).

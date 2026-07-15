@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
     # Emails allowed to read the /admin/costs dashboard (empty = nobody)
     admin_emails: list[str] = []
+
+    # Per-user monthly Forma spend cap, in US cents. Default $8.00 — the PRD's
+    # hard alerting threshold, well above the ~$1.87 expected spend, so only
+    # genuine runaway/abuse hits it. Soft-cap warns the rider at 80%.
+    monthly_budget_cents: int = 800
     frontend_url: str = ""  # Set to Vercel URL in production
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

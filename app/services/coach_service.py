@@ -834,6 +834,9 @@ async def stream_response(
             full_response += tail
             yield f'data: {json.dumps({"type": "text", "content": tail})}\n\n'
 
+    except forma_core.BudgetExceededError:
+        full_response = forma_core.QUOTA_MESSAGE
+        yield f'data: {json.dumps({"type": "text", "content": full_response})}\n\n'
     except anthropic.APIError as e:
         error_msg = f"Sorry, I'm having trouble connecting right now. Error: {str(e)}"
         full_response = error_msg
@@ -1030,6 +1033,9 @@ async def stream_voice_response(
             except Exception:
                 pass
 
+    except forma_core.BudgetExceededError:
+        full_response = forma_core.QUOTA_MESSAGE
+        yield f'data: {json.dumps({"type": "text", "content": full_response})}\n\n'
     except anthropic.APIError as e:
         error_msg = "Sorry, I'm having trouble connecting right now."
         full_response = error_msg
@@ -1080,13 +1086,17 @@ def get_non_streaming_response(
 
     messages = _build_messages(session)
 
-    response = forma_core.call(
-        user_id=user.id,
-        task="chat_sync",
-        surface="coach",
-        system=system,
-        messages=messages,
-    )
+    try:
+        response = forma_core.call(
+            user_id=user.id,
+            task="chat_sync",
+            surface="coach",
+            system=system,
+            messages=messages,
+        )
+    except forma_core.BudgetExceededError:
+        add_assistant_message(db, session, forma_core.QUOTA_MESSAGE, None, 0)
+        return forma_core.QUOTA_MESSAGE
 
     content = humanize(response_text(response))
     tokens_used = (

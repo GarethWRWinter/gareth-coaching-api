@@ -33,6 +33,7 @@ import logging
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime
 
 import anthropic
 
@@ -42,6 +43,29 @@ logger = logging.getLogger(__name__)
 
 SONNET = "claude-sonnet-5"
 HAIKU = "claude-haiku-4-5-20251001"
+
+# Warn the rider once their month-to-date spend passes this fraction of the cap.
+BUDGET_SOFT_RATIO = 0.80
+
+# Shown to the rider when the hard cap blocks a conversational turn.
+QUOTA_MESSAGE = (
+    "You've reached your Forma conversation quota for this month. Your training "
+    "plan, rides, and data are all still here — we'll pick the conversation back "
+    "up when your quota resets at the start of next month."
+)
+
+
+class BudgetExceededError(Exception):
+    """Raised by call()/stream() when a user's month-to-date spend has hit the
+    hard cap. Callers on the conversational path surface QUOTA_MESSAGE; cheap
+    background tasks degrade to their deterministic fallbacks."""
+
+    def __init__(self, spent_cents: float, budget_cents: int):
+        self.spent_cents = spent_cents
+        self.budget_cents = budget_cents
+        super().__init__(
+            f"Monthly Forma budget exceeded: {spent_cents:.1f}c / {budget_cents}c"
+        )
 
 
 @dataclass(frozen=True)
@@ -157,6 +181,68 @@ def _log(
         logger.exception("forma-core: failed to log call (task=%s user=%s)", task, user_id)
 
 
+# ── Per-user monthly budget (reads the forma_calls ledger) ──────────────────
+
+
+@dataclass(frozen=True)
+class BudgetStatus:
+    spent_cents: float
+    budget_cents: int
+    ratio: float
+    state: str  # "ok" | "soft" | "hard"
+
+
+def _month_start() -> datetime:
+    """First instant of the current calendar month, naive UTC — matches the
+    naive `forma_calls.ts` default (datetime.utcnow)."""
+    now = datetime.utcnow()
+    return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def month_to_date_cents(user_id: str) -> float:
+    """A user's total Forma spend so far this calendar month, in US cents."""
+    from sqlalchemy import func
+
+    from app.database import SessionLocal
+    from app.models.forma_call import FormaCall
+
+    db = SessionLocal()
+    try:
+        total = (
+            db.query(func.coalesce(func.sum(FormaCall.cost_cents), 0.0))
+            .filter(FormaCall.user_id == user_id, FormaCall.ts >= _month_start())
+            .scalar()
+        )
+        return float(total or 0.0)
+    finally:
+        db.close()
+
+
+def budget_status(user_id: str) -> BudgetStatus:
+    """Month-to-date spend vs the configured cap, with a coarse state."""
+    budget = settings.monthly_budget_cents
+    spent = month_to_date_cents(user_id)
+    ratio = (spent / budget) if budget else 0.0
+    state = "hard" if ratio >= 1.0 else "soft" if ratio >= BUDGET_SOFT_RATIO else "ok"
+    return BudgetStatus(spent_cents=spent, budget_cents=budget, ratio=ratio, state=state)
+
+
+def _enforce_budget(user_id: str, task: str) -> None:
+    """Block the call if the rider is over their hard cap; warn once at soft."""
+    status = budget_status(user_id)
+    if status.state == "hard":
+        logger.warning(
+            "forma-core: budget hard-cap hit (user=%s task=%s spent=%.1fc/%dc)",
+            user_id, task, status.spent_cents, status.budget_cents,
+        )
+        raise BudgetExceededError(status.spent_cents, status.budget_cents)
+    if status.state == "soft":
+        logger.info(
+            "forma-core: budget soft-cap (user=%s spent=%.1fc/%dc, %.0f%%)",
+            user_id, status.spent_cents, status.budget_cents, status.ratio * 100,
+        )
+
+
 def call(
     *,
     user_id: str,
@@ -166,8 +252,14 @@ def call(
     surface: str | None = None,
     tools: list | None = None,
     max_tokens: int | None = None,
+    enforce_budget: bool = True,
 ):
-    """One non-streaming Forma call. Returns the anthropic Message."""
+    """One non-streaming Forma call. Returns the anthropic Message.
+
+    Raises BudgetExceededError (before spending anything) when the rider is
+    over their monthly cap and enforce_budget is left on."""
+    if enforce_budget:
+        _enforce_budget(user_id, task)
     cfg = TASKS[task]
     kwargs = {}
     if tools:
@@ -198,9 +290,15 @@ def stream(
     surface: str | None = None,
     tools: list | None = None,
     max_tokens: int | None = None,
+    enforce_budget: bool = True,
 ):
     """One streaming Forma call. Yields the anthropic MessageStream;
-    usage is logged from the final message when the block exits."""
+    usage is logged from the final message when the block exits.
+
+    Raises BudgetExceededError (before opening the stream) when the rider is
+    over their monthly cap and enforce_budget is left on."""
+    if enforce_budget:
+        _enforce_budget(user_id, task)
     cfg = TASKS[task]
     kwargs = {}
     if tools:
