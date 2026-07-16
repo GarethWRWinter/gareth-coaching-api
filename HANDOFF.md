@@ -3,7 +3,7 @@
 > Whoever holds the baton has the turn. Read the protocol in `CLAUDE.md`.
 > At the start of your turn: `git pull --rebase`, claim below. At the end: commit, push, release below.
 
-Holder: FREE
+Holder: work
 Updated: 2026-07-16
 
 ## In flight / Next

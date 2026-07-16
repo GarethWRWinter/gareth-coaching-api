@@ -34,6 +34,12 @@ async def lifespan(app: FastAPI):
             "SECRET_KEY is the default placeholder — set a real SECRET_KEY "
             "env var. All auth tokens are forgeable until this is fixed."
         )
+    # Without an encryption key, integration tokens sit in the DB as plaintext.
+    if not settings.token_encryption_key:
+        logger.warning(
+            "TOKEN_ENCRYPTION_KEY is not set — Strava/Dropbox tokens are stored "
+            "unencrypted. Set it and run scripts/encrypt_integration_tokens.py."
+        )
 
     sync_interval = settings.dropbox_sync_interval
     if sync_interval > 0:

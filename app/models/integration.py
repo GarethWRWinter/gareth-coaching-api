@@ -1,6 +1,7 @@
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.crypto import EncryptedString
 from app.models.base import Base, generate_uuid
 
 
@@ -11,8 +12,8 @@ class StravaToken(Base):
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id"), unique=True, nullable=False
     )
-    access_token: Mapped[str] = mapped_column(String(255), nullable=False)
-    refresh_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    access_token: Mapped[str] = mapped_column(EncryptedString, nullable=False)
+    refresh_token: Mapped[str] = mapped_column(EncryptedString, nullable=False)
     expires_at: Mapped[str] = mapped_column(DateTime, nullable=False)
     athlete_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     scope: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -36,8 +37,8 @@ class TrainingPeaksToken(Base):
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id"), unique=True, nullable=False
     )
-    access_token: Mapped[str] = mapped_column(String(255), nullable=False)
-    refresh_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    access_token: Mapped[str] = mapped_column(EncryptedString, nullable=False)
+    refresh_token: Mapped[str] = mapped_column(EncryptedString, nullable=False)
     expires_at: Mapped[str] = mapped_column(DateTime, nullable=False)
     athlete_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     last_sync_at: Mapped[str | None] = mapped_column(DateTime, nullable=True)
@@ -50,8 +51,8 @@ class DropboxToken(Base):
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id"), unique=True, nullable=False
     )
-    access_token: Mapped[str] = mapped_column(Text, nullable=False)
-    refresh_token: Mapped[str] = mapped_column(Text, nullable=False)
+    access_token: Mapped[str] = mapped_column(EncryptedString, nullable=False)
+    refresh_token: Mapped[str] = mapped_column(EncryptedString, nullable=False)
     expires_at: Mapped[str] = mapped_column(DateTime, nullable=False)
     account_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     folder_path: Mapped[str] = mapped_column(String(500), default="/cycling", nullable=False)

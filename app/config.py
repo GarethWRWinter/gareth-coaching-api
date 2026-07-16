@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
     algorithm: str = "HS256"
 
+    # Encryption for integration tokens at rest (Fernet key, or comma-separated
+    # list for rotation). Deliberately separate from secret_key so rotating the
+    # JWT key never risks stored Strava/Dropbox tokens. Empty = encryption off
+    # (loud startup warning; reads still tolerate plaintext).
+    token_encryption_key: str = ""
+
     # Anthropic
     anthropic_api_key: str = ""
 
