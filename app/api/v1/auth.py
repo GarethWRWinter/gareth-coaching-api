@@ -1,19 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import BadRequestException, ConflictException, UnauthorizedException
-from app.core.security import (
-    create_access_token,
-    create_refresh_token,
-    get_user_id_from_token,
-    hash_password,
-    verify_password,
-)
+from app.core.exceptions import ConflictException, UnauthorizedException
+from app.core.security import hash_password, verify_password
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import TokenRefresh, TokenResponse, UserCreate, UserLogin, UserResponse
+from app.services import token_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Verified against when the email is unknown, so a login attempt takes the same
+# time whether or not the account exists (defeats timing-based user enumeration).
+_DUMMY_HASH = hash_password("forma-nonexistent-account-placeholder")
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
@@ -36,23 +35,25 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(user_in: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
-    if not user or not verify_password(user_in.password, user.hashed_password):
+    # Always run a bcrypt verify — against a dummy hash when the email is
+    # unknown — so response time doesn't reveal whether an email is registered.
+    hashed = user.hashed_password if user else _DUMMY_HASH
+    password_ok = verify_password(user_in.password, hashed)
+    if not user or not password_ok:
         raise UnauthorizedException(detail="Invalid email or password")
 
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        refresh_token=create_refresh_token(user.id),
-    )
+    access, refresh = token_service.issue_pair(db, user.id)
+    return TokenResponse(access_token=access, refresh_token=refresh)
 
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh_token(body: TokenRefresh, db: Session = Depends(get_db)):
-    user_id = get_user_id_from_token(body.refresh_token, token_type="refresh")
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise UnauthorizedException(detail="User not found")
+    access, refresh = token_service.rotate(db, body.refresh_token)
+    return TokenResponse(access_token=access, refresh_token=refresh)
 
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        refresh_token=create_refresh_token(user.id),
-    )
+
+@router.post("/logout", status_code=204)
+def logout(body: TokenRefresh, db: Session = Depends(get_db)):
+    """Revoke the presented refresh token's session lineage. Idempotent."""
+    token_service.logout(db, body.refresh_token)
+    return Response(status_code=204)

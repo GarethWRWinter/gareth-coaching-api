@@ -6,6 +6,7 @@ from app.models.integration import StravaToken, TrainingPeaksToken
 from app.models.memory import MemoryEdge, MemoryEntity
 from app.models.metrics import DailyMetrics
 from app.models.onboarding import GoalEvent, OnboardingResponse
+from app.models.refresh_token import RefreshToken
 from app.models.ride import Ride, RideData
 from app.models.segment import SegmentEffort, StravaSegment
 from app.models.training import TrainingPhase, TrainingPlan, Workout, WorkoutStep
@@ -29,6 +30,7 @@ __all__ = [
     "ChatMessage",
     "CoachNudge",
     "FormaCall",
+    "RefreshToken",
     "MemoryEntity",
     "MemoryEdge",
     "StravaSegment",
