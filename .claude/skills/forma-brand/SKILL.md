@@ -35,6 +35,13 @@ Canonical source: `frontend/docs/brand/FORMA-Brand-v2-source.html` (Gareth's bra
 - **The Timekeeper**: IBM Plex Mono (`.f-kicker` eyebrows 11px/0.16em/uppercase; `.f-data` tabular-nums). Data is mono; trends are mono `▲▼` glyphs, never coloured pills.
 - **Signature**: Caveat, flamme, only for Forma's handwritten sign-off (`.f-signature`).
 
+## The coach — one Forma, two channels
+
+Forma is the single coach (the DS). Two named channels, kept distinct:
+- **Race Radio** — Forma's live voice *during a training session* (carbon ride player); terse, in-effort cues.
+- **Coach Forma** — the *conversation off the bike* (nav: COACH); the memory-building, goal-working relationship.
+Never rename the conversation "Race Radio" (reserved for the in-ride voice), and never add a second coach persona name — always Forma.
+
 ## The coach presence
 
 Forma is a **flamme dot**, no avatar, no face, no disc. `CoachDot` in `components/ui/coach-glyph.tsx`:

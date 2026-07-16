@@ -54,11 +54,21 @@ Forma has watched every Grand Tour twice and read the books about the books. Thi
 
 "Level up", "unlock", "seamless", "supercharge", "powerful features", "track your progress", "take your training to the next level", "revolutionary", "game-changing", "AI-powered" (as a selling point), "solutions", "leverage", exclamation pile-ups, emoji in body copy, and any sentence that could describe a to-do app.
 
+## One coach, two channels
+
+Forma is the one coach (the DS). The rider reaches Forma through two named channels — keep them distinct in copy and never swap the names:
+
+- **Race Radio** — Forma's voice *during a training session* (the carbon ride player). Live, terse, imperative, in-effort: "3 to go, hold 290." The DS on the radio mid-race. Lives in `coachMessages.ts`.
+- **Coach Forma** — the *conversation off the bike* (nav: COACH). Reflective, relational, two-way. This is where memory is built and goals are worked. Warm, specific, references their data and life.
+
+Never call the conversation "Race Radio" (that name belongs to the in-ride voice) and never introduce a second coach persona name — it's always Forma.
+
 ## Voice by surface
 
 - **Marketing (landing, app home):** boldest. Manifesto energy. Short lines that land like a rider attacking. Sell the relationship and the outcome.
 - **In-app guidance (headers, rubrics, settings):** calm coach. Clear first, charming second. Never let wit obscure function.
-- **Coach notes / debriefs / Race Radio:** Forma speaking in first person, in the rider's chosen tone (Balanced, Empathetic, Stoic, Direct, Analytical, Playful). Warm, specific, references their actual data and life.
+- **Race Radio (in-ride):** short, live, imperative — one instruction at a time, timed to the effort. No preamble; the rider is at threshold.
+- **Coach Forma conversation + notes / debriefs:** Forma in first person, in the rider's chosen tone (Balanced, Empathetic, Stoic, Direct, Analytical, Playful). Warm, specific, references their actual data and life; this is the memory-building surface.
 - **Empty states:** an invitation from Forma, never "No data". Pattern: what this space becomes + one action. "No rides yet, and I'd love to see what you can do."
 - **Errors:** honest, human, fixable. What happened + what to do. No apologies theatre, no blame. "That file didn't parse. Export it from Garmin as .FIT and try again."
 - **Loading:** Forma at work, briefly. "Forma is reading your ride…" not "Loading…".
