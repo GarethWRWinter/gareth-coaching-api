@@ -386,6 +386,7 @@ This is what exists today, walked from the live URL.
 - **Privacy policy live** — public privacy notice covering lawful basis, data-subject rights, health-data (special-category) explicit consent, retention, and breach process. Claude can draft; Gareth reviews/publishes.
 - **Cyber Essentials (UK)** — ~£300, self-assessed, government-backed. Cheap early trust signal; a checklist + config hardening we can prepare pre-launch. *Not a blocker, but do it before public launch.*
 - **Re-evaluate SOC 2 / ISO 27001** — pursue **only** if a customer, partner, or employer (e.g. Mindvalley) contractually requires an audited certification. Revisit trigger: first enterprise/partner deal or procurement request. Until then, do not spend on it.
+- **Postgres row-level security (RLS)** — deferred from the beta build (2026-07-16 decision): beta ships app-layer user filtering + an automated cross-user isolation test suite. Add RLS before public launch so the database refuses cross-user reads by construction (defense-in-depth the isolation audits expect). Pairs with this milestone.
 
 ### Strava API budget & Developer Program
 

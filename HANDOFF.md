@@ -3,10 +3,22 @@
 > Whoever holds the baton has the turn. Read the protocol in `CLAUDE.md`.
 > At the start of your turn: `git pull --rebase`, claim below. At the end: commit, push, release below.
 
-Holder: work
+Holder: FREE
 Updated: 2026-07-16
 
 ## In flight / Next
+- **AUTH + DATA SECURITY — 5 increments shipped this session** (all pushed, verified live; GDPR
+  target per PRD). See memory `forma-auth-security` for the full map. Done: (1) integration tokens
+  encrypted at rest (`app/core/crypto.py` EncryptedString + `TOKEN_ENCRYPTION_KEY`; backfill
+  `scripts/encrypt_integration_tokens.py`); (2) refresh-token rotation/revocation + `/auth/logout`
+  (`refresh_tokens` table, `token_service.py`); (3) login enumeration timing fix; (4) auth rate
+  limiting (`app/core/ratelimit.py`); (5) security-headers middleware.
+  **RAILWAY: set `TOKEN_ENCRYPTION_KEY` + run the backfill script after deploy.**
+- **NEXT auth increments (tasks #32-34):** email verify + password reset (build pluggable +
+  stubbed sender; wire Resend/Postmark at launch); account status (`is_active`/`deleted_at`) +
+  GDPR data export + account deletion (soft→hard — DESTRUCTIVE, do carefully); cross-user
+  isolation **test suite** (install pytest first). **RLS deferred to pre-launch** (PRD Appendix B).
+  Social login (Google/Apple) deferred — needs Gareth's OAuth apps.
 - **Per-user monthly budget SHIPPED** on the forma_calls ledger: `settings.monthly_budget_cents`
   (env `MONTHLY_BUDGET_CENTS`, default $8). `forma_core.call/stream` raise `BudgetExceededError`
   before spending when over the hard cap; chat emits `QUOTA_MESSAGE`; `GET /coach/usage` exposes
