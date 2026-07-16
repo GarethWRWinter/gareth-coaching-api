@@ -631,3 +631,48 @@ POST   /billing/portal
 - **FTMS** — Fitness Machine Service. Standard BLE service for trainer telemetry + control.
 - **A/B/C race** — race priority. A = peak event. B = important. C = training/tune-up.
 - **RLS** — Row-Level Security. Postgres feature for per-row access control.
+
+## Appendix I — Launch Readiness Checklist
+
+Consolidated so nothing is overlooked before public launch. `[x]` = shipped, `[ ]` = outstanding.
+Updated 2026-07-16 after the auth + data-security build.
+
+### Security & auth (Epic D)
+- [x] Integration tokens (Strava/Dropbox/TP) encrypted at rest — `TOKEN_ENCRYPTION_KEY`, `EncryptedString`
+- [x] Refresh-token rotation + revocation + reuse detection + `/auth/logout`
+- [x] Login user-enumeration timing fix + per-IP rate limiting on auth endpoints
+- [x] Security-headers middleware (nosniff, X-Frame DENY, Referrer, HSTS, COOP)
+- [x] Account status (`is_active` / `deleted_at`) enforced on login + every authed request
+- [x] SECRET_KEY rotated (local + Railway)
+- [ ] **Email verification + password reset** — build the flow (pluggable sender, stubbed for beta); wire a live provider (Resend/Postmark) for public launch
+- [ ] **OAuth social login (Google/Apple)** — needs Gareth to create the OAuth apps; Apple needs the paid dev account
+- [ ] **Postgres RLS** — deferred (beta ships app-layer filtering + isolation test suite); add before public launch
+- [ ] **MFA (TOTP)** — pre-public-launch per Appendix B
+- [ ] **Rate limiter → Redis-backed** before running more than one backend instance (current limiter is process-local)
+
+### GDPR & compliance (see Appendix B)
+- [x] Data export endpoint (`GET /users/me/export`)
+- [x] Account deletion (soft) + retention-window purge script (`scripts/purge_deleted_accounts.py`)
+- [ ] **Schedule the purge** — cron / Railway scheduled job running the purge with `--commit`
+- [ ] **ICO registration + annual fee** (~£40–60) — *Gareth's action*
+- [ ] **Privacy policy live** (Claude drafts; Gareth reviews/publishes) — lawful basis, data-subject rights, health-data explicit consent, retention, breach process
+- [ ] **Health-data (special-category) explicit consent** captured at onboarding
+- [ ] **Cyber Essentials** (~£300, self-assessed)
+- [ ] **Re-evaluate SOC 2 / ISO 27001** only if a partner/enterprise buyer requires it
+
+### Infra / deployment (Railway env vars + ops)
+- [ ] Set **`TOKEN_ENCRYPTION_KEY`** + run `python -m scripts.encrypt_integration_tokens` once
+- [ ] Set **`ADMIN_EMAILS`** (for `/admin/costs`)
+- [ ] Set **`CORS_ORIGINS`** + **`FRONTEND_URL`** to the production frontend origin
+- [ ] **Sentry** on frontend + backend
+- [ ] **DB backups** (RPO ≤ 24h) + verify restore
+- [ ] Per-user cost monitoring (the `/admin/costs` endpoint exists; add alerting at the $8/user hard threshold)
+
+### Product gaps (from the 2026-07-15 PRD reconciliation)
+- [x] `forma-core` single Claude funnel + `forma_calls` cost ledger + per-user monthly budget
+- [ ] **pgvector** for memory embeddings (currently string-similarity matching)
+- [ ] **ASR / voice input** — browser STT only today; decide on server-side ASR or confirm browser-only is acceptable
+- [ ] **ElevenLabs voice** = the OQ2-locked pick (currently a different default voice id)
+- [ ] **Conversational onboarding** — currently a form wizard (Milestone 2)
+- [ ] **Billing (Epic G)** — Stripe subscription + quota tiers (the monthly budget cap is built; wire the subscription + Pro tier)
+- [ ] **Test coverage** beyond the isolation suite — Forma-call path + ride-session path (per Appendix C tech debt)
