@@ -49,6 +49,9 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)):
     password_ok = verify_password(user_in.password, hashed)
     if not user or not password_ok:
         raise UnauthorizedException(detail="Invalid email or password")
+    # A suspended or GDPR-deleted account cannot obtain new tokens.
+    if not user.is_active or user.deleted_at is not None:
+        raise UnauthorizedException(detail="Account is inactive")
 
     access, refresh = token_service.issue_pair(db, user.id)
     return TokenResponse(access_token=access, refresh_token=refresh)

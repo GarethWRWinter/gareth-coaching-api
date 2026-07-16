@@ -1,6 +1,7 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy import Boolean, Date, Enum, Float, Integer, String
+from sqlalchemy import Boolean, Date, DateTime, Enum, Float, Integer, String
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,6 +22,14 @@ class User(TimestampMixin, Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Account lifecycle. is_active gates login (suspension / deactivation);
+    # deleted_at marks a GDPR erasure request — the account is locked out
+    # immediately and hard-purged after the retention window.
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False, server_default="true"
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Physical
     weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)

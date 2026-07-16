@@ -18,4 +18,8 @@ def get_current_user(
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise UnauthorizedException(detail="User not found")
+    # A suspended or deleted account must not authenticate, even with a
+    # still-valid (short-lived) access token.
+    if not user.is_active or user.deleted_at is not None:
+        raise UnauthorizedException(detail="Account is inactive")
     return user
