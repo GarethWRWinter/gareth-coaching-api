@@ -7,8 +7,11 @@ responses via Claude API with SSE.
 
 import base64
 import json
+import logging
 import re
 from datetime import date, datetime, timedelta, timezone
+
+logger = logging.getLogger(__name__)
 
 import anthropic  # kept for anthropic.APIError handling; calls go via forma_core
 from sqlalchemy.orm import Session
