@@ -906,17 +906,29 @@ export interface StravaBackfillStatus {
   completed_at: string | null;
 }
 
+export interface StravaProbe {
+  connected: boolean;
+  ok: boolean;
+  http_status?: number | null;
+  stored_scope?: string | null;
+  reason?: string | null; // "missing_activity_scope" | "token_invalid" | ...
+}
+
 export interface StravaStatus {
   connected: boolean;
   athlete_id?: number;
   last_sync_at?: string;
   token_expired?: boolean;
+  scope?: string | null;
+  can_read_activities?: boolean;
   backfill?: StravaBackfillStatus;
+  probe?: StravaProbe;
 }
 
 export const strava = {
   getAuthUrl: () => request<{ auth_url: string }>("/integrations/strava/auth-url"),
-  getStatus: () => request<StravaStatus>("/integrations/strava/status"),
+  getStatus: (probe?: boolean) =>
+    request<StravaStatus>(`/integrations/strava/status${probe ? "?probe=true" : ""}`),
   sync: () =>
     request<{
       synced: number;

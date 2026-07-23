@@ -139,6 +139,28 @@ export default function SettingsPage() {
     },
   });
 
+  // One live probe of Strava activity access — the ground-truth 403 check that
+  // catches a token linked without the "activities" permission (which the
+  // stored scope alone can't reveal for older connections).
+  const { data: stravaProbe } = useQuery({
+    queryKey: ["strava-probe"],
+    queryFn: () => strava.getStatus(true),
+    enabled: !!stravaStatus?.connected,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
+  const stravaNoActivityScope =
+    stravaStatus?.connected === true &&
+    (stravaStatus?.can_read_activities === false ||
+      stravaProbe?.probe?.reason === "missing_activity_scope" ||
+      stravaStatus?.backfill?.status === "failed_no_activity_scope");
+
+  const reconnectStrava = async () => {
+    const { auth_url } = await strava.getAuthUrl();
+    window.location.href = auth_url;
+  };
+
   const { data: dropboxStatus } = useQuery({
     queryKey: ["dropbox-status"],
     queryFn: () => dropbox.getStatus(),
@@ -766,6 +788,23 @@ export default function SettingsPage() {
             <p className="f-data text-xs text-vb-text-muted">
               Athlete #{stravaStatus.athlete_id}
             </p>
+
+            {/* Activity-scope warning: linked, but no permission to read rides */}
+            {stravaNoActivityScope && (
+              <div className="border border-vb-red/40 bg-vb-surface p-4">
+                <Kicker flamme>Reconnect needed</Kicker>
+                <p className="mt-2 text-sm text-vb-text-dim">
+                  Strava is linked, but it hasn&apos;t given Forma permission to
+                  read your rides, so nothing can import. Reconnect and tick
+                  <span className="text-vb-text"> View data about your activities</span>{" "}
+                  on Strava&apos;s permission screen.
+                </p>
+                <Button size="sm" variant="flamme" className="mt-3" onClick={reconnectStrava}>
+                  Reconnect Strava
+                  <Arrow />
+                </Button>
+              </div>
+            )}
 
             {/* Backfill Progress */}
             {stravaStatus.backfill?.status === "running" && (

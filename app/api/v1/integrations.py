@@ -54,7 +54,20 @@ async def strava_callback(
         return RedirectResponse(f"{frontend_url}?strava=error&reason=invalid_state")
 
     try:
-        token = await strava_service.exchange_code(db, user_id, code)
+        token = await strava_service.exchange_code(db, user_id, code, granted_scope=scope)
+
+        # Strava only grants activity access when the user ticks "View data
+        # about your activities" on the consent screen. Without it the token
+        # is read-only and every activity fetch 403s — so surface it now as a
+        # clear reconnect prompt instead of a fake "connected" that fails later.
+        if not strava_service.scope_has_activity_read(token.scope):
+            logger.warning(
+                "Strava connected for user %s WITHOUT activity scope (granted=%r)",
+                user_id, token.scope,
+            )
+            return RedirectResponse(
+                f"{frontend_url}?strava=error&reason=missing_activity_scope"
+            )
 
         # Start historical backfill in background (only on first connect)
         if not token.backfill_status or token.backfill_status == "failed":
@@ -113,15 +126,22 @@ async def sync_strava(
 
 
 @router.get("/strava/status")
-def strava_status(
+async def strava_status(
+    probe: bool = Query(False, description="Make one live Strava call to verify activity access"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Check Strava connection status including backfill progress."""
+    """Check Strava connection status including backfill progress.
+
+    Pass ?probe=true to make a single live call to Strava and confirm the
+    stored token can actually read activities (the ground-truth 403 check).
+    """
     status = strava_service.get_connection_status(db, current_user.id)
     backfill = strava_service.get_backfill_status(db, current_user.id)
     if backfill:
         status["backfill"] = backfill
+    if probe and status.get("connected"):
+        status["probe"] = await strava_service.probe_activity_access(db, current_user.id)
     return status
 
 

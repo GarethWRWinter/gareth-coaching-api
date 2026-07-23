@@ -120,8 +120,28 @@ def get_auth_url(state: str = "") -> str:
     return f"{STRAVA_AUTH_URL}?{query}"
 
 
-async def exchange_code(db: Session, user_id: str, code: str) -> StravaToken:
-    """Exchange authorization code for access/refresh tokens."""
+def scope_has_activity_read(scope: str | None) -> bool:
+    """True if the granted scope lets us read the athlete's activities.
+
+    Strava grants activity access only when the user ticks
+    "View data about your activities" on the consent screen. Without it
+    the token is `read` only and every /athlete/activities call 403s.
+    """
+    if not scope:
+        return False
+    parts = {p.strip() for p in scope.replace(" ", ",").split(",")}
+    return "activity:read_all" in parts or "activity:read" in parts
+
+
+async def exchange_code(
+    db: Session, user_id: str, code: str, granted_scope: str | None = None
+) -> StravaToken:
+    """Exchange authorization code for access/refresh tokens.
+
+    `granted_scope` is the scope Strava actually granted, passed through from
+    the callback query string. We store it verbatim (never assume full scope)
+    so the connection state reflects what the user truly authorized.
+    """
     async with httpx.AsyncClient() as client:
         response = await client.post(STRAVA_TOKEN_URL, data={
             "client_id": settings.strava_client_id,
@@ -132,6 +152,10 @@ async def exchange_code(db: Session, user_id: str, code: str) -> StravaToken:
         response.raise_for_status()
         data = response.json()
 
+    # Strava echoes the granted scope in the exchange response too; prefer the
+    # callback value, fall back to the response, and only then to the request.
+    scope = granted_scope or data.get("scope") or "read,activity:read_all"
+
     # Upsert token
     existing = db.query(StravaToken).filter(StravaToken.user_id == user_id).first()
     if existing:
@@ -139,7 +163,7 @@ async def exchange_code(db: Session, user_id: str, code: str) -> StravaToken:
         existing.refresh_token = data["refresh_token"]
         existing.expires_at = datetime.fromtimestamp(data["expires_at"], tz=timezone.utc)
         existing.athlete_id = data["athlete"]["id"]
-        existing.scope = "read,activity:read_all"
+        existing.scope = scope
         db.commit()
         db.refresh(existing)
         return existing
@@ -150,7 +174,7 @@ async def exchange_code(db: Session, user_id: str, code: str) -> StravaToken:
         refresh_token=data["refresh_token"],
         expires_at=datetime.fromtimestamp(data["expires_at"], tz=timezone.utc),
         athlete_id=data["athlete"]["id"],
-        scope="read,activity:read_all",
+        scope=scope,
     )
     db.add(token)
     db.commit()
@@ -211,6 +235,13 @@ async def sync_activities(
             headers=headers,
             params=params,
         )
+        if response.status_code == 403:
+            # Token lacks activity:read_all — the user connected without ticking
+            # "View data about your activities". No amount of retrying fixes it.
+            raise ValueError(
+                "Strava hasn't granted activity access. Reconnect Strava and tick "
+                "“View data about your activities” on the permission screen."
+            )
         response.raise_for_status()
         activities = response.json()
 
@@ -644,7 +675,48 @@ def get_connection_status(db: Session, user_id: str) -> dict:
         "connected": True,
         "athlete_id": token.athlete_id,
         "last_sync_at": token.last_sync_at,
+        "scope": token.scope,
+        "can_read_activities": scope_has_activity_read(token.scope),
         "token_expired": token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc) if token.expires_at else True,
+    }
+
+
+async def probe_activity_access(db: Session, user_id: str) -> dict:
+    """Make ONE live call to Strava's activities endpoint and report the result.
+
+    This is the ground-truth diagnostic: it proves whether the stored token can
+    actually read activities right now, independent of what `scope` claims.
+    """
+    token = db.query(StravaToken).filter(StravaToken.user_id == user_id).first()
+    if not token:
+        return {"connected": False, "ok": False, "reason": "not_connected"}
+
+    try:
+        access_token = await _refresh_token_if_needed(db, token)
+    except Exception as e:  # refresh-token itself revoked/expired
+        return {"connected": True, "ok": False, "http_status": None,
+                "stored_scope": token.scope, "reason": f"refresh_failed: {e}"}
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(
+            f"{STRAVA_API_BASE}/athlete/activities",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"per_page": 1},
+        )
+
+    reason = None
+    if resp.status_code == 403:
+        reason = "missing_activity_scope"
+    elif resp.status_code == 401:
+        reason = "token_invalid"
+    elif resp.status_code == 429:
+        reason = "rate_limited"
+    return {
+        "connected": True,
+        "ok": resp.status_code == 200,
+        "http_status": resp.status_code,
+        "stored_scope": token.scope,
+        "reason": reason,
     }
 
 
@@ -724,6 +796,13 @@ async def backfill_history(
                         db.commit()
                         access_token = await _refresh_token_if_needed(db, strava_token)
                         continue
+                    if response.status_code == 403:
+                        strava_token.backfill_status = "failed_no_activity_scope"
+                        db.commit()
+                        raise ValueError(
+                            "Strava activity access not granted — reconnect and tick "
+                            "“View data about your activities”."
+                        )
                     response.raise_for_status()
                     break
                 else:

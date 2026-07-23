@@ -4,9 +4,25 @@
 > At the start of your turn: `git pull --rebase`, claim below. At the end: commit, push, release below.
 
 Holder: FREE
-Updated: 2026-07-16
+Updated: 2026-07-23
 
 ## In flight / Next
+- **STRAVA IMPORT SCOPE FIX SHIPPED (2026-07-23).** Root cause of "connected but 0 rides
+  import": `exchange_code` HARDCODED `scope="read,activity:read_all"` regardless of what
+  Strava granted. If the user doesn't tick "View data about your activities", Strava grants
+  `read` only → card shows LINKED → every `/athlete/activities` call 403s silently. Fixes:
+  (1) `exchange_code(...granted_scope=)` stores the REAL granted scope (callback passes it +
+  falls back to token response); (2) callback gates on `scope_has_activity_read()` and redirects
+  `?strava=error&reason=missing_activity_scope` instead of a fake "connected", skips backfill;
+  (3) `/strava/status` now returns `scope`+`can_read_activities`, and `?probe=true` makes ONE
+  live Strava call (`probe_activity_access`) = ground-truth 403 check for already-linked tokens;
+  (4) sync + backfill raise a clear "reconnect and tick activities" error on 403 (backfill status
+  `failed_no_activity_scope`), no more silent retry; (5) settings page shows a **Reconnect Strava**
+  banner driven by `can_read_activities===false` OR the live probe OR the new backfill status.
+  Typecheck clean, app boots. **USER ACTION to confirm the live fix:** on the live site, hit
+  Settings → the banner should appear if the current token lacks activity scope; Disconnect →
+  Connect and TICK "View data about your activities". Then rides import. (Ground truth also at
+  `GET /integrations/strava/status?probe=true`.)
 - **AUTH + DATA SECURITY — 7 increments shipped this session** (all pushed, verified; GDPR target).
   Memory `forma-auth-security` + **PRD Appendix I (Launch Readiness Checklist)** have the full map.
   Done: token encryption at rest; refresh rotation/revocation + `/auth/logout`; login timing fix +
