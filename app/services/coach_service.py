@@ -838,7 +838,10 @@ async def stream_response(
         full_response = forma_core.QUOTA_MESSAGE
         yield f'data: {json.dumps({"type": "text", "content": full_response})}\n\n'
     except anthropic.APIError as e:
-        error_msg = f"Sorry, I'm having trouble connecting right now. Error: {str(e)}"
+        # Never leak provider errors into the coach's mouth — log the real
+        # cause, tell the rider something honest and human.
+        logger.error("Coach chat stream failed: %s", e)
+        error_msg = "That one didn't reach me. Give it a second and send it again."
         full_response = error_msg
         yield f'data: {json.dumps({"type": "text", "content": error_msg})}\n\n'
 
@@ -1037,7 +1040,8 @@ async def stream_voice_response(
         full_response = forma_core.QUOTA_MESSAGE
         yield f'data: {json.dumps({"type": "text", "content": full_response})}\n\n'
     except anthropic.APIError as e:
-        error_msg = "Sorry, I'm having trouble connecting right now."
+        logger.error("Coach voice stream failed: %s", e)
+        error_msg = "That one didn't reach me. Give it a second and send it again."
         full_response = error_msg
         yield f'data: {json.dumps({"type": "text", "content": error_msg})}\n\n'
 
