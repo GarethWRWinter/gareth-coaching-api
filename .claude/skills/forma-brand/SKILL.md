@@ -48,6 +48,14 @@ Forma is a **flamme dot**, no avatar, no face, no disc. `CoachDot` in `component
 - `still` (C1) — present, listening. `pulsing` (C2) — thinking/typing. `rippling` (C3) — speaking, **carbon surfaces only**.
 - Legacy `CoachGlyph` import still works (renders the still dot centred in the old box).
 
+## Brand imagery — the Abstract (ink-dispersion terrain)
+
+The second imagery register beside hard photography: **iconic climbs rendered as ink-in-water abstractions** (exemplar: Sa Calobra, its 26 stacked switchbacks read as flow and sediment). Softer, editorial — for covers, chapter breaks, hero art and merch, not UI chrome.
+- Lockup over the art: **chalk wordmark + flamme kite** (IB2, the approved treatment; all-chalk IB1 is the quiet fallback). Never ink-on-ink.
+- The lockup sits in the **quiet corner**, clear of the busiest ink.
+- Caption pattern: mono kicker, `SA CALOBRA · 26 BENDS`.
+- Each piece stays in a limited palette (the Sa Calobra terrain is greens + subtle greys); one climb, one field, no collaging registers.
+
 ## Rules of composition ("print, not pixels")
 
 - Flat. No shadows, no gradients, no glows. Radius 2px (sm) / 4px (md) max — never rounded-lg.
