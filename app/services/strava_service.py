@@ -236,11 +236,17 @@ async def sync_activities(
             params=params,
         )
         if response.status_code == 403:
-            # Token lacks activity:read_all — the user connected without ticking
-            # "View data about your activities". No amount of retrying fixes it.
+            # Token lacks activity access. Log Strava's exact refusal — a stale
+            # prior authorization can shadow a fresh grant, and the error body
+            # tells us which permission Strava thinks is missing.
+            logger.error(
+                "Strava 403 on /athlete/activities (stored scope=%r): %s",
+                strava_token.scope, response.text[:500],
+            )
             raise ValueError(
-                "Strava hasn't granted activity access. Reconnect Strava and tick "
-                "“View data about your activities” on the permission screen."
+                "Strava hasn't granted activity access. Revoke “Cycling Coach” at "
+                "strava.com → Settings → My Apps, then reconnect and tick "
+                "“View data about your activities”."
             )
         response.raise_for_status()
         activities = response.json()
@@ -703,10 +709,20 @@ async def probe_activity_access(db: Session, user_id: str) -> dict:
             headers={"Authorization": f"Bearer {access_token}"},
             params={"per_page": 1},
         )
+        # Second opinion: /athlete needs only `read`. 200 here + 403 above
+        # isolates the failure to the activity permission specifically.
+        athlete_resp = await client.get(
+            f"{STRAVA_API_BASE}/athlete",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
 
     reason = None
     if resp.status_code == 403:
         reason = "missing_activity_scope"
+        logger.error(
+            "Strava probe 403 (stored scope=%r, /athlete=%s): %s",
+            token.scope, athlete_resp.status_code, resp.text[:500],
+        )
     elif resp.status_code == 401:
         reason = "token_invalid"
     elif resp.status_code == 429:
