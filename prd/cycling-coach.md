@@ -660,6 +660,21 @@ Updated 2026-07-16 after the auth + data-security build.
 - [ ] **Cyber Essentials** (~£300, self-assessed)
 - [ ] **Re-evaluate SOC 2 / ISO 27001** only if a partner/enterprise buyer requires it
 
+### Platform dependencies (discovered 2026-07-23)
+- [ ] **Strava API is now subscriber-only** — Strava deactivated the "Cycling Coach" app
+      (`Application/Status/Inactive` on every call) because the owning Strava account is free.
+      *Gareth's action:* subscribe on the owning Strava account to reactivate; recurring cost goes
+      in the P&L. Riders connecting their own Strava accounts should NOT need a subscription
+      (developer-side requirement) — re-verify once reactivated.
+- [ ] **Data-in resilience** — Strava is now a paid, policy-volatile dependency. FIT upload +
+      Dropbox sync already exist as independent channels; evaluate direct Garmin/Wahoo
+      integrations before public launch so one platform can't cut off rider data.
+- [ ] **Strava app rebrand** — consent screen still says "Cycling Coach" with the old Vercel URL;
+      rename to FORMA + update website/callback branding before launch.
+- [ ] **Vercel frontend deploys are MANUAL** (`npx vercel --prod` from `frontend/`; no git
+      integration). Either add Vercel git auto-deploy or keep the manual step in the release
+      ritual — the live site sat 15 days stale before 2026-07-23.
+
 ### Infra / deployment (Railway env vars + ops)
 - [ ] Set **`TOKEN_ENCRYPTION_KEY`** + run `python -m scripts.encrypt_integration_tokens` once
 - [ ] Set **`ADMIN_EMAILS`** (for `/admin/costs`)
