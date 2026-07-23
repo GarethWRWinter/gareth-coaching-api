@@ -7,6 +7,16 @@ Holder: FREE
 Updated: 2026-07-23
 
 ## In flight / Next
+- **FULL-PIPELINE SMOKE TEST PASSED + 3 BUGS FIXED (2026-07-23).** Fresh sign-up →
+  onboarding → auto 12-week plan → dashboard → coach chat → Brain, all verified live, zero
+  console errors. Fixed: (1) **new users got coach_name 'Marco'** — DB column default was
+  still 'Marco' from migration k5g6h7i8j9d0; migration q1m2n3o4p5j6 flips default to 'Forma'
+  + re-backfills (RUN `alembic upgrade head` ON RAILWAY — happens automatically on deploy);
+  (2) 422 validation errors rendered "[object Object]" in every form — api.ts now normalizes
+  FastAPI detail arrays to readable sentences; (3) data tiles stuck at 0 in hidden tabs —
+  useCountUp skips animation when document hidden + settle timeout. Also "your AI coach" →
+  "your coach". Brand doc updated (Abstract imagery register: ink-dispersion climbs, IB2
+  chalk+kite lockup) → frontend/docs/brand/ + forma-brand skill.
 - **STRAVA IMPORT SCOPE FIX SHIPPED (2026-07-23).** Root cause of "connected but 0 rides
   import": `exchange_code` HARDCODED `scope="read,activity:read_all"` regardless of what
   Strava granted. If the user doesn't tick "View data about your activities", Strava grants
