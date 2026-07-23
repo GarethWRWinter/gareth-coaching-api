@@ -253,7 +253,15 @@ export default function SettingsPage() {
     mutationFn: () => strava.sync(),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["rides"] });
-      alert(`${data.synced} rides in from Strava`);
+      queryClient.invalidateQueries({ queryKey: ["strava-status"] });
+      alert(
+        data.synced > 0
+          ? `${data.synced} rides in from Strava`
+          : "Strava answered, but had nothing new since the last sync."
+      );
+    },
+    onError: (err: Error) => {
+      alert(err.message || "That sync didn't go through. Try again in a minute.");
     },
   });
 
@@ -263,6 +271,9 @@ export default function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["rides"] });
       queryClient.invalidateQueries({ queryKey: ["dropbox-status"] });
       alert(`${data.synced} ride file(s) in from Dropbox`);
+    },
+    onError: (err: Error) => {
+      alert(err.message || "That sync didn't go through. Try again in a minute.");
     },
   });
 
