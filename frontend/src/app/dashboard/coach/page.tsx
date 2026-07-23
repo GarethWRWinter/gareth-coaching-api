@@ -466,26 +466,38 @@ function CoachPageInner() {
                     />
                   </span>
                 )}
-                <div
-                  className={cn(
-                    "max-w-[90%] rounded-md px-3 py-2.5 text-sm sm:max-w-[80%] sm:px-4 sm:py-3",
-                    // rider speaks in ink; flamme stays the coach's colour
-                    msg.role === "user"
-                      ? "bg-vb-text text-white"
-                      : "bg-vb-sage-tint text-vb-text"
-                  )}
-                >
-                  {msg.role === "assistant" ? (
-                    <div className="prose prose-sm max-w-none prose-headings:text-vb-text prose-strong:text-vb-text prose-em:text-vb-clay prose-em:not-italic prose-li:marker:text-vb-forest prose-a:text-vb-forest">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                      {streaming && i === messages.length - 1 && (
-                        <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-vb-forest" />
-                      )}
-                    </div>
-                  ) : (
-                    <p>{msg.content}</p>
-                  )}
-                </div>
+                {/* C2 · active · pulsing — the dot breathes while the coach
+                    works. Before the first word arrives there is no bubble,
+                    just the brand's thinking state: dot + mono status line. */}
+                {msg.role === "assistant" &&
+                !msg.content &&
+                streaming &&
+                i === messages.length - 1 ? (
+                  <p className="f-kicker self-center text-vb-text-muted">
+                    {coach} is thinking…
+                  </p>
+                ) : (
+                  <div
+                    className={cn(
+                      "max-w-[90%] rounded-md px-3 py-2.5 text-sm sm:max-w-[80%] sm:px-4 sm:py-3",
+                      // rider speaks in ink; flamme stays the coach's colour
+                      msg.role === "user"
+                        ? "bg-vb-text text-white"
+                        : "bg-vb-sage-tint text-vb-text"
+                    )}
+                  >
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-sm max-w-none prose-headings:text-vb-text prose-strong:text-vb-text prose-em:text-vb-clay prose-em:not-italic prose-li:marker:text-vb-forest prose-a:text-vb-forest">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        {streaming && i === messages.length - 1 && (
+                          <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-vb-forest" />
+                        )}
+                      </div>
+                    ) : (
+                      <p>{msg.content}</p>
+                    )}
+                  </div>
+                )}
                 {msg.role === "user" && (
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-vb-sunken">
                     <User className="h-4 w-4 text-vb-text" />
