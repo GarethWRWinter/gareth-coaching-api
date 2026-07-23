@@ -13,6 +13,37 @@ class ApiError extends Error {
   }
 }
 
+/**
+ * Turn any FastAPI error body into a human sentence.
+ *
+ * FastAPI's `detail` is a string for HTTPExceptions but an ARRAY of
+ * {loc, msg, ...} objects for 422 validation errors — rendering that
+ * directly gives the user "[object Object]". Normalize every shape here
+ * so forms always show a readable message.
+ */
+function normalizeErrorMessage(text: string): string {
+  try {
+    const json = JSON.parse(text);
+    const detail = json.detail ?? json;
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      const msgs = detail
+        .map((d) => {
+          const field = Array.isArray(d?.loc) ? String(d.loc[d.loc.length - 1]) : "";
+          const msg = typeof d?.msg === "string" ? d.msg : "";
+          if (!msg) return "";
+          return field && field !== "body" ? `${field}: ${msg}` : msg;
+        })
+        .filter(Boolean);
+      if (msgs.length) return msgs.join(". ");
+    }
+    if (detail && typeof detail === "object" && typeof detail.msg === "string") {
+      return detail.msg;
+    }
+  } catch {}
+  return text || "Something went wrong. Try again.";
+}
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("access_token");
@@ -56,7 +87,7 @@ async function request<T>(
         headers,
       });
       if (!retry.ok) {
-        throw new ApiError(await retry.text(), retry.status);
+        throw new ApiError(normalizeErrorMessage(await retry.text()), retry.status);
       }
       return retry.json();
     }
@@ -69,12 +100,7 @@ async function request<T>(
 
   if (!response.ok) {
     const text = await response.text();
-    let message = text;
-    try {
-      const json = JSON.parse(text);
-      message = json.detail || text;
-    } catch {}
-    throw new ApiError(message, response.status);
+    throw new ApiError(normalizeErrorMessage(text), response.status);
   }
 
   if (response.status === 204) return null as T;
@@ -116,7 +142,7 @@ async function uploadFile<T>(path: string, file: File): Promise<T> {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new ApiError(text, response.status);
+    throw new ApiError(normalizeErrorMessage(text), response.status);
   }
 
   return response.json();

@@ -11,9 +11,13 @@ export function useCountUp(target: number, durationMs = 700): number {
   const raf = useRef<number | null>(null);
 
   useEffect(() => {
+    // Skip the animation when it can't or shouldn't play: reduced motion,
+    // or a hidden/backgrounded tab (rAF is paused there, which would leave
+    // the tile stuck at 0 until the tab is fronted).
     if (
       typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      (window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        document.visibilityState === "hidden")
     ) {
       setValue(target);
       return;
@@ -27,8 +31,12 @@ export function useCountUp(target: number, durationMs = 700): number {
       if (t < 1) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
+    // Safety net: if rAF stalls (tab hidden mid-animation, throttled
+    // renderer), land on the real value once the duration has passed.
+    const settle = window.setTimeout(() => setValue(target), durationMs + 100);
     return () => {
       if (raf.current) cancelAnimationFrame(raf.current);
+      window.clearTimeout(settle);
     };
   }, [target, durationMs]);
 

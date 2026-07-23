@@ -345,7 +345,7 @@ function CoachPageInner() {
         <div className="divide-y divide-vb-border-subtle">
           {sessions?.length === 0 && (
             <p className="px-4 py-6 text-center text-xs text-vb-text-muted">
-              Start a conversation with your AI coach
+              Start a conversation with your coach
             </p>
           )}
           {sessions?.map((session) => (
