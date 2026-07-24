@@ -672,14 +672,48 @@ def create_session(db: Session, user_id: str, title: str | None = None) -> ChatS
     return session
 
 
-def get_sessions(db: Session, user_id: str) -> list[ChatSession]:
-    """Get all chat sessions for a user."""
+def get_sessions(
+    db: Session, user_id: str, include_archived: bool = False
+) -> list[ChatSession]:
+    """Get chat sessions for a user. Pinned first, then newest."""
+    q = db.query(ChatSession).filter(ChatSession.user_id == user_id)
+    if not include_archived:
+        q = q.filter(ChatSession.archived_at.is_(None))
     return (
-        db.query(ChatSession)
-        .filter(ChatSession.user_id == user_id)
-        .order_by(ChatSession.created_at.desc())
+        q.order_by(ChatSession.pinned.desc(), ChatSession.created_at.desc())
         .all()
     )
+
+
+def update_session(
+    db: Session,
+    session: ChatSession,
+    *,
+    title: str | None = None,
+    pinned: bool | None = None,
+    starred: bool | None = None,
+    archived: bool | None = None,
+) -> ChatSession:
+    """Update session management fields. Only passed fields change."""
+    if title is not None:
+        session.title = title.strip()[:255] or session.title
+    if pinned is not None:
+        session.pinned = pinned
+    if starred is not None:
+        session.starred = starred
+    if archived is not None:
+        session.archived_at = datetime.now(timezone.utc) if archived else None
+        if archived:
+            session.pinned = False  # archived chats don't hold a pin
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def delete_session(db: Session, session: ChatSession) -> None:
+    """Hard-delete a session and its messages (cascade)."""
+    db.delete(session)
+    db.commit()
 
 
 def get_session(db: Session, session_id: str, user_id: str) -> ChatSession | None:

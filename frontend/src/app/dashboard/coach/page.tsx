@@ -4,7 +4,21 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Send, Plus, MessageCircle, Bot, User, Mic } from "lucide-react";
+import {
+  Send,
+  Plus,
+  MessageCircle,
+  Bot,
+  User,
+  Mic,
+  MoreHorizontal,
+  Pin,
+  Star,
+  Archive,
+  ArchiveRestore,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { chat, goals as goalsApi } from "@/lib/api";
@@ -215,11 +229,49 @@ function CoachPageInner() {
     }
   }, [goalData, goalMessagePrefilled, isDebrief]);
 
-  // Load sessions list
+  // Session management UI state
+  const [showArchived, setShowArchived] = useState(false);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  // Load sessions list (pinned first from the API; archived on demand)
   const { data: sessions } = useQuery({
-    queryKey: ["chat-sessions"],
-    queryFn: () => chat.getSessions(),
+    queryKey: ["chat-sessions", showArchived],
+    queryFn: () => chat.getSessions(showArchived),
   });
+
+  const updateSession = useMutation({
+    mutationFn: ({ id, update }: { id: string; update: Parameters<typeof chat.updateSession>[1] }) =>
+      chat.updateSession(id, update),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat-sessions"] });
+    },
+  });
+
+  const removeSession = useMutation({
+    mutationFn: (id: string) => chat.deleteSession(id),
+    onSuccess: (_, id) => {
+      if (id === activeSessionId) {
+        setActiveSessionId(null);
+        setMessages([]);
+      }
+      queryClient.invalidateQueries({ queryKey: ["chat-sessions"] });
+    },
+  });
+
+  const startRename = (id: string, current: string | null) => {
+    setRenamingId(id);
+    setRenameValue(current || "");
+    setMenuFor(null);
+  };
+
+  const commitRename = () => {
+    if (renamingId && renameValue.trim()) {
+      updateSession.mutate({ id: renamingId, update: { title: renameValue.trim() } });
+    }
+    setRenamingId(null);
+  };
 
   // Load active session messages
   const { data: sessionData } = useQuery({
@@ -349,30 +401,152 @@ function CoachPageInner() {
             </p>
           )}
           {sessions?.map((session) => (
-            <button
+            <div
               key={session.id}
-              onClick={() => {
-                setActiveSessionId(session.id);
-                setShowSessions(false);
-              }}
               className={cn(
-                "flex w-full items-center gap-2 px-4 py-3 text-left text-sm transition-colors",
+                "group relative flex w-full items-center gap-2 px-3 py-3 text-left text-sm transition-colors",
+                session.archived_at && "opacity-60",
                 session.id === activeSessionId
                   ? "bg-vb-sage-tint text-vb-forest"
                   : "text-vb-text-dim hover:bg-vb-surface-raised hover:text-vb-text"
               )}
             >
-              <MessageCircle className="h-4 w-4 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">
-                  {session.title || "Chat"}
-                </p>
-                <p className="text-[10px] text-vb-text-muted">
-                  {session.message_count} messages
-                </p>
-              </div>
-            </button>
+              {session.pinned ? (
+                <Pin className="h-3.5 w-3.5 shrink-0 fill-current text-vb-red" />
+              ) : (
+                <MessageCircle className="h-4 w-4 shrink-0" />
+              )}
+              {renamingId === session.id ? (
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={commitRename}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitRename();
+                    if (e.key === "Escape") setRenamingId(null);
+                  }}
+                  className="min-w-0 flex-1 border border-vb-border bg-vb-surface px-1.5 py-0.5 text-xs text-vb-text outline-none focus:border-vb-red"
+                />
+              ) : (
+                <button
+                  onClick={() => {
+                    setActiveSessionId(session.id);
+                    setShowSessions(false);
+                  }}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <p className="flex items-center gap-1 truncate text-xs font-medium">
+                    {session.starred && (
+                      <Star className="h-3 w-3 shrink-0 fill-current text-vb-text" />
+                    )}
+                    <span className="truncate">{session.title || "Chat"}</span>
+                  </p>
+                  <p className="text-[10px] text-vb-text-muted">
+                    {session.archived_at
+                      ? "Archived"
+                      : `${session.message_count} messages`}
+                  </p>
+                </button>
+              )}
+
+              {/* Quiet row menu */}
+              <button
+                onClick={() =>
+                  setMenuFor(menuFor === session.id ? null : session.id)
+                }
+                className="shrink-0 rounded-sm p-1 text-vb-text-muted opacity-0 transition-opacity hover:text-vb-text focus:opacity-100 group-hover:opacity-100"
+                aria-label="Chat options"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+
+              {menuFor === session.id && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setMenuFor(null)}
+                  />
+                  <div className="absolute right-2 top-10 z-40 w-40 border border-vb-border bg-vb-surface-raised py-1 shadow-none">
+                    <button
+                      onClick={() => startRename(session.id, session.title)}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-vb-text-dim hover:bg-vb-sunken hover:text-vb-text"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Rename
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateSession.mutate({
+                          id: session.id,
+                          update: { pinned: !session.pinned },
+                        });
+                        setMenuFor(null);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-vb-text-dim hover:bg-vb-sunken hover:text-vb-text"
+                    >
+                      <Pin className="h-3.5 w-3.5" />
+                      {session.pinned ? "Unpin" : "Pin"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateSession.mutate({
+                          id: session.id,
+                          update: { starred: !session.starred },
+                        });
+                        setMenuFor(null);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-vb-text-dim hover:bg-vb-sunken hover:text-vb-text"
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                      {session.starred ? "Unstar" : "Star"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateSession.mutate({
+                          id: session.id,
+                          update: { archived: !session.archived_at },
+                        });
+                        setMenuFor(null);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-vb-text-dim hover:bg-vb-sunken hover:text-vb-text"
+                    >
+                      {session.archived_at ? (
+                        <ArchiveRestore className="h-3.5 w-3.5" />
+                      ) : (
+                        <Archive className="h-3.5 w-3.5" />
+                      )}
+                      {session.archived_at ? "Unarchive" : "Archive"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuFor(null);
+                        if (
+                          window.confirm(
+                            "Delete this chat for good? Forma keeps what it learned, but the conversation itself is gone."
+                          )
+                        ) {
+                          removeSession.mutate(session.id);
+                        }
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-vb-red hover:bg-vb-sunken"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           ))}
+        </div>
+
+        {/* Archived toggle */}
+        <div className="border-t border-vb-border-subtle px-4 py-2">
+          <button
+            onClick={() => setShowArchived((v) => !v)}
+            className="f-kicker text-vb-text-muted transition-colors hover:text-vb-text"
+          >
+            {showArchived ? "Hide archived" : "Show archived"}
+          </button>
         </div>
       </div>
 

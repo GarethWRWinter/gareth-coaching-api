@@ -31,10 +31,21 @@ class ChatSessionCreate(BaseModel):
     title: str | None = None
 
 
+class ChatSessionUpdate(BaseModel):
+    """Rename / pin / star / archive a chat session. All fields optional."""
+    title: str | None = Field(None, min_length=1, max_length=255)
+    pinned: bool | None = None
+    starred: bool | None = None
+    archived: bool | None = None
+
+
 class ChatSessionResponse(BaseModel):
     """Chat session summary."""
     id: str
     title: str | None = None
+    pinned: bool = False
+    starred: bool = False
+    archived_at: datetime | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
     message_count: int = 0

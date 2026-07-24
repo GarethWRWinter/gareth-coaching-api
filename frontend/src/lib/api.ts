@@ -798,8 +798,18 @@ export const goals = {
 export interface ChatSession {
   id: string;
   title: string | null;
+  pinned?: boolean;
+  starred?: boolean;
+  archived_at?: string | null;
   message_count: number;
   created_at: string;
+}
+
+export interface ChatSessionUpdate {
+  title?: string;
+  pinned?: boolean;
+  starred?: boolean;
+  archived?: boolean;
 }
 
 export interface ChatMessage {
@@ -810,13 +820,25 @@ export interface ChatMessage {
 }
 
 export const chat = {
-  getSessions: () => request<ChatSession[]>("/chat/sessions"),
+  getSessions: (includeArchived?: boolean) =>
+    request<ChatSession[]>(
+      `/chat/sessions${includeArchived ? "?include_archived=true" : ""}`
+    ),
 
   createSession: (title?: string) =>
     request<ChatSession>("/chat/sessions", {
       method: "POST",
       body: JSON.stringify({ title }),
     }),
+
+  updateSession: (id: string, update: ChatSessionUpdate) =>
+    request<ChatSession>(`/chat/sessions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(update),
+    }),
+
+  deleteSession: (id: string) =>
+    request<null>(`/chat/sessions/${id}`, { method: "DELETE" }),
 
   getSession: (id: string) =>
     request<ChatSession & { messages: ChatMessage[] }>(`/chat/sessions/${id}`),

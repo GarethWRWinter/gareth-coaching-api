@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy import JSON as SA_JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,6 +20,11 @@ class ChatSession(Base):
         String(36), ForeignKey("users.id"), index=True, nullable=False
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Session management: pinned floats to the top of the list, starred marks
+    # it important, archived hides it from the default list (soft, reversible).
+    pinned: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    starred: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    archived_at: Mapped[str | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[str] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[str | None] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
 

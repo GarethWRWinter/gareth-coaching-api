@@ -14,14 +14,17 @@ from app.schemas.chat import (
     ChatSessionCreate,
     ChatSessionDetailResponse,
     ChatSessionResponse,
+    ChatSessionUpdate,
     TTSRequest,
 )
 from app.services.coach_service import (
     create_session,
+    delete_session,
     get_session,
     get_sessions,
     stream_response,
     stream_voice_response,
+    update_session,
 )
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -45,21 +48,70 @@ def create_chat_session(
 
 @router.get("/sessions", response_model=list[ChatSessionResponse])
 def list_chat_sessions(
+    include_archived: bool = False,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """List all chat sessions."""
-    sessions = get_sessions(db, current_user.id)
+    """List chat sessions — pinned first, archived hidden unless asked for."""
+    sessions = get_sessions(db, current_user.id, include_archived=include_archived)
     return [
         ChatSessionResponse(
             id=s.id,
             title=s.title,
+            pinned=s.pinned,
+            starred=s.starred,
+            archived_at=s.archived_at,
             created_at=s.created_at,
             updated_at=s.updated_at,
             message_count=len(s.messages) if s.messages else 0,
         )
         for s in sessions
     ]
+
+
+@router.patch("/sessions/{session_id}", response_model=ChatSessionResponse)
+def update_chat_session(
+    session_id: str,
+    body: ChatSessionUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Rename, pin, star or archive a chat session."""
+    session = get_session(db, session_id, current_user.id)
+    if not session:
+        raise NotFoundException(detail="Chat session not found")
+    session = update_session(
+        db,
+        session,
+        title=body.title,
+        pinned=body.pinned,
+        starred=body.starred,
+        archived=body.archived,
+    )
+    return ChatSessionResponse(
+        id=session.id,
+        title=session.title,
+        pinned=session.pinned,
+        starred=session.starred,
+        archived_at=session.archived_at,
+        created_at=session.created_at,
+        updated_at=session.updated_at,
+        message_count=len(session.messages) if session.messages else 0,
+    )
+
+
+@router.delete("/sessions/{session_id}", status_code=204)
+def delete_chat_session(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a chat session and its messages. Permanent."""
+    session = get_session(db, session_id, current_user.id)
+    if not session:
+        raise NotFoundException(detail="Chat session not found")
+    delete_session(db, session)
+    return None
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionDetailResponse)
