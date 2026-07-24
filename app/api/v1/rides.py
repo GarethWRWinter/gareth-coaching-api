@@ -124,10 +124,42 @@ def list_rides(
     rides, total = ride_service.get_rides(
         db, current_user.id, page, per_page, start_date, end_date
     )
+    _warm_zone_summaries(db, current_user, rides)
     return RideListResponse(
         rides=[RideResponse.model_validate(r) for r in rides],
         total=total, page=page, per_page=per_page,
     )
+
+
+def _warm_zone_summaries(db: Session, user: User, rides: list) -> None:
+    """Lazily cache a compact time-in-zone summary on each ride.
+
+    Computed once from the power stream on first list view, then served
+    from the rides row forever. Rides without power data cache {"none": true}
+    so they're never recomputed.
+    """
+    from app.services.metrics_service import get_ride_zone_distribution
+
+    dirty = False
+    for ride in rides:
+        if ride.zone_summary is not None:
+            continue
+        try:
+            ftp = ride.ftp_at_time or user.ftp or 0
+            dist = get_ride_zone_distribution(db, ride.id, ftp)
+            zones = dist.get("zones") or []
+            total = dist.get("total_seconds") or 0
+            if not zones or total <= 0:
+                ride.zone_summary = {"none": True}
+            else:
+                secs = [z["seconds"] for z in zones]
+                dom_idx = max(range(len(secs)), key=lambda i: secs[i])
+                ride.zone_summary = {"z": secs, "dom": f"z{dom_idx + 1}"}
+            dirty = True
+        except Exception:
+            _logger.exception("Zone summary failed for ride %s", ride.id)
+    if dirty:
+        db.commit()
 
 
 @router.get("/{ride_id}", response_model=RideResponse)

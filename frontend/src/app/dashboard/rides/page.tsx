@@ -4,8 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { rides } from "@/lib/api";
+import { rides, type Ride } from "@/lib/api";
 import { formatDate, formatDuration, formatPower, formatTSS } from "@/lib/utils";
+import { ZONES } from "@/lib/palette";
+import { rideStory, dominantZone, zoneSeconds } from "@/lib/rideStory";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Kicker } from "@/components/ui/kicker";
@@ -17,6 +19,59 @@ const SOURCE_LABELS: Record<string, string> = {
   in_app: "In-app",
   dropbox: "Dropbox",
 };
+
+const ZONE_LABELS: Record<string, string> = {
+  z1: "Recovery",
+  z2: "Endurance",
+  z3: "Tempo",
+  z4: "Threshold",
+  z5: "VO2",
+  z6: "Anaerobic",
+  z7: "Sprint",
+};
+
+/** The ride's zones as proportional colour blocks — the shape of the effort
+    at a glance. Zone inks are data colours; this is data. */
+function ZoneStrip({ ride }: { ride: Ride }) {
+  const secs = zoneSeconds(ride);
+  if (!secs) return null;
+  const total = secs.reduce((a, b) => a + b, 0);
+  if (total <= 0) return null;
+  const keys = ["z1", "z2", "z3", "z4", "z5", "z6", "z7"] as const;
+  return (
+    <span
+      className="mt-2 flex h-1.5 w-full max-w-[280px] overflow-hidden"
+      aria-label="Time in zones"
+    >
+      {secs.map((s, i) =>
+        s / total >= 0.02 ? (
+          <span
+            key={keys[i]}
+            style={{
+              width: `${(s / total) * 100}%`,
+              background: ZONES[keys[i]],
+            }}
+          />
+        ) : null
+      )}
+    </span>
+  );
+}
+
+/** Dominant-zone tag: a small colour block + the zone's name in mono. */
+function ZoneTag({ ride }: { ride: Ride }) {
+  const dom = dominantZone(ride);
+  if (!dom) return null;
+  return (
+    <span className="flex items-center gap-1.5">
+      <span
+        className="inline-block h-2.5 w-2.5"
+        style={{ background: ZONES[dom as keyof typeof ZONES] }}
+      />
+      <span className="f-kicker text-vb-text-dim">{ZONE_LABELS[dom]}</span>
+    </span>
+  );
+}
 
 export default function RidesPage() {
   const queryClient = useQueryClient();
@@ -142,9 +197,9 @@ export default function RidesPage() {
                   href={`/dashboard/rides/${ride.id}`}
                   className="block py-4 transition-colors hover:-mx-3 hover:bg-vb-surface hover:px-3 lg:grid lg:grid-cols-[1fr_90px_90px_90px_90px_70px_60px] lg:items-baseline lg:gap-6"
                 >
-                  {/* Title + rubric */}
+                  {/* Title + rubric + the ride's story */}
                   <div className="min-w-0">
-                    <p className="mb-1 flex items-center gap-2">
+                    <div className="mb-1 flex items-center gap-2.5">
                       <span className="f-kicker text-vb-text-muted">
                         {formatDate(ride.ride_date)}
                       </span>
@@ -153,10 +208,17 @@ export default function RidesPage() {
                           {SOURCE_LABELS[ride.source]}
                         </Badge>
                       )}
-                    </p>
+                      <ZoneTag ride={ride} />
+                    </div>
                     <p className="truncate text-base font-medium text-vb-text">
                       {ride.title}
                     </p>
+                    {rideStory(ride) && (
+                      <p className="mt-1 max-w-xl text-xs leading-relaxed text-vb-text-dim">
+                        {rideStory(ride)}
+                      </p>
+                    )}
+                    <ZoneStrip ride={ride} />
                   </div>
 
                   {/* Compact numbers row, visible always, repositioned on lg */}

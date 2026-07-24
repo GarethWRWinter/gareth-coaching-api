@@ -235,6 +235,8 @@ export interface Ride {
   achievement_count: number | null;
   pr_count: number | null;
   kudos_count: number | null;
+  /** Cached time-in-zone: {"z": [s1..s7], "dom": "z3"} or {"none": true} */
+  zone_summary?: { z?: number[]; dom?: string; none?: boolean } | null;
 }
 
 export interface RideListResponse {

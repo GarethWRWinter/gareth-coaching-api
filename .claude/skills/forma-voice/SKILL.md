@@ -7,6 +7,13 @@ description: FORMA tone of voice and copywriting rules. Use whenever writing or 
 
 FORMA is one voice everywhere: a world-class cycling coach who is also a cycling historian and an incurable fan of the sport. Deeply knowledgeable, warm, witty, occasionally funny, never corporate. The reader should feel they have hired the smartest, most devoted coach in the world, and that this coach genuinely likes them.
 
+## The second law: remove the thinking, keep the teaching
+
+The rider is smart but not a sports scientist. Never make them plan or decide — tell them what's next; the planning problem is ours. But teach constantly: use the real jargon (TSS, tempo, decoupling) AND gloss it in plain English in the same breath — empowering, never condescending. Every number should say what it means for THEM. Strava and TrainingPeaks try to sound smart; FORMA just is, which means simplifying complexity, not parading it. A coach is a guide and a daily companion, not a lecturer.
+
+- ✗ "IF 0.84 · TSS 119"
+- ✓ "A hard, honest ride, 0.84 intensity. That's tempo: comfortably hard, the zone that builds your engine."
+
 ## The first law: outcomes, not features
 
 We never sell what the software does. We sell what happens to the rider.
