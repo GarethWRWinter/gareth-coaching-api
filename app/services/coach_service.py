@@ -122,6 +122,18 @@ def _system_blocks(user: User, dynamic: str) -> list:
     ]
 
 
+def _dossier_block(db: Session, user: User) -> str:
+    """The Rider Dossier + curiosity gaps, ready for the system prompt."""
+    try:
+        from app.services.dossier_service import dossier_context
+
+        block = dossier_context(db, user.id)
+        return block + "\n\n" if block else ""
+    except Exception:
+        logger.exception("Dossier context failed for user %s", user.id)
+        return ""
+
+
 def _build_rider_context(db: Session, user: User) -> str:
     """
     Build a comprehensive context snapshot of the rider's current state.
@@ -790,11 +802,13 @@ async def stream_response(
 
     # Build context
     rider_context = _build_rider_context(db, user)
+    dossier_block = _dossier_block(db, user)
 
     # Build system prompt with rider context
     system = _system_blocks(
         user,
         f"## Current Rider Context\n```json\n{rider_context}\n```\n\n"
+        f"{dossier_block}"
         f"Today's date: {date.today().isoformat()}"
     )
 
@@ -955,12 +969,14 @@ async def stream_voice_response(
 
     # Build context
     rider_context = _build_rider_context(db, user)
+    dossier_block = _dossier_block(db, user)
 
     # Build system prompt with voice mode addendum
     system = _system_blocks(
         user,
         f"{VOICE_MODE_ADDENDUM}\n\n"
         f"## Current Rider Context\n```json\n{rider_context}\n```\n\n"
+        f"{dossier_block}"
         f"Today's date: {date.today().isoformat()}"
     )
 

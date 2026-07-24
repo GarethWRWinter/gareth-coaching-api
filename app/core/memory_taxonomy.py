@@ -133,16 +133,29 @@ def extraction_prompt() -> str:
     for name, spec in ENTITY_TYPES.items():
         kinds = "|".join(spec["kinds"])
         lines.append(f"- {name} (kind: {kinds}): {spec['prompt']}")
+    # The Rider Dossier: typed personal knowledge that powers
+    # hyper-personalization. Extracted alongside the graph in one pass.
+    from app.models.dossier import DOSSIER_DIMENSIONS
+
     lines += [
         "",
         f"EDGE TYPES: {', '.join(EDGE_TYPES)}",
         f"LIFE AREAS (`life_area`, required): {', '.join(LIFE_AREAS)}",
         "",
+        "DOSSIER DIMENSIONS — separately, capture personal facts the RIDER reveals",
+        "about themselves on these dimensions (only when genuinely stated, never inferred",
+        "from the assistant's words):",
+    ]
+    for dim, desc in DOSSIER_DIMENSIONS.items():
+        lines.append(f"- {dim}: {desc}")
+    lines += [
+        "",
         "Return STRICT JSON, no prose:",
         '{"entities": [{"type": "...", "kind": "...", "life_area": "...", "label": "short human label, max 60 chars", "summary": "1 sentence, optional"}],',
-        ' "edges": [{"from_label": "...", "to_label": "...", "edge_type": "..."}]}',
+        ' "edges": [{"from_label": "...", "to_label": "...", "edge_type": "..."}],',
+        ' "dossier": [{"dimension": "one of the dossier dimensions", "content": "the fact in one plain sentence, rider-specific", "confidence": 0.5-1.0}]}',
         "",
         "Edges may reference entities extracted now OR the KNOWN ENTITIES list provided.",
-        "If nothing durable was said, return {\"entities\": [], \"edges\": []}.",
+        "If nothing durable was said, return {\"entities\": [], \"edges\": [], \"dossier\": []}.",
     ]
     return "\n".join(lines)

@@ -352,12 +352,24 @@ def generate_ride_debrief(
 
     context = _build_debrief_context(db, user, ride)
 
+    # The Rider Dossier: known facts + curiosity gaps. Post-ride is the most
+    # natural drip moment — a bonk invites a fuelling question, a missed
+    # session invites a time-reality one.
+    try:
+        from app.services.dossier_service import dossier_context
+
+        dossier_block = dossier_context(db, user.id)
+    except Exception:
+        dossier_block = ""
+
     try:
         response = forma_core.call(
             user_id=user.id,
             task="debrief",
             surface="ride_detail",
-            system=distilled_persona(user.coach_name, user.coach_tone) + DEBRIEF_SYSTEM_PROMPT,
+            system=distilled_persona(user.coach_name, user.coach_tone)
+            + DEBRIEF_SYSTEM_PROMPT
+            + (f"\n\n{dossier_block}" if dossier_block else ""),
             messages=[{
                 "role": "user",
                 "content": f"Generate a post-ride debrief for this ride:\n\n```json\n{json.dumps(context, indent=2, default=str)}\n```",

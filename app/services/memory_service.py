@@ -180,6 +180,25 @@ def extract_memories(
         db.add(MemoryEdge(user_id=user.id, from_id=a.id, to_id=b.id, edge_type=et))
         linked += 1
 
+    # Rider Dossier: typed personal facts extracted in the same pass.
+    from app.services.dossier_service import upsert_entry
+
+    dossier_added = 0
+    for item in data.get("dossier", []):
+        try:
+            entry = upsert_entry(
+                db,
+                user.id,
+                dimension=item.get("dimension", ""),
+                content=item.get("content", ""),
+                confidence=float(item.get("confidence", 0.6)),
+                source=f"{source}:{source_ref}" if source_ref else source,
+            )
+            if entry is not None:
+                dossier_added += 1
+        except Exception:
+            logger.exception("Dossier upsert failed (user=%s)", user.id)
+
     db.commit()
     if created or linked:
         logger.info(
