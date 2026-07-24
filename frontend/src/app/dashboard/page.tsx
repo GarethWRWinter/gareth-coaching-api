@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { metrics, rides, training, goals as goalsApi, coachInsights } from "@/lib/api";
+import { metrics, rides, training, goals as goalsApi, coachInsights, inspiration } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDuration, formatDate, cn } from "@/lib/utils";
 import { RiderProfileRadar } from "@/components/charts/rider-profile-radar";
@@ -53,6 +53,12 @@ export default function DashboardPage() {
   const { data: goalsData } = useQuery({
     queryKey: ["goals"],
     queryFn: () => goalsApi.list(),
+  });
+
+  const { data: daily } = useQuery({
+    queryKey: ["daily-inspiration"],
+    queryFn: () => inspiration.today(),
+    staleTime: 60 * 60 * 1000, // it only changes at midnight
   });
 
   const { data: nudge } = useQuery({
@@ -166,6 +172,28 @@ export default function DashboardPage() {
           }
         />
       </section>
+
+      {/* ============ THE DAILY LINE (quote / wisdom) ============ */}
+      {daily && (
+        <section className="f-rise border-y border-vb-border bg-vb-surface px-6 py-8 md:px-10 md:py-10">
+          <Kicker className="text-vb-text-muted">
+            {daily.tag === "wisdom" ? "Daily wisdom" : "Daily quote"}
+          </Kicker>
+          <blockquote className="mt-4 max-w-3xl">
+            <p className="f-display text-2xl leading-snug text-vb-text md:text-3xl">
+              &ldquo;{daily.text}&rdquo;
+            </p>
+          </blockquote>
+          <p className="f-kicker mt-5 text-vb-text-dim">
+            {daily.detail || daily.author}
+          </p>
+          {daily.context && (
+            <p className="mt-1.5 max-w-2xl text-xs leading-relaxed text-vb-text-muted">
+              {daily.context}
+            </p>
+          )}
+        </section>
+      )}
 
       {/* ============ GOALS NEEDING ASSESSMENT ============ */}
       {goalsData?.goals

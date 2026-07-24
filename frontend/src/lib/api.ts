@@ -793,6 +793,21 @@ export const goals = {
     request<{ goals: GoalEvent[]; total: number }>("/goals/needs-assessment"),
 };
 
+// === Daily inspiration ===
+
+export interface DailyInspiration {
+  text: string;
+  author: string;
+  context?: string;
+  detail?: string;
+  tag: "quote" | "wisdom";
+  date: string;
+}
+
+export const inspiration = {
+  today: () => request<DailyInspiration>("/inspiration/today"),
+};
+
 // === Chat ===
 
 export interface ChatSession {
