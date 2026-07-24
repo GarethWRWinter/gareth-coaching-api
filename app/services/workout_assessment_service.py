@@ -322,12 +322,34 @@ def generate_assessment(
         upcoming = _get_upcoming_workouts(db, user.id, workout.scheduled_date)
         user_msg = _build_assessment_prompt(user, workout, ride, score_result, upcoming)
 
+        # One system, not separate features: assessments see the same memory
+        # and dossier every other coach surface sees.
+        extra_context = ""
+        try:
+            from app.services.memory_service import get_context as get_memory_context
+
+            mem = get_memory_context(db, user, limit=16)
+            if mem:
+                extra_context += f"\n\n{mem}"
+        except Exception:
+            pass
+        try:
+            from app.services.dossier_service import dossier_context
+
+            dossier = dossier_context(db, user.id)
+            if dossier:
+                extra_context += f"\n\n{dossier}"
+        except Exception:
+            pass
+
         try:
             response = forma_core.call(
                 user_id=user.id,
                 task="assessment",
                 surface="workout_detail",
-                system=distilled_persona(user.coach_name, user.coach_tone) + ASSESSMENT_SYSTEM_PROMPT,
+                system=distilled_persona(user.coach_name, user.coach_tone)
+                + ASSESSMENT_SYSTEM_PROMPT
+                + extra_context,
                 messages=[{"role": "user", "content": user_msg}],
             )
             text = humanize(response_text(response))

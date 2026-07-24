@@ -159,6 +159,17 @@ def _build_nudge_context(
     except Exception:
         logger.exception("Memory context for nudge failed (user=%s)", user.id)
 
+    # Rider Dossier — the personal layer (heartset, time reality, fuel...)
+    # so the morning note speaks to this rider's life, not just their PMC.
+    try:
+        from app.services.dossier_service import dossier_context
+
+        dossier_block = dossier_context(db, user.id)
+        if dossier_block:
+            context["rider_dossier"] = dossier_block.split("\n")
+    except Exception:
+        logger.exception("Dossier context for nudge failed (user=%s)", user.id)
+
     return context
 
 

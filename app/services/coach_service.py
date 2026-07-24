@@ -112,10 +112,18 @@ def _system_blocks(user: User, dynamic: str) -> list:
         getattr(user, "coach_name", None) or "Forma",
         getattr(user, "coach_tone", None),
     )
+    # Pin the rider's identity hard: models invent plausible names when a
+    # name feels unusual. This is non-negotiable, so it lives in the stable
+    # (cached) block, not the per-turn context.
+    rider_name = ((user.full_name or user.email.split("@")[0]).split() or ["Rider"])[0]
+    identity = (
+        f"THE RIDER'S NAME IS {rider_name}. Address them as {rider_name} and "
+        f"nothing else — never invent, substitute or vary their name."
+    )
     return [
         {
             "type": "text",
-            "text": education + "\n\n" + COACH_APP_PLAYBOOK,
+            "text": identity + "\n\n" + education + "\n\n" + COACH_APP_PLAYBOOK,
             "cache_control": {"type": "ephemeral"},
         },
         {"type": "text", "text": dynamic},
